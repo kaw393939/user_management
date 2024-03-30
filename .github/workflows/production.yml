@@ -64,7 +64,7 @@ jobs:
           cache-to: type=inline,mode=max
           
       - name: Scan the Docker image
-        uses: aquasecurity/trivy-action@v0.5.8
+        uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'kaw393939/devops_demo:${{ github.sha }}'
           format: 'table'
