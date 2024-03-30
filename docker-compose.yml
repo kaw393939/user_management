@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  fastapi:
+    build: .
+    volumes:
+      - ./qr_codes:/myapp/qr_codes # Maps ./qr_codes from your host to /myapp/qr_codes in the container
+    environment:
+      - QR_CODE_DIR=./qr_codes
+      - FILL_COLOR=red
+      - BACK_COLOR=white
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./qr_codes:/var/www/qr_codes # Maps ./qr_codes from your host to /var/www/qr_codes in the container

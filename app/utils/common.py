@@ -10,6 +10,9 @@ load_dotenv()
 QR_DIRECTORY = Path(os.getenv('QR_CODE_DIR', './qr_codes'))
 FILL_COLOR = os.getenv('FILL_COLOR', 'red')
 BACK_COLOR = os.getenv('BACK_COLOR', 'white')
+BACK_COLOR = os.getenv('BACK_COLOR', 'white')
+SERVER_BASE_URL = os.getenv('SERVER_BASE_URL', 'http://localhost:80')
+
 
 def setup_logging():
     logging.config.dictConfig({
@@ -33,9 +36,13 @@ def setup_logging():
         }
     })
 
-def create_directory():
+def create_directory(directory_path):
+    """Create a directory if it does not exist."""
     try:
-        QR_DIRECTORY.mkdir(parents=True, exist_ok=True)
+        # Using os.makedirs to create the directory if it does not exist.
+        # exist_ok=True prevents raising an exception if the directory already exists.
+        os.makedirs(directory_path, exist_ok=True)
     except Exception as e:
-        logging.error(f"Failed to create directory {QR_DIRECTORY}: {e}")
+        logging.error(f"Failed to create directory {directory_path}: {e}")
+        # Rethrow the exception to handle it further up the call stack.
         raise
