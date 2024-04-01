@@ -66,22 +66,14 @@ async def list_qr_codes_endpoint(token: str = Depends(oauth2_scheme)):
     ) for qr_file in qr_files]
     return responses
 
-# Define an endpoint to delete a specific QR code
-# It responds to DELETE requests at "/qr-codes/{qr_filename}" and returns a 204 status code upon successful deletion
 @router.delete("/qr-codes/{qr_filename}", status_code=status.HTTP_204_NO_CONTENT, tags=["QR Codes"])
 async def delete_qr_code_endpoint(qr_filename: str, token: str = Depends(oauth2_scheme)):
     logging.info(f"Deleting QR code: {qr_filename}.")
-    # Construct the file path for the QR code
     qr_code_path = QR_DIRECTORY / qr_filename
-    # Check if the file exists
     if not qr_code_path.is_file():
         logging.warning(f"QR code not found: {qr_filename}.")
-        # If not found, raise a 404 error
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="QR code not found")
 
-    # Delete the QR code if it exists
     delete_qr_code(qr_code_path)
-    # Generate HATEOAS links for the delete action
-    links = generate_links("delete", qr_filename, SERVER_BASE_URL, "")
-    # Return a response indicating successful deletion
-    return JSONResponse(content={"message": "QR code deleted successfully.", "links": links})
+    # No need to generate or return any links since the 204 response should not contain a body
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
