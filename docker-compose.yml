@@ -5,6 +5,7 @@ services:
     build: .
     volumes:
       - ./qr_codes:/myapp/qr_codes # Maps ./qr_codes from your host to /myapp/qr_codes in the container
+      - ./:/myapp/
     environment:
       - QR_CODE_DIR=./qr_codes
       - FILL_COLOR=red
