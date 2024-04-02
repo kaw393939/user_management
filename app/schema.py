@@ -161,6 +161,7 @@ class EventList(BaseModel):
 
         json_schema_extra = {
             "example": {
+            "example": {
                 "items": [
                     {
                         "id": 1,
@@ -206,3 +207,7 @@ class EventList(BaseModel):
                 ]
             }
         }
+    }
+        
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str

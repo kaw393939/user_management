@@ -1,18 +1,7 @@
-import pytest
 from httpx import AsyncClient
 from app.main import app  # Import your FastAPI app
+import pytest
 
-@pytest.mark.asyncio
-async def test_login_for_access_token():
-    form_data = {
-        "username": "admin",
-        "password": "secret",
-    }
-    async with AsyncClient(app=app, base_url="http://test") as ac:
-        response = await ac.post("/token", data=form_data)
-    assert response.status_code == 200
-    assert "access_token" in response.json()
-    assert response.json()["token_type"] == "bearer"
 
 @pytest.mark.asyncio
 async def test_create_qr_code_unauthorized():

@@ -3,7 +3,8 @@ import os
 import base64
 from typing import List
 from dotenv import load_dotenv
-from jose import jwt
+from fastapi import HTTPException, status
+from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from app.config import ADMIN_PASSWORD, ADMIN_USER, ALGORITHM, SECRET_KEY, SERVER_BASE_URL
 import validators  # Make sure to install this package
@@ -38,15 +39,10 @@ def authenticate_user(username: str, password: str):
     logging.warning(f"Authentication failed for user: {username}")
     return None
 
-def create_access_token(data: dict, expires_delta: timedelta = None):
-    """
-    Generates a JWT access token. Optionally, an expiration time can be specified.
-    """
-    # Copy user data and set expiration time for the token.
+def create_access_token(data: dict, expires_delta: timedelta):
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))
+    expire = datetime.utcnow() + expires_delta
     to_encode.update({"exp": expire})
-    # Encode the data to create the JWT.
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
@@ -63,6 +59,21 @@ def validate_and_sanitize_url(url_str):
         logging.error(f"Invalid URL provided: {url_str}")
         return None
 
+# Assuming this function already exists and returns a user object if credentials are valid
+def verify_refresh_token(refresh_token: str):
+    # Placeholder for refresh token verification logic
+    # You should validate the refresh token's signature and its expiration
+    # Also check if the token has been revoked or is still valid
+    try:
+        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+        # Implement additional checks here, such as token revocation or session validity
+        return {"username": username}
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+    
 def encode_url_to_filename(url):
     """
     Encodes a URL into a base64 string safe for filenames, after validating and sanitizing.

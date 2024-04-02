@@ -19,8 +19,8 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 # Now, import your factory
-from app.event_factory import EventFactory  # Update this import path as necessary
-from app.event_factory import EventFactory  # Correct import path
+from app.factories.event_factory import EventFactory  # Update this import path as necessary
+from app.factories.event_factory import EventFactory  # Correct import path
 from sqlalchemy.orm import Session
 from database import Base, engine  # Assuming your engine is defined here
 
