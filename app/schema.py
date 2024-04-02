@@ -5,7 +5,7 @@ class QRCodeRequest(BaseModel):
     url: HttpUrl = Field(..., description="The URL to encode into the QR code.")
     fill_color: str = Field(default="red", description="Color of the QR code.", example="black")
     back_color: str = Field(default="white", description="Background color of the QR code.", example="yellow")
-    size: conint(ge=1, le=40) = Field(default=10, description="Size of the QR code from 1 to 40.", example=20)
+    size: conint(ge=1, le=40) = Field(default=10, description="Size of the QR code from 1 to 40.", example=20) # type: ignore
 
     class Config:
         json_schema_extra = {

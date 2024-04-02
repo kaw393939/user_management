@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordBearer
 from typing import List
 
 # Import classes and functions from our application's modules
-from app.models import QRCodeRequest, QRCodeResponse
+from app.schema import QRCodeRequest, QRCodeResponse
 from app.services.qr_service import generate_qr_code, list_qr_codes, delete_qr_code
 from app.utils.common import decode_filename_to_url, encode_url_to_filename, generate_links
 from app.config import QR_DIRECTORY, SERVER_BASE_URL, FILL_COLOR, BACK_COLOR, SERVER_DOWNLOAD_FOLDER
