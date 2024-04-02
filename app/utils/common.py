@@ -5,9 +5,11 @@ from typing import List
 from dotenv import load_dotenv
 from jose import jwt
 from datetime import datetime, timedelta
-from app.config import ADMIN_PASSWORD, ADMIN_USER, ALGORITHM, SECRET_KEY
+from app.config import ADMIN_PASSWORD, ADMIN_USER, ALGORITHM, SECRET_KEY, SERVER_BASE_URL
 import validators  # Make sure to install this package
 from urllib.parse import urlparse, urlunparse
+
+from app.schema import Link
 
 # Load environment variables from .env file for security and configuration.
 load_dotenv()
@@ -84,16 +86,30 @@ def decode_filename_to_url(encoded_str: str) -> str:
     decoded_bytes = base64.urlsafe_b64decode(encoded_str)
     return decoded_bytes.decode('utf-8')
 
-def generate_links(action: str, qr_filename: str, base_api_url: str, download_url: str) -> List[dict]:
-    """
-    Generates HATEOAS links for QR code resources, including view and delete actions.
-    This supports the application's RESTful architecture by providing links to possible actions.
-    """
+def generate_links(action: str, qr_filename: str, base_api_url: str, download_url: str) -> List[Link]:
     links = []
     if action in ["list", "create"]:
-        original_url = decode_filename_to_url(qr_filename[:-4])
-        links.append({"rel": "view", "href": download_url, "action": "GET", "type": "image/png"})
+        links.append(Link(rel="view", href=download_url, action="GET", type="image/png"))
     if action in ["list", "create", "delete"]:
         delete_url = f"{base_api_url}/qr-codes/{qr_filename}"
-        links.append({"rel": "delete", "href": delete_url, "action": "DELETE", "type": "application/json"})
+        links.append(Link(rel="delete", href=delete_url, action="DELETE", type="application/json"))
+    return links
+
+def generate_event_links(event_id: int) -> List[Link]:
+    return [
+        Link(rel="self", href=f"{SERVER_BASE_URL}/events/{event_id}", action="GET", type="application/json"),
+        Link(rel="edit", href=f"{SERVER_BASE_URL}/events/{event_id}", action="PUT", type="application/json"),
+        Link(rel="delete", href=f"{SERVER_BASE_URL}/events/{event_id}", action="DELETE", type="application/json")
+    ]
+
+def generate_pagination_links(page: int, per_page: int, total_pages: int, base_url: str = "/events/") -> List[Link]:
+    links = []
+    links.append(Link(rel="first", href=f"{SERVER_BASE_URL}{base_url}?page=1&per_page={per_page}", action="GET", type="application/json"))
+    links.append(Link(rel="last", href=f"{SERVER_BASE_URL}{base_url}?page={total_pages}&per_page={per_page}", action="GET", type="application/json"))
+    
+    if page > 1:
+        links.append(Link(rel="prev", href=f"{SERVER_BASE_URL}{base_url}?page={page - 1}&per_page={per_page}", action="GET", type="application/json"))
+    if page < total_pages:
+        links.append(Link(rel="next", href=f"{SERVER_BASE_URL}{base_url}?page={page + 1}&per_page={per_page}", action="GET", type="application/json"))
+    
     return links

@@ -1,5 +1,6 @@
 from pydantic import BaseModel, HttpUrl, Field, conint
-from typing import List, Optional
+from typing import Dict, List, Optional
+from datetime import datetime
 
 class QRCodeRequest(BaseModel):
     url: HttpUrl = Field(..., description="The URL to encode into the QR code.")
@@ -73,5 +74,135 @@ class TokenData(BaseModel):
         json_schema_extra = {
             "example": {
                 "username": "user@example.com"
+            }
+        }
+
+class EventBase(BaseModel):
+    title: str = Field(..., description="Title of the event.")
+    description: str = Field(..., description="Description of the event.")
+
+class EventCreate(EventBase):
+    start_date: datetime = Field(..., description="Start date and time of the event.")
+    end_date: datetime = Field(..., description="End date and time of the event.")
+
+class Event(EventBase):
+    id: int = Field(..., description="Unique identifier of the event.")
+    start_date: datetime
+    end_date: datetime
+    links: List[Link] = Field(default=[], description="HATEOAS links related to this event.")
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "id": 1,
+                "title": "Sample Event",
+                "description": "This is a sample event.",
+                "start_date": "2024-01-01T09:00:00",
+                "end_date": "2024-01-01T17:00:00",
+                "links": [
+                    {
+                        "rel": "self",
+                        "href": "https://api.example.com/events/1",
+                        "action": "GET",
+                        "type": "application/json"
+                    },
+                    {
+                        "rel": "update",
+                        "href": "https://api.example.com/events/1",
+                        "action": "PUT",
+                        "type": "application/json"
+                    },
+                    {
+                        "rel": "delete",
+                        "href": "https://api.example.com/events/1",
+                        "action": "DELETE",
+                        "type": "application/json"
+                    }
+                ]
+            }
+        }
+
+class EventUpdate(BaseModel):
+    title: Optional[str] = Field(None, description="Updated title of the event.")
+    description: Optional[str] = Field(None, description="Updated description of the event.")
+    start_date: Optional[datetime] = Field(None, description="Updated start date and time of the event.")
+    end_date: Optional[datetime] = Field(None, description="Updated end date and time of the event.")
+
+    class Config:
+        from_attributes = True
+
+class Pagination(BaseModel):
+    page: int = Field(..., description="Current page number.")
+    per_page: int = Field(..., description="Number of items per page.")
+    total_items: int = Field(..., description="Total number of items.")
+    total_pages: int = Field(..., description="Total number of pages.")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "page": 1,
+                "per_page": 10,
+                "total_items": 50,
+                "total_pages": 5
+            }
+        }
+
+class EventList(BaseModel):
+    items: List[Event]  # Your EventResponse model
+    pagination: Pagination  # Your Pagination model
+    links: List[Link] = Field(..., alias='_links')  # Use alias for the external representation
+
+
+
+    class Config:
+        from_attributes = True
+        populate_by_name = True
+
+        json_schema_extra = {
+            "example": {
+                "items": [
+                    {
+                        "id": 1,
+                        "title": "Sample Event",
+                        "description": "This is a sample event.",
+                        "start_date": "2024-01-01T09:00:00",
+                        "end_date": "2024-01-01T17:00:00",
+                        "links": [
+                            {
+                                "rel": "self",
+                                "href": "https://api.example.com/events/1",
+                                "action": "GET",
+                                "type": "application/json"
+                            }
+                        ]
+                    }
+                ],
+                "pagination": {
+                    "page": 1,
+                    "per_page": 10,
+                    "total_items": 50,
+                    "total_pages": 5
+                },
+                "links": [
+                    {
+                        "rel": "self",
+                        "href": "https://api.example.com/events?page=1&per_page=10",
+                        "action": "GET",
+                        "type": "application/json"
+                    },
+                    {
+                        "rel": "next",
+                        "href": "https://api.example.com/events?page=2&per_page=10",
+                        "action": "GET",
+                        "type": "application/json"
+                    },
+                    {
+                        "rel": "last",
+                        "href": "https://api.example.com/events?page=5&per_page=10",
+                        "action": "GET",
+                        "type": "application/json"
+                    }
+                ]
             }
         }
