@@ -1,8 +1,8 @@
-"""Seed database
+"""seed events
 
-Revision ID: 42a44bfa27b5
-Revises: 1f04798b9a3a
-Create Date: 2024-04-02 00:17:02.217433
+Revision ID: 22a97243fcf2
+Revises: 089b3ac22c5d
+Create Date: 2024-04-03 04:15:09.562509
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '42a44bfa27b5'
-down_revision: Union[str, None] = '1f04798b9a3a'
+revision: str = '22a97243fcf2'
+down_revision: Union[str, None] = '089b3ac22c5d'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -44,7 +44,7 @@ def upgrade():
     session.commit()  # Don't forget to commit the session
     session.close()  # Cleanup the session after committing
 
-def downgrade():
-    # Implement your downgrade functionality here
-    # This may involve deleting the seeded events or leaving it if it's not critical
+
+
+def downgrade() -> None:
     pass

@@ -11,7 +11,6 @@ class EventFactory(factory.alchemy.SQLAlchemyModelFactory):
         sqlalchemy_session = SessionLocal()  # Use your SQLAlchemy session here
         sqlalchemy_session_persistence = "commit"
 
-    id = factory.Sequence(lambda n: n)
     title = factory.LazyFunction(lambda: fake.sentence(nb_words=6))
     description = factory.LazyFunction(lambda: fake.text())
     start_date = factory.LazyFunction(lambda: fake.date_time())

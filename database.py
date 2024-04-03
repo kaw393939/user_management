@@ -1,16 +1,15 @@
-# database.py
-
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from app import config
+# Use the DATABASE_URL from config.py
+# If you're using individual components (e.g., POSTGRES_USER), you could construct the URL in config.py and import it here directly.
+SQLALCHEMY_DATABASE_URL = config.DATABASE_URL
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"  # SQLite database
-# For other databases, you might need a connection string like:
-# PostgreSQL example: "postgresql://user:password@localhost/dbname"
+# The connect_args parameter is not used for PostgreSQL and can be omitted.
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}  # Only needed for SQLite
-)
+# Define sessionmaker, which is DB-agnostic and doesn't need changes.
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

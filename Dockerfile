@@ -13,7 +13,8 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONFAULTHANDLER=1 \
     PIP_NO_CACHE_DIR=off \
     PIP_DEFAULT_TIMEOUT=100 \
-    PIP_DISABLE_PIP_VERSION_CHECK=on
+    PIP_DISABLE_PIP_VERSION_CHECK=on \
+    QR_CODE_DIR=/myapp/qr_codes
 
 # Set the working directory inside the container
 WORKDIR /myapp
@@ -34,13 +35,11 @@ RUN pip install --upgrade pip \
     && pip install -r requirements.txt
 
 # Copy the rest of your application's code
-COPY . /myapp
-# Copy the startup script and make it executable
-RUN chmod +x ./start.sh
 # Run the application as a non-root user for security
 RUN useradd -m myuser
-USER myuser
+COPY --chown=myuser:myuser . . 
 
+USER myuser
 # Tell Docker about the port we'll run on.
 EXPOSE 8000
 
