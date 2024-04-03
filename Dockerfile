@@ -36,8 +36,7 @@ RUN pip install --upgrade pip \
 # Copy the rest of your application's code
 COPY . /myapp
 # Copy the startup script and make it executable
-COPY start.sh /start.sh
-RUN chmod +x /start.sh
+RUN chmod +x ./start.sh
 # Run the application as a non-root user for security
 RUN useradd -m myuser
 USER myuser
@@ -45,4 +44,4 @@ USER myuser
 # Tell Docker about the port we'll run on.
 EXPOSE 8000
 
-CMD ["/start.sh"]
+ENTRYPOINT [ "./start.sh" ]
