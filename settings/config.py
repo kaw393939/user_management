@@ -22,9 +22,9 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = Field(default=30, description="Expiration time for access tokens in minutes")
     admin_user: str = Field(default='admin', description="Default admin username")
     admin_password: str = Field(default='secret', description="Default admin password")
-
+    
     # Database configuration
-    database_url: str = Field(default='postgresql://user:password@localhost/myappdb', description="URL for connecting to the database")
+    database_url: str = Field(default='postgresql://user:password@postgres/myappdb', description="URL for connecting to the database")
 
     # Optional: If preferring to construct the SQLAlchemy database URL from components
     postgres_user: str = Field(default='user', description="PostgreSQL username")

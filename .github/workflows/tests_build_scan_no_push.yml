@@ -1,31 +1,31 @@
-name: Checking Test Run, Docker Builds, and Security Scan - No upload
+name: CI with PostgreSQL, Docker Build, and Security Scan
 
 on:
   push:
     branches-ignore:
-      - 'main'  # Exclude main branch
+      - 'main'  # Ignore main branch to avoid duplicate checks on PR merges
   pull_request:
     branches-ignore:
-      - 'main'  # Exclude main branch
+      - 'main'  # Ensure PRs targeting non-main branches are evaluated
 
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.10.12]  # Define Python versions here
+        python-version: [3.10.12]  # Specify the Python version to use
     services:
       postgres:
-        image: postgres:latest
+        image: postgres:13  # Use PostgreSQL version 13 for consistency with production
         env:
           POSTGRES_USER: testuser
           POSTGRES_PASSWORD: password
           POSTGRES_DB: testdb
         ports:
-          - 5432:5432
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+          - 5432:5432  # Map PostgreSQL port 5432 on the container to the same port on the host
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5  # Ensure PostgreSQL is ready before proceeding
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4  # Check out the repository code
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -37,20 +37,20 @@ jobs:
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          restore-keys: ${{ runner.os }}-pip-
 
       - name: Install dependencies
         run: |
-          mkdir ./qr_codes
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Run tests with Pytest
-        run: pytest
+        env:
+          DATABASE_URL: postgresql://testuser:password@localhost:5432/testdb  # Configure the DATABASE_URL environment variable for tests
+        run: pytest  # Execute the test suite using pytest
 
   build-docker-image:
-    needs: test
+    needs: test  # Ensure this job runs after the tests have passed
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -63,22 +63,21 @@ jobs:
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
+          restore-keys: ${{ runner.os }}-buildx-
 
       - name: Build Docker image (without pushing)
         uses: docker/build-push-action@v5
         with:
-          push: false  # Disable pushing the image
-          tags: kaw393939/devops_demo:${{ github.sha }}  # Tags the image
-          load: true  # Load the built image into Docker's local storage
+          push: false  # This configuration prevents pushing the built image to a registry
+          tags: yourusername/devops_demo:${{ github.sha }}  # Customize the tag with your DockerHub username
+          load: true
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
-      - name: Scan the Docker image
+      - name: Scan the Docker image with Trivy
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'kaw393939/devops_demo:${{ github.sha }}'
+          image-ref: 'yourusername/devops_demo:${{ github.sha }}'  # Ensure this matches the tag used during build
           format: 'table'
           exit-code: '1'  # Fail the job if vulnerabilities are found
           ignore-unfixed: true
