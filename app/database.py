@@ -1,18 +1,23 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Define sessionmaker, which is DB-agnostic and doesn't need changes.
-SessionLocal = sessionmaker(autocommit=False, autoflush=False)
+# Create the async engine
+async_engine = None
+AsyncSessionLocal = None
 
+# Create a base class for your models
 Base = declarative_base()
 
-def get_engine():
-    from app.dependencies import get_settings
-    settings = get_settings()
-    # Use the DATABASE_URL from config.py
-    # If you're using individual components (e.g., POSTGRES_USER), you could construct the URL in config.py and import it here directly.
-    SQLALCHEMY_DATABASE_URL = settings.database_url
-    # The connect_args parameter is not used for PostgreSQL and can be omitted.
-    engine = create_engine(SQLALCHEMY_DATABASE_URL)
-    return engine
+# Function to initialize the async engine and session
+def initialize_async_db(database_url: str):
+    global async_engine, AsyncSessionLocal
+    async_engine = create_async_engine(database_url, echo=True)
+    AsyncSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=async_engine, class_=AsyncSession)
+
+# Function to get a database session
+async def get_async_db():
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
