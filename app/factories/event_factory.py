@@ -1,7 +1,7 @@
 import factory
 from faker import Faker
 from app.models.models import Event, User
-from database import SessionLocal
+from app.database import SessionLocal
 
 fake = Faker()
 

@@ -8,8 +8,9 @@ from typing import List
 from app.schemas.schemas import QRCodeRequest, QRCodeResponse
 from app.services.qr_service import generate_qr_code, list_qr_codes, delete_qr_code
 from app.utils.common import decode_filename_to_url, encode_url_to_filename, generate_links
-from app.config import QR_DIRECTORY, SERVER_BASE_URL, FILL_COLOR, BACK_COLOR, SERVER_DOWNLOAD_FOLDER
+from app.dependencies import get_settings
 
+settings = get_settings()
 import logging
 
 # Create an APIRouter instance to register our endpoints
@@ -29,13 +30,13 @@ async def create_qr_code(request: QRCodeRequest, token: str = Depends(oauth2_sch
     # Encode the URL to a safe filename format
     encoded_url = encode_url_to_filename(request.url)
     qr_filename = f"{encoded_url}.png"
-    qr_code_full_path = QR_DIRECTORY / qr_filename
+    qr_code_full_path = settings.qr_directory / qr_filename
 
     # Construct the download URL for the QR code
-    qr_code_download_url = f"{SERVER_BASE_URL}/{SERVER_DOWNLOAD_FOLDER}/{qr_filename}"
+    qr_code_download_url = f"{settings.server_base_url}/{settings.server_download_folder}/{qr_filename}"
     
     # Generate HATEOAS (Hypermedia As The Engine Of Application State) links for this resource
-    links = generate_links("create", qr_filename, SERVER_BASE_URL, qr_code_download_url)
+    links = generate_links("create", qr_filename, settings.server_base_url, qr_code_download_url)
 
     # Check if the QR code already exists to prevent duplicates
     if qr_code_full_path.exists():
@@ -47,7 +48,7 @@ async def create_qr_code(request: QRCodeRequest, token: str = Depends(oauth2_sch
         )
 
     # Generate the QR code if it does not exist
-    generate_qr_code(request.url, qr_code_full_path, FILL_COLOR, BACK_COLOR, request.size)
+    generate_qr_code(request.url, qr_code_full_path, settings.fill_color, settings.fill_color, request.size)
     # Return a response indicating successful creation
     return QRCodeResponse(message="QR code created successfully.", qr_code_url=qr_code_download_url, links=links)
 
@@ -69,7 +70,7 @@ async def list_qr_codes_endpoint(token: str = Depends(oauth2_scheme)):
 @router.delete("/qr-codes/{qr_filename}", status_code=status.HTTP_204_NO_CONTENT, tags=["QR Codes"])
 async def delete_qr_code_endpoint(qr_filename: str, token: str = Depends(oauth2_scheme)):
     logging.info(f"Deleting QR code: {qr_filename}.")
-    qr_code_path = QR_DIRECTORY / qr_filename
+    qr_code_path = settings.qr_directory / qr_filename
     if not qr_code_path.is_file():
         logging.warning(f"QR code not found: {qr_filename}.")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="QR code not found")

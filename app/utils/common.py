@@ -6,15 +6,13 @@ from dotenv import load_dotenv
 from fastapi import HTTPException, status
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
-from app.config import ADMIN_PASSWORD, ADMIN_USER, ALGORITHM, SECRET_KEY, SERVER_BASE_URL
+from app.dependencies import get_settings
 import validators  # Make sure to install this package
 from urllib.parse import urlparse, urlunparse
 
 from app.schemas.schemas import Link
 
-# Load environment variables from .env file for security and configuration.
-load_dotenv()
-
+settings = get_settings()
 def setup_logging():
     """
     Sets up logging for the application using a configuration file.
@@ -33,7 +31,7 @@ def authenticate_user(username: str, password: str):
     In a real application, replace this with actual authentication against a user database.
     """
     # Simple check against constants for demonstration.
-    if username == ADMIN_USER and password == ADMIN_PASSWORD:
+    if username == settings.admin_user and password == settings.admin_password:
         return {"username": username}
     # Log a warning if authentication fails.
     logging.warning(f"Authentication failed for user: {username}")
@@ -43,7 +41,7 @@ def create_access_token(data: dict, expires_delta: timedelta):
     to_encode = data.copy()
     expire = datetime.utcnow() + expires_delta
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
     return encoded_jwt
 
 def validate_and_sanitize_url(url_str):
@@ -65,7 +63,7 @@ def verify_refresh_token(refresh_token: str):
     # You should validate the refresh token's signature and its expiration
     # Also check if the token has been revoked or is still valid
     try:
-        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(refresh_token, settings.secret_key, algorithms=[settings.algorithm])
         username: str = payload.get("sub")
         if username is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
@@ -108,9 +106,9 @@ def generate_links(action: str, qr_filename: str, base_api_url: str, download_ur
 
 def generate_event_links(event_id: int) -> List[Link]:
     return [
-        Link(rel="self", href=f"{SERVER_BASE_URL}/events/{event_id}", action="GET", type="application/json"),
-        Link(rel="edit", href=f"{SERVER_BASE_URL}/events/{event_id}", action="PUT", type="application/json"),
-        Link(rel="delete", href=f"{SERVER_BASE_URL}/events/{event_id}", action="DELETE", type="application/json")
+        Link(rel="self", href=f"{settings.server_base_url}/events/{event_id}", action="GET", type="application/json"),
+        Link(rel="edit", href=f"{settings.server_base_url}/events/{event_id}", action="PUT", type="application/json"),
+        Link(rel="delete", href=f"{settings.server_base_url}/events/{event_id}", action="DELETE", type="application/json")
     ]
 
 def generate_pagination_links(page: int, per_page: int, total_pages: int, base_url: str = "/events/") -> List[Link]:

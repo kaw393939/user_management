@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
-from database import SessionLocal  # Adjust the import path as necessary to find your SessionLocal
+from app.database import SessionLocal
+from settings.config import Settings  # Adjust the import path as necessary to find your SessionLocal
 
 # Dependency
 def get_db():
@@ -8,3 +9,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# Dependency to inject settings
+def get_settings():
+    return Settings()

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 # Renamed service function imports to avoid conflicts
-from app.config import SERVER_BASE_URL
+from app.dependencies import get_settings
 from app.services.event_service import (
     create_event as create_event_service,
     get_event as get_event_service,
@@ -12,10 +12,10 @@ from app.services.event_service import (
     update_event as update_event_service,
     delete_event as delete_event_service,
 )
-from app.dependencies import get_db
+from app.dependencies import get_db, get_settings
 from app.schemas.schemas import EventCreate, EventUpdate, Event as EventResponse, EventList, Link, Pagination
 from app.utils.common import generate_event_links, generate_pagination_links
-
+settings = get_settings()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 router = APIRouter()
 

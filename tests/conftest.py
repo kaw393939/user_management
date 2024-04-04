@@ -2,8 +2,8 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
-from app.main import app  # Adjust this import path to your FastAPI app
-from database import Base  # Adjust this import to match where your Base metadata is defined
+from app.main import app
+from app.database import Base  # Adjust this import to match where your Base metadata is defined
 from app.dependencies import get_db
 from unittest.mock import patch
 

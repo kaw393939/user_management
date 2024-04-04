@@ -3,7 +3,9 @@ from typing import List
 import qrcode
 import logging
 from pathlib import Path
-from app.config import SERVER_BASE_URL, SERVER_DOWNLOAD_FOLDER
+from app.dependencies import get_settings
+
+settings = get_settings()
 
 def list_qr_codes(directory_path: Path) -> List[str]:
     """

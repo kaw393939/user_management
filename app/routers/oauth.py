@@ -2,10 +2,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from datetime import timedelta
-from app.config import ACCESS_TOKEN_EXPIRE_MINUTES  # Custom configuration setting
+from app.dependencies import get_settings  # Custom configuration setting
 from app.schemas.schemas import RefreshTokenRequest, Token  # Import the Token model from our application
 from app.utils.common import authenticate_user, create_access_token, verify_refresh_token
-
+settings = get_settings()
 # Initialize OAuth2PasswordBearer, a class that FastAPI provides to handle security with OAuth2 Password Flow
 # 'tokenUrl' is the endpoint where the client will send the username and password to get the token
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -29,7 +29,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         )
     
     # Define the duration the token will be valid for, using the application's configuration
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
     
     # Generate an access token for the authenticated user
     access_token = create_access_token(
@@ -46,6 +46,6 @@ async def refresh_access_token(refresh_token_request: RefreshTokenRequest):
     user = verify_refresh_token(refresh_token)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
     access_token = create_access_token(data={"sub": user["username"]}, expires_delta=access_token_expires)
     return {"access_token": access_token, "token_type": "bearer"}
