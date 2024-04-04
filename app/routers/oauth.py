@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from datetime import timedelta
 from app.config import ACCESS_TOKEN_EXPIRE_MINUTES  # Custom configuration setting
-from app.schema import RefreshTokenRequest, Token  # Import the Token model from our application
+from app.schemas.schemas import RefreshTokenRequest, Token  # Import the Token model from our application
 from app.utils.common import authenticate_user, create_access_token, verify_refresh_token
 
 # Initialize OAuth2PasswordBearer, a class that FastAPI provides to handle security with OAuth2 Password Flow

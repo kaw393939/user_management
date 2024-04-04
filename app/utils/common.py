@@ -10,7 +10,7 @@ from app.config import ADMIN_PASSWORD, ADMIN_USER, ALGORITHM, SECRET_KEY, SERVER
 import validators  # Make sure to install this package
 from urllib.parse import urlparse, urlunparse
 
-from app.schema import Link
+from app.schemas.schemas import Link
 
 # Load environment variables from .env file for security and configuration.
 load_dotenv()

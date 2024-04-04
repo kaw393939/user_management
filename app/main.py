@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.config import QR_DIRECTORY
-from app.routers import events, qr_code, oauth  # Make sure these imports match your project structure.
+from app.routers import events, qr_code, oauth, users  # Make sure these imports match your project structure.
 from app.services.qr_service import create_directory
 from app.utils.common import setup_logging
 
@@ -36,3 +36,4 @@ app = FastAPI(
 app.include_router(qr_code.router)  # QR code management routes
 app.include_router(oauth.router)  # OAuth authentication routes
 app.include_router(events.router)  
+app.include_router(users.router)

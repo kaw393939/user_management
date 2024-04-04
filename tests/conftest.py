@@ -1,41 +1,46 @@
-from fastapi.testclient import TestClient
 import pytest
-from httpx import AsyncClient
-from app.main import app  # Adjust this import path as necessary
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, scoped_session
+from app.main import app  # Adjust this import path to your FastAPI app
 from database import Base  # Adjust this import to match where your Base metadata is defined
-from sqlalchemy.orm import scoped_session
+from app.dependencies import get_db
 from unittest.mock import patch
- 
-# Update these variables to match your test database configuration
+
+# Update this variable to match your test database configuration
 TEST_DATABASE_URL = "sqlite:///./test_db.sqlite"
 engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionScoped = scoped_session(TestingSessionLocal)
 
-# Optional: If you're using Alembic, you can use it here to upgrade and downgrade your test database schema
+@pytest.fixture(scope="session")
+def setup_database():
+    Base.metadata.create_all(bind=engine)
+    yield
+    Base.metadata.drop_all(bind=engine)
+
+@pytest.fixture(scope="function")
+def db_session(setup_database):
+    session = SessionScoped()
+    try:
+        yield session
+    finally:
+        session.rollback()
+        session.close()
 
 @pytest.fixture(scope="module")
 def client():
-    with TestClient(app) as test_client:
-        yield test_client
+    with TestClient(app) as c:
+        yield c
 
+# Dependency override for test database
+@pytest.fixture(autouse=True)
+def override_dependency():
+    app.dependency_overrides[get_db] = lambda: SessionScoped()
+    yield
+    app.dependency_overrides.clear()
 
-@pytest.fixture(scope="function")
-def db_session():
-    # Bind the engine to the metadata of the Base class so that the
-    # declaratives can be accessed through a DBSession instance
-    Base.metadata.bind = engine
-    Base.metadata.create_all(bind=engine)  # Create the tables.
-    db_session = scoped_session(TestingSessionLocal)
-    try:
-        yield db_session
-    finally:
-        db_session.rollback()
-        db_session.close()
-        Base.metadata.drop_all(bind=engine)  # Optional: Drop tables after each test
-
+# Mock fixtures
 @pytest.fixture
 def mock_authenticate_user_success():
     with patch("app.routers.oauth.authenticate_user", return_value={"username": "test_user"}) as mock:

@@ -1,4 +1,5 @@
-from pydantic import BaseModel, HttpUrl, Field, conint
+from uuid import UUID
+from pydantic import BaseModel, EmailStr, Field, HttpUrl, validator, conint
 from typing import Dict, List, Optional
 from datetime import datetime
 
@@ -211,3 +212,46 @@ class EventList(BaseModel):
         
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
+
+# Custom Validators
+def validate_username(username: str) -> str:
+    if not re.match(r"^\w+$", username):
+        raise ValueError('Username must be alphanumeric')
+    return username
+
+def validate_password(password: str) -> str:
+    pattern = re.compile(
+        r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+    )
+    if not pattern.match(password):
+        raise ValueError(
+            'Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character')
+    return password
+
+# User Models
+class UserBase(BaseModel):
+    username: str = Field(..., min_length=3, max_length=255)
+    email: EmailStr
+
+    _validate_username = validator('username', allow_reuse=True)(validate_username)
+
+class UserCreate(UserBase):
+    password: str = Field(..., min_length=8)
+    
+    _validate_password = validator('password', allow_reuse=True)(validate_password)
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = Field(None, min_length=3, max_length=255)
+    email: Optional[EmailStr]
+    password: Optional[str] = Field(None, min_length=8)
+    profile_picture_url: Optional[HttpUrl]
+
+    _username_validator = validator('username', allow_reuse=True)(validate_username)
+    _password_validator = validator('password', allow_reuse=True)(validate_password)
+
+class UserResponse(UserBase):
+    id: UUID
+    profile_picture_url: Optional[HttpUrl]
+    last_login_at: Optional[datetime]
+    created_at: datetime
+    updated_at: datetime
