@@ -1,55 +1,65 @@
-# app/services/user_service.py
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from app.models.models import User
 from app.utils.security import hash_password
 from uuid import UUID
 
-def create_user(db: Session, username: str, email: str, password: str) -> User:
+async def create_user(db: AsyncSession, username: str, email: str, password: str) -> User:
     """
-    Create a new user with hashed password and return the user object.
+    Asynchronously create a new user with hashed password and return the user object.
     """
     hashed_password = hash_password(password)
     new_user = User(username=username, email=email, hashed_password=hashed_password)
     db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    await db.commit()
+    await db.refresh(new_user)
     return new_user
 
-def get_user(db: Session, user_id: UUID) -> User:
+async def get_user(db: AsyncSession, user_id: UUID) -> User:
     """
-    Retrieve a user by their ID.
+    Asynchronously retrieve a user by their ID.
     """
-    return db.query(User).filter(User.id == user_id).first()
+    stmt = select(User).filter(User.id == user_id)
+    result = await db.execute(stmt)
+    user = result.scalars().first()
+    return user
 
-def get_users(db: Session, skip: int = 0, limit: int = 10) -> list[User]:
+async def get_users(db: AsyncSession, skip: int = 0, limit: int = 10) -> list[User]:
     """
-    Retrieve a list of users, with pagination.
+    Asynchronously retrieve a list of users, with pagination.
     """
-    return db.query(User).offset(skip).limit(limit).all()
+    stmt = select(User).offset(skip).limit(limit)
+    result = await db.execute(stmt)
+    users = result.scalars().all()
+    return users
 
-def update_user(db: Session, user_id: UUID, username: str = None, email: str = None, password: str = None) -> User:
+async def update_user(db: AsyncSession, user_id: UUID, username: str = None, email: str = None, password: str = None) -> User:
     """
-    Update user details.
+    Asynchronously update user details.
     """
-    user = db.query(User).filter(User.id == user_id).first()
+    stmt = select(User).filter(User.id == user_id)
+    result = await db.execute(stmt)
+    user = result.scalars().first()
     if user:
-        if username:
+        if username is not None:
             user.username = username
-        if email:
+        if email is not None:
             user.email = email
-        if password:
+        if password is not None:
             user.hashed_password = hash_password(password)
-        db.commit()
+        await db.commit()
         return user
     return None
 
-def delete_user(db: Session, user_id: UUID) -> bool:
+async def delete_user(db: AsyncSession, user_id: UUID) -> bool:
     """
-    Delete a user by their ID.
+    Asynchronously delete a user by their ID.
     """
-    user = db.query(User).filter(User.id == user_id).first()
+    stmt = select(User).filter(User.id == user_id)
+    result = await db.execute(stmt)
+    user = result.scalars().first()
     if user:
-        db.delete(user)
-        db.commit()
+        await db.delete(user)
+        await db.commit()
         return True
     return False
