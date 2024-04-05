@@ -1,43 +1,71 @@
 import pytest
-from app.services.event_service import create_event, get_event, get_events, update_event, delete_event
-from app.services.user_service import create_user  # Assuming you have this service
-from sqlalchemy.orm import Session
-from uuid import uuid4, UUID
-from app.database import Base  # Adjust this import as necessary
+from httpx import AsyncClient
+from sqlalchemy import select
+from app.models.models import Event
 
-# Your test functions remain largely unchanged, but now they correctly use a valid creator_id
-def test_create_event(db_session, sample_event_data):
-    event = create_event(db_session, **sample_event_data)
-    assert event.id is not None
-    assert event.title == sample_event_data['title']
-    assert event.creator_id == sample_event_data['creator_id']
+@pytest.mark.asyncio
+async def test_create_event(client, user, sample_event_data):
+    response = await client.post("/events/", json=sample_event_data)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["title"] == sample_event_data["title"]
+    assert data["creator_id"] == str(user.id)  # Assuming JSON returns stringified UUID
 
-def test_get_event(db_session, sample_event_data):
-    created_event = create_event(db_session, **sample_event_data)
-    retrieved_event = get_event(db_session, created_event.id)
-    assert retrieved_event.id == created_event.id
-    assert retrieved_event.title == created_event.title
+@pytest.mark.asyncio
+async def test_get_event(client, db_session, user, sample_event_data):
+    # First, create an event to ensure there's one to get
+    response = await client.post("/events/", json=sample_event_data)
+    assert response.status_code == 200
+    event_id = response.json()["id"]
 
-def test_get_events(db_session, sample_event_data):
-    create_event(db_session, **sample_event_data)
+    # Now, try to retrieve the created event
+    get_response = await client.get(f"/events/{event_id}")
+    assert get_response.status_code == 200
+    event_data = get_response.json()
+    assert event_data["id"] == event_id
+    assert event_data["title"] == sample_event_data["title"]
+
+@pytest.mark.asyncio
+async def test_get_events(client, db_session, sample_event_data):
+    # Create multiple events
+    await client.post("/events/", json=sample_event_data)
     another_event_data = sample_event_data.copy()
-    another_event_data["title"] = "Another Event"
-    create_event(db_session, **another_event_data)
-    events, total = get_events(db_session)
+    another_event_data["title"] = "Another Sample Event"
+    await client.post("/events/", json=another_event_data)
+
+    # Get the list of events
+    response = await client.get("/events/")
+    assert response.status_code == 200
+    events = response.json()
     assert len(events) >= 2
-    assert total >= 2
 
-def test_update_event(db_session, sample_event_data):
-    event = create_event(db_session, **sample_event_data)
-    updated_title = "Updated Event Title"
-    updated_description = "Updated Description"
-    update_event(db_session, event.id, title=updated_title, description=updated_description)
-    updated_event = get_event(db_session, event.id)
-    assert updated_event.title == updated_title
-    assert updated_event.description == updated_description
+@pytest.mark.asyncio
+async def test_update_event(client, db_session, user, sample_event_data):
+    # Create an event
+    create_response = await client.post("/events/", json=sample_event_data)
+    event_id = create_response.json()["id"]
 
-def test_delete_event(db_session, sample_event_data):
-    event = create_event(db_session, **sample_event_data)
-    delete_event(db_session, event.id)
-    deleted_event = get_event(db_session, event.id)
-    assert deleted_event is None
+    # Update the event
+    updated_data = {"title": "Updated Title", "description": "Updated Description"}
+    update_response = await client.put(f"/events/{event_id}", json=updated_data)
+    assert update_response.status_code == 200
+
+    # Verify update
+    get_response = await client.get(f"/events/{event_id}")
+    event_data = get_response.json()
+    assert event_data["title"] == "Updated Title"
+    assert event_data["description"] == "Updated Description"
+
+@pytest.mark.asyncio
+async def test_delete_event(client, db_session, user, sample_event_data):
+    # Create an event to delete
+    create_response = await client.post("/events/", json=sample_event_data)
+    event_id = create_response.json()["id"]
+
+    # Delete the event
+    delete_response = await client.delete(f"/events/{event_id}")
+    assert delete_response.status_code == 200
+
+    # Verify deletion
+    get_response = await client.get(f"/events/{event_id}")
+    assert get_response.status_code == 404

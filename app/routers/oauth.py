@@ -39,13 +39,3 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     
     # Return the access token and the token type (Bearer) to the client
     return {"access_token": access_token, "token_type": "bearer"}
-
-@router.post("/token/refresh", response_model=Token)
-async def refresh_access_token(refresh_token_request: RefreshTokenRequest):
-    refresh_token = refresh_token_request.refresh_token
-    user = verify_refresh_token(refresh_token)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
-    access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
-    access_token = create_access_token(data={"sub": user["username"]}, expires_delta=access_token_expires)
-    return {"access_token": access_token, "token_type": "bearer"}

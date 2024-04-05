@@ -1,45 +1,48 @@
-from typing import List, Tuple
-from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
-from app.models.models import Event  # Ensure correct import paths
-import uuid
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from app.models.models import Event
+from uuid import UUID
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-def create_event(db: Session, creator_id: uuid.UUID, title: str, description: str, qr_code_path: str = None) -> Event:
+async def create_event(db: AsyncSession, creator_id: UUID, title: str, description: str, qr_code_path: str = None) -> Event:
     """
-    Create a new event without specifying start and end dates at this level.
+    Asynchronously create a new event.
     """
-    db_event = Event(
+    new_event = Event(
         title=title,
         description=description,
         creator_id=creator_id,
         qr_code_path=qr_code_path
     )
-    db.add(db_event)
-    db.commit()
-    db.refresh(db_event)
-    return db_event
+    db.add(new_event)
+    await db.commit()
+    await db.refresh(new_event)
+    return new_event
 
-def get_events(db: Session, skip: int = 0, limit: int = 10) -> Tuple[List[Event], int]:
+async def get_events(db: AsyncSession, skip: int = 0, limit: int = 10) -> list[Event]:
     """
-    Retrieve a list of events with pagination.
+    Asynchronously retrieve a list of events, with pagination.
     """
-    items = db.query(Event).offset(skip).limit(limit).all()
-    total = db.query(Event).count()
-    return items, total
+    stmt = select(Event).offset(skip).limit(limit)
+    result = await db.execute(stmt)
+    events = result.scalars().all()
+    return events
 
-def get_event(db: Session, event_id: uuid.UUID) -> Event:
+async def get_event(db: AsyncSession, event_id: UUID) -> Event:
     """
-    Retrieve an event by its ID.
+    Asynchronously retrieve an event by its ID.
     """
-    return db.query(Event).filter(Event.id == event_id).first()
+    stmt = select(Event).filter(Event.id == event_id)
+    result = await db.execute(stmt)
+    event = result.scalars().first()
+    return event
 
-def update_event(db_session: Session, event_id: uuid.UUID, title: str = None, description: str = None, qr_code_path: str = None) -> Event:
+async def update_event(db: AsyncSession, event_id: UUID, title: str = None, description: str = None, qr_code_path: str = None) -> Event:
     """
-    Update an existing event with new details.
+    Asynchronously update event details.
     """
-    event = db_session.query(Event).filter(Event.id == event_id).first()
+    stmt = select(Event).filter(Event.id == event_id)
+    result = await db.execute(stmt)
+    event = result.scalars().first()
     if event:
         if title is not None:
             event.title = title
@@ -47,18 +50,19 @@ def update_event(db_session: Session, event_id: uuid.UUID, title: str = None, de
             event.description = description
         if qr_code_path is not None:
             event.qr_code_path = qr_code_path
-        db_session.commit()
+        await db.commit()
         return event
-    else:
-        return None
+    return None
 
-def delete_event(db: Session, event_id: uuid.UUID) -> bool:
+async def delete_event(db: AsyncSession, event_id: UUID) -> bool:
     """
-    Delete an event by its ID.
+    Asynchronously delete an event by its ID.
     """
-    event_to_delete = db.query(Event).filter(Event.id == event_id).first()
-    if event_to_delete:
-        db.delete(event_to_delete)
-        db.commit()
+    stmt = select(Event).filter(Event.id == event_id)
+    result = await db.execute(stmt)
+    event = result.scalars().first()
+    if event:
+        await db.delete(event)
+        await db.commit()
         return True
     return False

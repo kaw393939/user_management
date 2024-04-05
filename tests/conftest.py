@@ -22,13 +22,15 @@ AsyncTestingSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_c
 AsyncSessionScoped = scoped_session(AsyncTestingSessionLocal)
 
 # Database Fixtures
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="function", autouse=True)
 async def setup_database():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+    await engine.dispose()  # Close the engine
+
 
 @pytest.fixture(scope="function")
 async def db_session(setup_database):
@@ -52,11 +54,11 @@ async def user(db_session):
     await db_session.commit()
     return user
 
-# Application Client Fixture
-@pytest.fixture(scope="module")
-async def client():
-    async with TestClient(app) as c:
-        yield c
+@pytest.fixture(scope="function")
+def client():
+    # Directly return an instance of TestClient
+    client = TestClient(app)
+    return client
 
 # Mock Fixtures
 @pytest.fixture
@@ -88,7 +90,7 @@ def mock_verify_refresh_token_fail():
 @pytest.fixture(scope="function")
 def sample_event_data(user):
     return {
-        "creator_id": user.id,
+        "creator_id": str(user.id),  # Convert UUID to string
         "title": "Sample Event",
         "description": "A sample event for testing.",
         "qr_code_path": None,

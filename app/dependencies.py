@@ -7,5 +7,5 @@ def get_settings():
     return Settings()
 
 async def get_db() -> AsyncSession:
-    async with get_async_db() as session:
+    async for session in get_async_db():
         yield session
