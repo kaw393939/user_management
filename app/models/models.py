@@ -101,5 +101,7 @@ class EventRegistration(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
     section_id = Column(UUID(as_uuid=True), ForeignKey('event_sections.id'), nullable=False)
     registered_at = Column(DateTime, default=func.now(), nullable=False)
+    attended = Column(Boolean, default=False, nullable=False)  # Track attendance
+    attended_time = Column(DateTime, nullable=True)  # Time of attendance
     user = relationship("User")
     section = relationship("EventSection")
