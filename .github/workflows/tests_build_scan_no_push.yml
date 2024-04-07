@@ -18,7 +18,7 @@ jobs:
       postgres:
         image: postgres:13  # Use PostgreSQL version 13 for consistency with production
         env:
-          POSTGRES_USER: testuser
+          POSTGRES_USER: user
           POSTGRES_PASSWORD: password
           POSTGRES_DB: testdb
         ports:
