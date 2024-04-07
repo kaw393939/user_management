@@ -20,7 +20,7 @@ jobs:
         env:
           POSTGRES_USER: user
           POSTGRES_PASSWORD: password
-          POSTGRES_DB: testdb
+          POSTGRES_DB: myappdb
         ports:
           - 5432:5432  # Map PostgreSQL port 5432 on the container to the same port on the host
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5  # Ensure PostgreSQL is ready before proceeding
@@ -39,6 +39,8 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run tests with Pytest
+        env:
+          DATABASE_URL: postgresql+asyncpg://user:password@localhost:5432/myappdb  # Configure the DATABASE_URL environment variable for tests
         run: pytest  # Execute the test suite using pytest
 
   build-docker-image:
