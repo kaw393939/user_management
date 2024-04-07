@@ -1,6 +1,7 @@
 from fastapi import FastAPI
+from app.database import initialize_async_db
 from app.dependencies import get_settings
-from app.routers import events, qr_code, oauth, users
+from app.routers import qr_code, oauth, user_routes
 from app.services.qr_service import create_directory
 from app.utils.common import setup_logging
 
@@ -31,9 +32,12 @@ app = FastAPI(
         "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
     }
 )
-
+settings = get_settings()
+@app.on_event("startup")
+def startup_event():
+    initialize_async_db(settings.database_url)
 # Include the routers for your application.
 app.include_router(qr_code.router)  # QR code management routes
 app.include_router(oauth.router)  # OAuth authentication routes
-app.include_router(events.router)
-app.include_router(users.router)
+# app.include_router(events.router)
+app.include_router(user_routes.router)

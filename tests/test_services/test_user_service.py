@@ -1,37 +1,56 @@
 import pytest
-from app.services.user_service import get_user, get_users, update_user, delete_user
+from sqlalchemy import select
+from app.services.user_service import UserService
+from app.models.user_model import User
 
-@pytest.mark.asyncio
-async def test_create_user(user):
-    # The `user` fixture is an async fixture, so we need to await it
-    user_obj = user
-    assert user_obj.id is not None
-    assert user_obj.username is not None
-    assert user_obj.email is not None
-    assert user_obj.hashed_password is not None
+pytestmark = pytest.mark.asyncio
 
-@pytest.mark.asyncio
-async def test_get_user(db_session, user):
-    # The `get_user()` function returns a coroutine, so we need to await it
-    retrieved_user = await get_user(db=db_session, user_id=user.id)
+async def test_user_service(db_session, user_role):
+    # Ensure a role exists for the user
+    #  = await ensure_role_exists(db_session, 'TestRole')
+    
+    user_data = {
+        "username": "test_user",
+        "email": "test_user@example.com",
+        "password": "test_password",
+        "role_id": user_role.id  # Use the ensured role's ID
+    }
+    user = await UserService.create(db_session, user_data)
+    assert user is not None, "User creation failed"
+    assert user.username == user_data["username"]
+    assert user.email == user_data["email"]
+
+async def test_get_by_id(db_session, user):
+    retrieved_user = await UserService.get_by_id(db_session, user.id)
     assert retrieved_user.id == user.id
 
-@pytest.mark.asyncio
-async def test_get_users(db_session, user):
-    users = await get_users(db=db_session)
-    assert len(users) >= 1
-    assert any(u.id == user.id for u in users)
+async def test_get_by_username(db_session, user):
+    retrieved_user = await UserService.get_by_username(db_session, user.username)
+    assert retrieved_user.username == user.username
 
-@pytest.mark.asyncio
+async def test_get_by_email(db_session, user):
+    retrieved_user = await UserService.get_by_email(db_session, user.email)
+    assert retrieved_user.email == user.email
+
 async def test_update_user(db_session, user):
-    updated_data = {"username": "updateduser", "email": "updatedemail@example.com"}
-    updated_user = await update_user(db=db_session, user_id=user.id, **updated_data)
-    assert updated_user.username == updated_data['username']
-    assert updated_user.email == updated_data['email']
+    new_username = "updated_" + user.username[:40]  # Ensure the new username is within the 50 characters limit
+    updated_user = await UserService.update(db_session, user.id, {"username": new_username})
+    assert updated_user is not None
+    assert updated_user.username == new_username
 
 @pytest.mark.asyncio
 async def test_delete_user(db_session, user):
-    result = await delete_user(db=db_session, user_id=user.id)
-    assert result is True
-    deleted_user = await get_user(db=db_session, user_id=user.id)
-    assert deleted_user is None
+    # Verify the user exists in the database before deletion
+    user_in_db_before_deletion = await db_session.execute(select(User).where(User.id == user.id))
+    user_in_db_before_deletion = user_in_db_before_deletion.scalars().first()
+    assert user_in_db_before_deletion is not None, "User should exist in the DB before deletion."
+
+    # Attempt to delete the user
+    deletion_success = await UserService.delete(db_session, user.id)
+    assert deletion_success is True, "User deletion should succeed."
+
+    # Verify the user no longer exists in the database after deletion
+    user_in_db_after_deletion = await db_session.execute(select(User).where(User.id == user.id))
+    user_in_db_after_deletion = user_in_db_after_deletion.scalars().first()
+    assert user_in_db_after_deletion is None, "User should not exist in the DB after deletion."
+

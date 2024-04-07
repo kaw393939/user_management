@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     admin_password: str = Field(default='secret', description="Default admin password")
     
     # Database configuration
-    database_url: str = Field(default='postgresql://user:password@postgres/myappdb', description="URL for connecting to the database")
+    database_url: str = Field(default='postgresql+asyncpg://user:password@postgres/myappdb', description="URL for connecting to the database")
 
     # Optional: If preferring to construct the SQLAlchemy database URL from components
     postgres_user: str = Field(default='user', description="PostgreSQL username")
