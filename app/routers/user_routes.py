@@ -6,6 +6,7 @@ from app.dependencies import get_async_db
 from app.schemas.user_schemas import UserCreate, UserRole, UserResponse
 from app.services.user_service import UserService
 from app.schemas.link_schema import Link
+from app.utils.link_generation import create_user_links
 
 router = APIRouter()
 
@@ -22,22 +23,7 @@ async def update_user(user_id: UUID):
 async def delete_user(user_id: UUID):
     pass
 
-def create_links(user_id: UUID, request: Request) -> List[Link]:
-    """
-    Generate navigation links for user actions.
 
-    Parameters:
-    - user_id (UUID): The unique identifier of the user.
-    - request (Request): The request object.
-
-    Returns:
-    - List[Link]: A list of Link objects for navigating user-related actions.
-    """
-    return [
-        Link(rel="self", href=str(request.url_for("get_user", user_id=str(user_id))), method="GET"),
-        Link(rel="update", href=str(request.url_for("update_user", user_id=str(user_id))), method="PUT"),
-        Link(rel="delete", href=str(request.url_for("delete_user", user_id=str(user_id))), method="DELETE"),
-    ]
 
 @router.post("/users/", response_model=UserResponse, status_code=status.HTTP_201_CREATED, tags=["User Management"], name="create_user")
 async def create_user(user: UserCreate, request: Request, db: AsyncSession = Depends(get_async_db)):
@@ -64,7 +50,7 @@ async def create_user(user: UserCreate, request: Request, db: AsyncSession = Dep
     if not created_user:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create user")
     
-    links = create_links(created_user.id, request)
+    links = create_user_links(created_user.id, request)
     
     return UserResponse.model_construct(
         id=created_user.id,
