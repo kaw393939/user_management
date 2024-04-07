@@ -54,3 +54,18 @@ async def test_delete_user(db_session, user):
     user_in_db_after_deletion = user_in_db_after_deletion.scalars().first()
     assert user_in_db_after_deletion is None, "User should not exist in the DB after deletion."
 
+@pytest.mark.asyncio
+async def test_list_users(db_session, users_with_same_role_50_users):
+    # Create multiple users to test pagination
+    
+
+    # List the first 10 users
+    users_page_1 = await UserService.list_users(db_session, skip=0, limit=10)
+    assert len(users_page_1) == 10, "Should return 10 users"
+
+    # List the next 1- users
+    users_page_2 = await UserService.list_users(db_session, skip=10, limit=10)
+    assert len(users_page_2) == 10, "Should return the remaining 5 users"
+
+    # Verify that pagination works correctly
+    assert users_page_1[0].username != users_page_2[0].username, "Pagination should return different sets of users"

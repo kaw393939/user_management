@@ -1,4 +1,4 @@
-from typing import Optional, Dict
+from typing import List, Optional, Dict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.exc import SQLAlchemyError
@@ -60,17 +60,39 @@ class UserService:
 
     @classmethod
     async def update(cls, session: AsyncSession, user_id: UUID, update_data: Dict[str, str]) -> Optional[User]:
-        """Update an existing user's information."""
+        """Update an existing user's information.
+
+        Args:
+            session (AsyncSession): The database session.
+            user_id (UUID): The ID of the user to update.
+            update_data (Dict[str, str]): A dictionary of fields to update.
+
+        Returns:
+            Optional[User]: The updated user object, or None if update failed.
+        """
         try:
+            # Fetch the user to be updated
             user = await cls.get_by_id(session, user_id)
-            if user:
-                for key, value in update_data.items():
+            if not user:
+                logger.info(f"User {user_id} not found.")
+                return None
+
+            # Update the user attributes
+            for key, value in update_data.items():
+                if hasattr(user, key):
                     setattr(user, key, value)
-                await session.commit()
-                await session.refresh(user)
-                return user
-            return None
+                else:
+                    logger.warning(f"Attempted to update unknown attribute '{key}' for user {user_id}.")
+            
+            # Commit the transaction
+            await session.commit()
+
+            # Refresh and return the updated user object
+            await session.flush()
+            await session.refresh(user)
+            return user
         except SQLAlchemyError as e:
+            # Log the exception and rollback the transaction
             logger.error(f"Failed to update user {user_id}: {e}")
             await session.rollback()
             return None
@@ -91,3 +113,26 @@ class UserService:
             logger.error(f"Failed to delete user {user_id}: {e}")
             await session.rollback()
             return False
+
+    @classmethod
+    async def list_users(cls, session: AsyncSession, skip: int = 0, limit: int = 10) -> List[User]:
+        """
+        List users with basic pagination.
+
+        Parameters:
+        - session (AsyncSession): The database session to use for the query.
+        - skip (int): Number of records to skip (for pagination).
+        - limit (int): Maximum number of records to return.
+
+        Returns:
+        - List[User]: A list of users.
+        """
+        try:
+            # Prepare query with pagination
+            query = select(User).offset(skip).limit(limit)
+            result = await cls._execute_query(session, query)
+            # Fetch all results
+            return result.scalars().all() if result else []
+        except SQLAlchemyError as e:
+            logger.error(f"Failed to list users: {e}")
+            return []
