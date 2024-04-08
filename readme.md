@@ -1,3 +1,11 @@
+# Commands
+
+1. docker compose up --build
+2. docker compose exec fastapi pytest
+    * docker compose exec fastapi pytest tests/test_services/test_user_service.py::test_list_users
+3. Need to apply database migrationss: docker compose exec fastapi alembic upgrade head
+4. Creating database migration: docker compose exec fastapi alembic revision --autogenerate -m 'added admin'
+
 # Introduction to Database Testing and Asynchronous Programming
 
 When testing applications that interact with databases, it's crucial to ensure the integrity and reliability of the data. Database testing involves verifying that the application can correctly communicate with the database, perform the necessary operations, and handle data consistency and accuracy.
