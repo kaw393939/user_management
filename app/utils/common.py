@@ -9,7 +9,7 @@ from app.dependencies import get_settings
 import validators  # Make sure to install this package
 from urllib.parse import urlparse, urlunparse
 
-from app.schemas.schemas import Link
+from app.schemas.link_schema import Link
 
 settings = get_settings()
 def setup_logging():

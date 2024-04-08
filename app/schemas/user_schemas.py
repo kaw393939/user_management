@@ -1,12 +1,9 @@
 from datetime import datetime
 import re
 from typing import List, Optional
-from uuid import UUID
 from pydantic import UUID4, BaseModel, EmailStr, Field, HttpUrl, validator
-
 from app.schemas.link_schema import Link
 
-# Custom Validators
 def validate_username(username: str) -> str:
     if not re.match(r"^[a-zA-Z0-9_-]+$", username):
         raise ValueError("Username can only contain letters, numbers, underscores, and hyphens.")
@@ -25,13 +22,12 @@ def validate_password(password: str) -> str:
         raise ValueError("Password must contain at least one special character.")
     return password
 
-
 class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, description="The username of the user.")
     email: EmailStr = Field(..., description="The email address of the user.")
     full_name: Optional[str] = Field(None, min_length=1, max_length=100, description="The full name of the user.")
     bio: Optional[str] = Field(None, max_length=500, description="The bio of the user.")
-    profile_picture_url: Optional[str] = Field(None, description="The URL of the user's profile picture.")
+    profile_picture_url: Optional[HttpUrl] = Field(None, description="The URL of the user's profile picture.")
 
     _normalize_username = validator("username", allow_reuse=True)(validate_username)
 
@@ -47,18 +43,12 @@ class UserUpdate(BaseModel):
     profile_picture_url: Optional[HttpUrl] = Field(None, description="The updated URL of the user's profile picture.")
 
 class UserResponse(UserBase):
-    id: UUID = Field(..., description="The unique identifier of the user.")
+    id: UUID4 = Field(..., description="The unique identifier of the user.")
     last_login_at: Optional[datetime] = Field(None, description="The timestamp of the user's last login.")
     created_at: datetime = Field(..., description="The timestamp when the user was created.")
     updated_at: datetime = Field(..., description="The timestamp when the user was last updated.")
     links: List[Link] = Field([], description="The HATEOAS links related to the user.")
 
-    class Config:
-        from_attributes=True
-
 class UserListResponse(BaseModel):
     items: List[UserResponse] = Field(..., description="The list of users.")
     links: List[Link] = Field([], description="The HATEOAS links related to the user list.")
-
-    class Config:
-        from_attributes=True

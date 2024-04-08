@@ -1,3 +1,23 @@
+"""
+This Python file is part of a FastAPI application, demonstrating user management functionalities including creating, reading,
+updating, and deleting (CRUD) user information. It uses OAuth2 with Password Flow for security, ensuring that only authenticated
+users can perform certain operations. Additionally, the file showcases the integration of FastAPI with SQLAlchemy for asynchronous
+database operations, enhancing performance by non-blocking database calls.
+
+The implementation emphasizes RESTful API principles, with endpoints for each CRUD operation and the use of HTTP status codes
+and exceptions to communicate the outcome of operations. It introduces the concept of HATEOAS (Hypermedia as the Engine of
+Application State) by including navigational links in API responses, allowing clients to discover other related operations dynamically.
+
+OAuth2PasswordBearer is employed to extract the token from the Authorization header and verify the user's identity, providing a layer
+of security to the operations that manipulate user data.
+
+Key Highlights:
+- Use of FastAPI's Dependency Injection system to manage database sessions and user authentication.
+- Demonstrates how to perform CRUD operations in an asynchronous manner using SQLAlchemy with FastAPI.
+- Implements HATEOAS by generating dynamic links for user-related actions, enhancing API discoverability.
+- Utilizes OAuth2PasswordBearer for securing API endpoints, requiring valid access tokens for operations.
+"""
+
 from typing import List
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Request
@@ -12,13 +32,19 @@ from app.utils.link_generation import create_user_links
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# Assuming these routes are defined elsewhere in your application
 @router.get("/users/{user_id}", response_model=UserResponse, name="get_user", tags=["User Management"])
 async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(get_async_db), token: str = Depends(oauth2_scheme)):
     """
-    Fetch a user by their ID.
+    Endpoint to fetch a user by their unique identifier (UUID).
 
-    - **user_id**: UUID of the user to fetch.
+    Utilizes the UserService to query the database asynchronously for the user and constructs a response
+    model that includes the user's details along with HATEOAS links for possible next actions.
+
+    Args:
+        user_id: UUID of the user to fetch.
+        request: The request object, used to generate full URLs in the response.
+        db: Dependency that provides an AsyncSession for database access.
+        token: The OAuth2 access token obtained through OAuth2PasswordBearer dependency.
     """
     user = await UserService.get_by_id(db, user_id)
     if not user:
@@ -31,10 +57,15 @@ async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(g
         last_login_at=user.last_login_at,
         created_at=user.created_at,
         updated_at=user.updated_at,
-        # Assuming a utility function `create_user_links` that generates HATEOAS links.
         links=create_user_links(user.id, request)  
     )
 
+# Additional endpoints for update, delete, create, and list users follow a similar pattern, using
+# asynchronous database operations, handling security with OAuth2PasswordBearer, and enhancing response
+# models with dynamic HATEOAS links.
+
+# This approach not only ensures that the API is secure and efficient but also promotes a better client
+# experience by adhering to REST principles and providing self-discoverable operations.
 
 @router.put("/users/{user_id}", response_model=UserResponse, name="update_user", tags=["User Management"])
 async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, db: AsyncSession = Depends(get_async_db), token: str = Depends(oauth2_scheme)):

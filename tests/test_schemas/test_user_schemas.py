@@ -64,18 +64,25 @@ def test_user_response():
             {
                 "rel": "self",
                 "href": "https://api.example.com/users/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-                "method": "GET"
+                "method": "GET",
+                "action": "view"  # Correctly added the 'action' field
             }
         ]
     }
+
     user = UserResponse(**user_data)
+    # Other assertions remain unchanged
+
+    # Correct the Link creation in the assertion to include the 'action' field
+    expected_link = Link(rel="self", href="https://api.example.com/users/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", method="GET", action="view")
+    
     assert str(user.id) == "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
     assert user.username == "johndoe"
     assert user.email == "johndoe@example.com"
     assert user.last_login_at == datetime(2023, 6, 10, 12, 0, tzinfo=ZoneInfo("UTC"))
     assert user.created_at == datetime(2023, 6, 10, 12, 0, tzinfo=ZoneInfo("UTC"))
     assert user.updated_at == datetime(2023, 6, 10, 12, 0, tzinfo=ZoneInfo("UTC"))
-    assert user.links == [Link(rel="self", href="https://api.example.com/users/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", method="GET")]
+    assert user.links == [expected_link]
 
 def test_user_list_response():
     user_list_data = {
@@ -91,7 +98,8 @@ def test_user_list_response():
                     {
                         "rel": "self",
                         "href": "https://api.example.com/users/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-                        "method": "GET"
+                        "method": "GET",
+                        "action": "view"  # Correctly included
                     }
                 ]
             }
@@ -100,12 +108,17 @@ def test_user_list_response():
             {
                 "rel": "self",
                 "href": "https://api.example.com/users",
-                "method": "GET"
+                "method": "GET",
+                "action": "list"  # Correctly included for top-level links
             }
         ]
     }
     user_list = UserListResponse(**user_list_data)
+    
+    # Update the assertion to include the 'action' field
+    expected_link = Link(rel="self", href="https://api.example.com/users", method="GET", action="list")
+    assert user_list.links == [expected_link]
+
     assert len(user_list.items) == 1
     assert user_list.items[0].username == "johndoe"
     assert user_list.items[0].email == "johndoe@example.com"
-    assert user_list.links == [Link(rel="self", href="https://api.example.com/users", method="GET")]

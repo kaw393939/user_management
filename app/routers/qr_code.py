@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordBearer
 from typing import List
 
 # Import classes and functions from our application's modules
-from app.schemas.schemas import QRCodeRequest, QRCodeResponse
+from app.schemas.qr_code_schemas import QRCodeRequest, QRCodeResponse
 from app.services.qr_service import generate_qr_code, list_qr_codes, delete_qr_code
 from app.utils.common import decode_filename_to_url, encode_url_to_filename, generate_links
 from app.dependencies import get_settings
@@ -58,12 +58,12 @@ async def create_qr_code(request: QRCodeRequest, token: str = Depends(oauth2_sch
 async def list_qr_codes_endpoint(token: str = Depends(oauth2_scheme)):
     logging.info("Listing all QR codes.")
     # Retrieve all QR code files
-    qr_files = list_qr_codes(QR_DIRECTORY)
+    qr_files = list_qr_codes(settings.qr_directory)
     # Create a response object for each QR code
     responses = [QRCodeResponse(
         message="QR code available",
         qr_code_url=decode_filename_to_url(qr_file[:-4]),  # Decode the filename to the original URL
-        links=generate_links("list", qr_file, SERVER_BASE_URL, f"{SERVER_BASE_URL}/{SERVER_DOWNLOAD_FOLDER}/{qr_file}")
+        links=generate_links("list", qr_file, settings.server_base_url, f"{settings.server_base_url}/{settings.server_download_folder}/{qr_file}")
     ) for qr_file in qr_files]
     return responses
 
