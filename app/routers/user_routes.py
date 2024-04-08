@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_async_db
-from app.schemas.user_schemas import UserCreate, UserListResponse, UserRole, UserResponse, UserUpdate
+from app.schemas.user_schemas import UserCreate, UserListResponse, UserResponse, UserUpdate
 from app.services.user_service import UserService
 from app.schemas.link_schema import Link
 from app.utils.link_generation import create_user_links
@@ -28,7 +28,6 @@ async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(g
         id=user.id,
         username=user.username,
         email=user.email,
-        role=UserRole(id=user.role.id, name=user.role.name),
         last_login_at=user.last_login_at,
         created_at=user.created_at,
         updated_at=user.updated_at,
@@ -54,7 +53,6 @@ async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, 
         id=updated_user.id,
         username=updated_user.username,
         email=updated_user.email,
-        role=UserRole(id=updated_user.role.id, name=updated_user.role.name),
         last_login_at=updated_user.last_login_at,
         created_at=updated_user.created_at,
         updated_at=updated_user.updated_at,
@@ -107,7 +105,6 @@ async def create_user(user: UserCreate, request: Request, db: AsyncSession = Dep
         id=created_user.id,
         username=created_user.username,
         email=created_user.email,
-        role=UserRole(id=created_user.role.id, name=created_user.role.name),
         last_login_at=created_user.last_login_at,
         created_at=created_user.created_at,
         updated_at=created_user.updated_at,
@@ -130,7 +127,6 @@ async def list_users(request: Request, skip: int = 0, limit: int = 10, db: Async
             id=user.id,
             username=user.username,
             email=user.email,
-            role=UserRole(id=user.role.id, name=user.role.name),
             last_login_at=user.last_login_at,
             created_at=user.created_at,
             updated_at=user.updated_at,

@@ -14,7 +14,7 @@ async def async_client(db_session):
 
 # Example of a test function using the async_client fixture
 @pytest.mark.asyncio
-async def test_create_user_with_role(async_client, user_role):
+async def test_create_user(async_client):
     form_data = {
         "username": "admin",
         "password": "secret",
@@ -29,7 +29,6 @@ async def test_create_user_with_role(async_client, user_role):
         "username": "testuser",
         "email": "test@example.com",
         "password": "sS#fdasrongPassword123!",
-        "role_id": str(user_role.id),
     }
 
     # Send a POST request to create a user
@@ -37,7 +36,6 @@ async def test_create_user_with_role(async_client, user_role):
 
     # Asserts
     assert response.status_code == 201
-    assert response.json()["role"]["id"] == str(user_role.id)
 
 # You can similarly refactor other test functions to use the async_client fixture
 @pytest.mark.asyncio

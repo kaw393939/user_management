@@ -5,7 +5,7 @@ from app.models.user_model import User
 
 pytestmark = pytest.mark.asyncio
 
-async def test_user_service(db_session, user_role):
+async def test_user_service(db_session):
     # Ensure a role exists for the user
     #  = await ensure_role_exists(db_session, 'TestRole')
     
@@ -13,7 +13,6 @@ async def test_user_service(db_session, user_role):
         "username": "test_user",
         "email": "test_user@example.com",
         "password": "test_password",
-        "role_id": user_role.id  # Use the ensured role's ID
     }
     user = await UserService.create(db_session, user_data)
     assert user is not None, "User creation failed"

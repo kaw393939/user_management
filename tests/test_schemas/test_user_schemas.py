@@ -2,7 +2,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 import pytest
 from pydantic import ValidationError
-from app.schemas.user_schemas import UserBase, UserCreate, UserUpdate, UserResponse, UserListResponse, UserRole, Link
+from app.schemas.user_schemas import UserBase, UserCreate, UserUpdate, UserResponse, UserListResponse, Link
 
 def test_user_base():
     user_data = {
@@ -13,12 +13,11 @@ def test_user_base():
     assert user.username == "johndoe"
     assert user.email == "johndoe@example.com"
 
-def test_user_create(user_role):
+def test_user_create():
     user_data = {
         "username": "johndoe",
         "email": "johndoe@example.com",
         "password": "Password123!",
-        "role_id": str(user_role.id)  # Provide a valid role_id from the user_role fixture
 
     }
     user = UserCreate(**user_data)
@@ -58,10 +57,6 @@ def test_user_response():
         "id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
         "username": "johndoe",
         "email": "johndoe@example.com",
-        "role": {
-            "id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-            "name": "Admin"
-        },
         "last_login_at": "2023-06-10T12:00:00Z",
         "created_at": "2023-06-10T12:00:00Z",
         "updated_at": "2023-06-10T12:00:00Z",
@@ -77,7 +72,6 @@ def test_user_response():
     assert str(user.id) == "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
     assert user.username == "johndoe"
     assert user.email == "johndoe@example.com"
-    assert user.role == UserRole(id="b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", name="Admin")
     assert user.last_login_at == datetime(2023, 6, 10, 12, 0, tzinfo=ZoneInfo("UTC"))
     assert user.created_at == datetime(2023, 6, 10, 12, 0, tzinfo=ZoneInfo("UTC"))
     assert user.updated_at == datetime(2023, 6, 10, 12, 0, tzinfo=ZoneInfo("UTC"))
@@ -90,10 +84,6 @@ def test_user_list_response():
                 "id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                 "username": "johndoe",
                 "email": "johndoe@example.com",
-                "role": {
-                    "id": "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-                    "name": "Admin"
-                },
                 "last_login_at": "2023-06-10T12:00:00Z",
                 "created_at": "2023-06-10T12:00:00Z",
                 "updated_at": "2023-06-10T12:00:00Z",

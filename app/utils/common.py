@@ -2,7 +2,6 @@ import logging.config
 import os
 import base64
 from typing import List
-from dotenv import load_dotenv
 from fastapi import HTTPException, status
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
@@ -102,23 +101,4 @@ def generate_links(action: str, qr_filename: str, base_api_url: str, download_ur
     if action in ["list", "create", "delete"]:
         delete_url = f"{base_api_url}/qr-codes/{qr_filename}"
         links.append(Link(rel="delete", href=delete_url, action="DELETE", type="application/json"))
-    return links
-
-def generate_event_links(event_id: int) -> List[Link]:
-    return [
-        Link(rel="self", href=f"{settings.server_base_url}/events/{event_id}", action="GET", type="application/json"),
-        Link(rel="edit", href=f"{settings.server_base_url}/events/{event_id}", action="PUT", type="application/json"),
-        Link(rel="delete", href=f"{settings.server_base_url}/events/{event_id}", action="DELETE", type="application/json")
-    ]
-
-def generate_pagination_links(page: int, per_page: int, total_pages: int, base_url: str = "/events/") -> List[Link]:
-    links = []
-    links.append(Link(rel="first", href=f"{SERVER_BASE_URL}{base_url}?page=1&per_page={per_page}", action="GET", type="application/json"))
-    links.append(Link(rel="last", href=f"{SERVER_BASE_URL}{base_url}?page={total_pages}&per_page={per_page}", action="GET", type="application/json"))
-    
-    if page > 1:
-        links.append(Link(rel="prev", href=f"{SERVER_BASE_URL}{base_url}?page={page - 1}&per_page={per_page}", action="GET", type="application/json"))
-    if page < total_pages:
-        links.append(Link(rel="next", href=f"{SERVER_BASE_URL}{base_url}?page={page + 1}&per_page={per_page}", action="GET", type="application/json"))
-    
     return links

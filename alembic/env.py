@@ -4,7 +4,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
-from app.models.models import Base  # adjust "myapp.models" to the actual location of your Base
+from app.models.user_model import Base  # adjust "myapp.models" to the actual location of your Base
 
 
 # this is the Alembic Config object, which provides

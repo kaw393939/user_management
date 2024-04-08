@@ -37,7 +37,6 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8, description="The password of the user.")
-    role_id: UUID4  # Ensure this matches the type expected by your database and service layer.
 
     _validate_password = validator("password", allow_reuse=True)(validate_password)
 
@@ -47,13 +46,8 @@ class UserUpdate(BaseModel):
     bio: Optional[str] = Field(None, max_length=500, description="The updated bio of the user.")
     profile_picture_url: Optional[HttpUrl] = Field(None, description="The updated URL of the user's profile picture.")
 
-class UserRole(BaseModel):
-    id: UUID = Field(..., description="The unique identifier of the user role.")
-    name: str = Field(..., description="The name of the user role.")
-
 class UserResponse(UserBase):
     id: UUID = Field(..., description="The unique identifier of the user.")
-    role: UserRole = Field(..., description="The role of the user.")
     last_login_at: Optional[datetime] = Field(None, description="The timestamp of the user's last login.")
     created_at: datetime = Field(..., description="The timestamp when the user was created.")
     updated_at: datetime = Field(..., description="The timestamp when the user was last updated.")
