@@ -1,3 +1,12 @@
+# Instructor Videos
+1.  https://youtu.be/dgMCSND2FQw
+
+
+# Libraries
+https://www.sqlalchemy.org/
+https://docs.pydantic.dev/latest/
+https://fastapi.tiangolo.com/
+
 # Commands
 
 1. docker compose up --build
