@@ -6,7 +6,8 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid
 from app.database import Base
-
+from app.models.user_model import User
+from app.models.user_role_model import UserRole
 
 # Association Table for many-to-many relationship between Event and Tag
 event_tag_table = Table(
