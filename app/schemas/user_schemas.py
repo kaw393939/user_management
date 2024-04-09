@@ -4,6 +4,7 @@ from typing import List, Optional
 from pydantic import UUID4, BaseModel, EmailStr, Field, HttpUrl, validator
 
 from app.schemas.link_schema import Link
+from app.schemas.pagination_schema import EnhancedPagination
 
 def validate_username(username: str) -> str:
     """
@@ -70,8 +71,5 @@ class UserResponse(UserBase):
     links: List[Link] = Field([], description="Navigational links related to the user for HATEOAS compliance.")
 
 class UserListResponse(BaseModel):
-    """
-    A model for paginated responses, containing a list of users and navigational links.
-    """
     items: List[UserResponse] = Field(..., description="A list of user responses.")
-    links: List[Link] = Field([], description="Navigational links for pagination and other list-related actions.")
+    pagination: EnhancedPagination = Field(..., description="Pagination details including navigational links.")

@@ -18,16 +18,15 @@ Key Highlights:
 - Utilizes OAuth2PasswordBearer for securing API endpoints, requiring valid access tokens for operations.
 """
 
-from typing import List
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_async_db
+from app.schemas.pagination_schema import EnhancedPagination
 from app.schemas.user_schemas import UserCreate, UserListResponse, UserResponse, UserUpdate
 from app.services.user_service import UserService
-from app.schemas.link_schema import Link
-from app.utils.link_generation import create_user_links
+from app.utils.link_generation import create_user_links, generate_pagination_links
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -144,33 +143,28 @@ async def create_user(user: UserCreate, request: Request, db: AsyncSession = Dep
 
 @router.get("/users/", response_model=UserListResponse, name="list_users", tags=["User Management"])
 async def list_users(request: Request, skip: int = 0, limit: int = 10, db: AsyncSession = Depends(get_async_db), token: str = Depends(oauth2_scheme)):
-    """
-    List users with optional pagination.
-
-    - **skip**: Number of users to skip (for pagination).
-    - **limit**: Max number of users to return.
-    - **request**: The request object for generating full URLs in the response.
-    - **db**: Database session dependency.
-    """
+    total_users = await UserService.count(db)
     users = await UserService.list_users(db, skip=skip, limit=limit)
-    user_responses = [
-        UserResponse.model_construct(
-            id=user.id,
-            username=user.username,
-            email=user.email,
-            last_login_at=user.last_login_at,
-            created_at=user.created_at,
-            updated_at=user.updated_at,
-            # Generate user-specific links
-            links=create_user_links(user.id, request)
-        )
-        for user in users
-    ]
-    
-    # Generate links for the list itself (e.g., pagination links)
-    list_links = [
-        Link(rel="self", href=str(request.url), method="GET"),
-        # Add more links as necessary (e.g., for pagination)
-    ]
-    
-    return UserListResponse(items=user_responses, links=list_links)
+
+    user_responses = [UserResponse.model_construct(
+        id=user.id,
+        username=user.username,
+        email=user.email,
+        last_login_at=user.last_login_at,
+        created_at=user.created_at,
+        updated_at=user.updated_at,
+        links=create_user_links(user.id, request)
+    ) for user in users]
+
+    pagination_links = generate_pagination_links(request, skip, limit, total_users)
+    pagination = EnhancedPagination(
+        page=skip // limit + 1,
+        per_page=limit,
+        total_items=total_users,
+        total_pages=(total_users + limit - 1) // limit,
+        links=pagination_links
+    )
+
+    return UserListResponse(items=user_responses, pagination=pagination)
+
+

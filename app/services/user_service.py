@@ -18,6 +18,7 @@ Key concepts covered include:
 """
 
 from typing import List, Optional, Dict
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.exc import SQLAlchemyError
@@ -64,7 +65,18 @@ class UserService:
         query = select(model).filter_by(**filters)
         result = await cls._execute_query(session, query)
         return result.scalars().first() if result else None
+    @classmethod
+    async def count(cls, db_session: AsyncSession) -> int:
+        """
+        Count the total number of users in the database.
 
+        :param db_session: The database session.
+        :return: The total number of users.
+        """
+        async with db_session as session:
+            total = await session.execute(select(func.count(User.id)))
+            return total.scalar()
+        
     @classmethod
     async def get_by_id(cls, session: AsyncSession, user_id: UUID) -> Optional[User]:
         """Fetch a user by ID without relationships.
