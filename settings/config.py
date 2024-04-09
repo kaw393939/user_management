@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     # QR code appearance configuration
     fill_color: str = Field(default='red', description="Color used to fill QR codes")
     back_color: str = Field(default='white', description="Background color of QR codes")
-
+    max_login_attempts: int = Field(default='3', description="Background color of QR codes")
     # Server configuration
     server_base_url: AnyUrl = Field(default='http://localhost:80', description="Base URL of the server")
     server_download_folder: str = Field(default='downloads', description="Folder for storing downloaded files")

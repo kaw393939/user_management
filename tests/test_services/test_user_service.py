@@ -1,5 +1,5 @@
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, text
 from app.services.user_service import UserService
 from app.models.user_model import User
 
@@ -68,3 +68,41 @@ async def test_list_users(db_session, users_with_same_role_50_users):
 
     # Verify that pagination works correctly
     assert users_page_1[0].username != users_page_2[0].username, "Pagination should return different sets of users"
+
+@pytest.mark.asyncio
+async def test_register_user(db_session):
+    user_data = {
+        "username": "testuser",
+        "email": "testuser@example.com",
+        "password": "StrongPassword123!"
+    }
+    # Create a copy of the user_data for password assertion
+    original_password = user_data["password"]
+    user = await UserService.register_user(db_session, user_data)
+    assert user.username == user_data["username"]
+    assert user.email == user_data["email"]
+    # Ensure the password is hashed by comparing it to the original password
+    assert user.hashed_password != original_password
+
+@pytest.mark.asyncio
+async def test_login_user(db_session):
+    # Directly register the user here to ensure existence
+    user_data = {
+        "username": "testuser",
+        "email": "testuser@example.com",
+        "password": "StrongPassword123!"
+    }
+    registered_user = await UserService.register_user(db_session, user_data)
+    assert registered_user is not None  # Ensure user is registered
+
+    # Refresh the session if necessary
+    await db_session.commit()
+
+    # Test successful login
+    user = await UserService.login_user(db_session, "testuser", "StrongPassword123!")
+    assert user is not None
+
+    # Reset for clean state if necessary
+    await db_session.execute(
+    text('UPDATE users SET failed_login_attempts = 0 WHERE username = :username'),
+    {'username': "testuser"})

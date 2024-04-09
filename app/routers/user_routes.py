@@ -168,3 +168,18 @@ async def list_users(request: Request, skip: int = 0, limit: int = 10, db: Async
     return UserListResponse(items=user_responses, pagination=pagination)
 
 
+@router.post("/register/", response_model=UserResponse)
+async def register(user_data: UserCreate, session: AsyncSession = Depends(get_async_db)):
+    user = await UserService.register_user(session, user_data.dict())
+    if user:
+        return user
+    raise HTTPException(status_code=400, detail="Registration failed.")
+
+@router.post("/login/")
+async def login(username: str, password: str, session: AsyncSession = Depends(get_async_db)):
+    if await UserService.is_account_locked(session, username):
+        raise HTTPException(status_code=400, detail="Account locked due to too many failed login attempts.")
+    user = await UserService.login_user(session, username, password)
+    if user:
+        return {"message": "Login successful"}
+    raise HTTPException(status_code=401, detail="Incorrect username or password.")

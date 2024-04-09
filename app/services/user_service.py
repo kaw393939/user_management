@@ -17,17 +17,19 @@ Key concepts covered include:
 - Implementing pagination in database queries.
 """
 
+from datetime import datetime
 from typing import List, Optional, Dict
-from sqlalchemy import func
+from sqlalchemy import func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import selectinload
 from app.models.user_model import User
-from app.utils.security import hash_password
+from app.utils.security import hash_password, verify_password
 from uuid import UUID
+from app.dependencies import get_settings
 import logging
-
+settings = get_settings()
 logger = logging.getLogger(__name__)
 
 class UserService:
@@ -226,3 +228,59 @@ class UserService:
         except SQLAlchemyError as e:
             logger.error(f"Failed to list users: {e}")
             return []
+
+    @classmethod
+    async def register_user(cls, session: AsyncSession, user_data: dict) -> Optional[User]:
+        """Registers a new user."""
+        return await cls.create(session, user_data)
+
+    @classmethod
+    async def login_user(cls, session: AsyncSession, username: str, password: str) -> Optional[User]:
+        """Attempts to log in a user."""
+        user = await cls.get_by_username(session, username)
+        if user and verify_password(password, user.hashed_password):
+            # Reset failed login attempts on successful login
+            await cls._reset_failed_login_attempts(session, user.id)
+            # Update last login timestamp
+            await cls._update_last_login(session, user.id)
+            return user
+        else:
+            if user:
+                # Increment failed login attempts
+                await cls._increment_failed_login_attempts(session, user.id)
+            return None
+
+    @classmethod
+    async def _reset_failed_login_attempts(cls, session: AsyncSession, user_id: UUID):
+        """Resets the failed login attempts counter for a user."""
+        await cls._update_user_field(session, user_id, failed_login_attempts=0)
+
+    @classmethod
+    async def _increment_failed_login_attempts(cls, session: AsyncSession, user_id: UUID):
+        """Increments the failed login attempts counter for a user."""
+        user = await cls.get_by_id(session, user_id)
+        if user and user.failed_login_attempts < settings.max_login_attempts:
+            new_attempts = user.failed_login_attempts + 1
+            await cls._update_user_field(session, user_id, failed_login_attempts=new_attempts)
+
+    @classmethod
+    async def _update_last_login(cls, session: AsyncSession, user_id: UUID):
+        """Updates the last login timestamp for a user."""
+        await cls._update_user_field(session, user_id, last_login_at=datetime.utcnow())
+
+    @classmethod
+    async def _update_user_field(cls, session: AsyncSession, user_id: UUID, **fields):
+        """Generic method to update user fields."""
+        try:
+            query = update(User).where(User.id == user_id).values(**fields)
+            await session.execute(query)
+            await session.commit()
+        except SQLAlchemyError as e:
+            logger.error(f"Failed to update user {user_id}: {e}")
+            await session.rollback()
+
+    @classmethod
+    async def is_account_locked(cls, session: AsyncSession, username: str) -> bool:
+        """Checks if a user's account is locked due to too many failed login attempts."""
+        user = await cls.get_by_username(session, username)
+        return user.failed_login_attempts >= settings.max_login_attempts if user else False
