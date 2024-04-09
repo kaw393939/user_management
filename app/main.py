@@ -17,7 +17,7 @@ create_directory(settings.qr_directory)
 
 # Create an instance of the FastAPI application.
 app = FastAPI(
-    title="QR Code Manager",
+    title="Event Management",
     description="A FastAPI application for creating, listing available codes, and deleting QR codes. "
                 "It also supports OAuth for secure access.",
     version="0.0.1",

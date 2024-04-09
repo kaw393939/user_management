@@ -9,6 +9,10 @@
 * https://alembic.sqlalchemy.org/en/latest/index.html The database migrations
 
 
+Install note
+
+chmod a+x start.sh
+
 # Commands
 
 1. docker compose up --build
