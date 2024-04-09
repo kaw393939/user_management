@@ -2,6 +2,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 import pytest
 from pydantic import ValidationError
+from app.schemas.pagination_schema import EnhancedPagination, PaginationLink
 from app.schemas.user_schemas import UserBase, UserCreate, UserUpdate, UserResponse, UserListResponse, Link
 
 def test_user_base():
@@ -99,26 +100,43 @@ def test_user_list_response():
                         "rel": "self",
                         "href": "https://api.example.com/users/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                         "method": "GET",
-                        "action": "view"  # Correctly included
+                        "action": "view"
                     }
                 ]
             }
         ],
-        "links": [
-            {
-                "rel": "self",
-                "href": "https://api.example.com/users",
-                "method": "GET",
-                "action": "list"  # Correctly included for top-level links
-            }
-        ]
+        "pagination": {
+            "page": 1,
+            "per_page": 10,
+            "total_items": 50,
+            "total_pages": 5,
+            "links": [
+                {
+                    "rel": "next",
+                    "href": "https://api.example.com/users?page=2",
+                    "method": "GET"
+                }
+            ]
+        }
     }
-    user_list = UserListResponse(**user_list_data)
-    
-    # Update the assertion to include the 'action' field
-    expected_link = Link(rel="self", href="https://api.example.com/users", method="GET", action="list")
-    assert user_list.links == [expected_link]
 
+    # Conversion of dict to objects for the 'pagination' field
+    user_list_data["pagination"]["links"] = [PaginationLink(**link) for link in user_list_data["pagination"]["links"]]
+    user_list_data["pagination"] = EnhancedPagination(**user_list_data["pagination"])
+
+    user_list = UserListResponse(**user_list_data)
+
+    # Assertions for pagination
+    assert user_list.pagination.page == 1
+    assert user_list.pagination.per_page == 10
+    assert user_list.pagination.total_items == 50
+    assert user_list.pagination.total_pages == 5
+    assert len(user_list.pagination.links) == 1
+    assert user_list.pagination.links[0].rel == "next"
+    assert str(user_list.pagination.links[0].href) == "https://api.example.com/users?page=2"
+    assert user_list.pagination.links[0].method == "GET"
+
+    # Assertions for items
     assert len(user_list.items) == 1
     assert user_list.items[0].username == "johndoe"
     assert user_list.items[0].email == "johndoe@example.com"
