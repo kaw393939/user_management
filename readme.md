@@ -3,9 +3,11 @@
 
 
 # Libraries
-https://www.sqlalchemy.org/
-https://docs.pydantic.dev/latest/
-https://fastapi.tiangolo.com/
+* https://www.sqlalchemy.org/ This is to handle the database
+* https://docs.pydantic.dev/latest/  this is to handle the validation json serialization and deserialization>
+* https://fastapi.tiangolo.com/ This is the api
+* https://alembic.sqlalchemy.org/en/latest/index.html The database migrations
+
 
 # Commands
 
