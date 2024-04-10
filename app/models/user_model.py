@@ -1,7 +1,13 @@
 from datetime import datetime
 from enum import Enum
 from sqlalchemy import (
-    Column, String, Integer, DateTime, Boolean, func, Enum as SQLAlchemyEnum
+    Column,
+    String,
+    Integer,
+    DateTime,
+    Boolean,
+    func,
+    Enum as SQLAlchemyEnum
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -17,13 +23,14 @@ class UserRole(Enum):
 class User(Base):
     """
     Represents a user entity within the application, mapping to the 'users' table in the database.
-    Enhanced to include role management and account lock functionality for improved security and 
-    administrative control.
-    
+    Enhanced to include role management, account lock functionality, and email verification status
+    for improved security and administrative control.
+
     Attributes:
         id (UUID): Auto-generated unique identifier.
         username (str): User's unique username.
         email (str): User's unique email address.
+        email_verified (bool): Indicates if the user's email address has been verified.
         hashed_password (str): Hashed password for secure storage.
         full_name (str, optional): Full name of the user.
         bio (str, optional): A short biography or personal description.
@@ -41,6 +48,7 @@ class User(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     username: Mapped[str] = Column(String(50), unique=True, nullable=False, index=True)
     email: Mapped[str] = Column(String(255), unique=True, nullable=False, index=True)
+    email_verified: Mapped[bool] = Column(Boolean, default=False, nullable=False, doc="Indicates if the user's email address has been verified.")
     hashed_password: Mapped[str] = Column(String(255), nullable=False)
     full_name: Mapped[str] = Column(String(100), nullable=True)
     bio: Mapped[str] = Column(String(500), nullable=True)
@@ -66,3 +74,7 @@ class User(Base):
     def has_role(self, role_name: UserRole) -> bool:
         """Checks if the user has a specific role."""
         return self.role == role_name
+
+    def verify_email(self):
+        """Marks the user's email address as verified."""
+        self.email_verified = True

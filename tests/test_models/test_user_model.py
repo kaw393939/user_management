@@ -90,15 +90,29 @@ async def test_account_lock_and_unlock(db_session: AsyncSession, user: User):
     """
     # Initially, the account should not be locked.
     assert not user.is_locked, "Account should initially be unlocked"
-    
+
     # Lock the account and verify.
     user.lock_account()
     await db_session.commit()
     await db_session.refresh(user)
     assert user.is_locked, "Account should be locked after calling lock_account()"
-    
+
     # Unlock the account and verify.
     user.unlock_account()
     await db_session.commit()
     await db_session.refresh(user)
     assert not user.is_locked, "Account should be unlocked after calling unlock_account()"
+
+@pytest.mark.asyncio
+async def test_email_verification(db_session: AsyncSession, user: User):
+    """
+    Tests the email verification functionality.
+    """
+    # Initially, the email should not be verified.
+    assert not user.email_verified, "Email should initially be unverified"
+
+    # Verify the email and check.
+    user.verify_email()
+    await db_session.commit()
+    await db_session.refresh(user)
+    assert user.email_verified, "Email should be verified after calling verify_email()"

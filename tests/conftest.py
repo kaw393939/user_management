@@ -71,6 +71,24 @@ async def db_session(setup_database):
             await session.close()  # Close the session after the test
 
 @pytest.fixture(scope="function")
+async def locked_user(db_session):
+    # This fixture creates a single User object with a locked account
+    unique_email = fake.email()
+    user_data = {
+        "username": fake.user_name(),
+        "email": unique_email,
+        "hashed_password": hash_password("MySuperPassword$1234"),
+        "role": UserRole.USER,
+        "email_verified": False,
+        "is_locked": True,  # Set is_locked to True for a locked user
+        "failed_login_attempts": get_settings().max_login_attempts,  # Set failed login attempts to the maximum allowed
+    }
+    user = User(**user_data)
+    db_session.add(user)  # Add the user to the database session
+    await db_session.commit()  # Commit the changes to the database
+    return user  # Return the created user object
+
+@pytest.fixture(scope="function")
 async def user(db_session):
     # This fixture creates a single User object with fake data using the Faker instance
     unique_email = fake.email()
@@ -79,7 +97,25 @@ async def user(db_session):
         "email": unique_email,
         "hashed_password": hash_password("MySuperPassword$1234"),
         "role": UserRole.USER,
+        "email_verified": False,  # Set email_verified to False by default
+        "is_locked": False,  # Set is_locked to False by default
+    }
+    user = User(**user_data)
+    db_session.add(user)  # Add the user to the database session
+    await db_session.commit()  # Commit the changes to the database
+    return user  # Return the created user object
 
+@pytest.fixture(scope="function")
+async def verified_user(db_session):
+    # This fixture creates a single User object with a verified email
+    unique_email = fake.email()
+    user_data = {
+        "username": fake.user_name(),
+        "email": unique_email,
+        "hashed_password": hash_password("MySuperPassword$1234"),
+        "role": UserRole.USER,
+        "email_verified": True,  # Set email_verified to True for a verified user
+        "is_locked": False,  # Set is_locked to False by default
     }
     user = User(**user_data)
     db_session.add(user)  # Add the user to the database session
@@ -96,6 +132,8 @@ async def users_with_same_role_50_users(db_session):
             "username": fake.user_name(),
             "email": unique_email,
             "hashed_password": fake.password(),
+            "email_verified": False,  # Set email_verified to False by default
+            "is_locked": False,  # Set is_locked to False by default
         }
         user = User(**user_data)
         db_session.add(user)  # Add each user to the database session
