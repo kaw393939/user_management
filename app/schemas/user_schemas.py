@@ -1,9 +1,11 @@
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 from pydantic import BaseModel, EmailStr, Field, HttpUrl, validator
 from typing import List, Optional
 from app.schemas.link_schema import Link
 from app.schemas.pagination_schema import EnhancedPagination
 import re
+import uuid
 
 class UserBase(BaseModel):
     username: str = Field(
@@ -30,7 +32,7 @@ class UserBase(BaseModel):
         description="A short biography or description of the user.",
         example="I am a software engineer with over 5 years of experience in building scalable web applications using Python and JavaScript."
     )
-    profile_picture_url: Optional[HttpUrl] = Field(
+    profile_picture_url: Optional[str] = Field(
         None,
         description="The URL to the user's profile picture. Must point to a valid image file (e.g., JPEG, PNG).",
         example="https://example.com/profile_pictures/john_doe.jpg"
@@ -48,14 +50,17 @@ class UserBase(BaseModel):
             raise ValueError("Full name can only contain letters, spaces, hyphens, or apostrophes.")
         return v
 
-    @validator('profile_picture_url')
+    @validator('profile_picture_url', pre=True, always=True)
     def validate_profile_picture_url(cls, v):
-        if v and not re.match(r"\.(jpg|jpeg|png)$", v):
+        if v is None:
+            return v  # If the URL is optional, allow None values
+        parsed_url = urlparse(v)
+        if not re.search(r"\.(jpg|jpeg|png)$", parsed_url.path):
             raise ValueError("Profile picture URL must point to a valid image file (JPEG, PNG).")
         return v
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "description": "Base model for user information.",
             "example": {
                 "username": "john_doe_123",
@@ -89,7 +94,7 @@ class UserCreate(UserBase):
         return v
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "description": "Model for creating a new user account.",
             "example": {
                 "username": "jane_smith_456",
@@ -124,9 +129,18 @@ class UserUpdate(BaseModel):
         description="An updated URL to the user's profile picture.",
         example="https://example.com/profile_pictures/john_doe_updated.jpg"
     )
+ 
+    @validator('profile_picture_url', pre=True, always=True)
+    def validate_profile_picture_url(cls, v):
+        if v is not None:
+            parsed_url = urlparse(str(v))  # Convert the URL object to a string before parsing
+            # Ensure the validation logic only runs when parsed_url is defined
+            if not re.search(r"\.(jpg|jpeg|png)$", parsed_url.path):
+                raise ValueError("Profile picture URL must point to a valid image file (JPEG, PNG).")
+        return v
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "description": "Model for updating user information.",
             "example": {
                 "email": "john.doe.new@example.com",
@@ -141,6 +155,12 @@ class UserResponse(UserBase):
         ...,
         description="The system-generated unique identifier for the user (e.g., UUID).",
         example="a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6"
+    )
+    bio: Optional[str] = Field(
+        None,
+        max_length=500,
+        description="A short biography or description of the user.",
+        example="I am a software engineer with over 5 years of experience in building scalable web applications using Python and JavaScript."
     )
     last_login_at: Optional[datetime] = Field(
         None,
@@ -165,9 +185,14 @@ class UserResponse(UserBase):
             {"rel": "update", "href": "https://api.example.com/users/a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6"}
         ]
     )
-
+    # Custom validator to convert UUID to string
+    @validator('id', pre=True, allow_reuse=True)
+    def convert_uuid_to_string(cls, value):
+        if isinstance(value, uuid.UUID):
+            return str(value)
+        return value
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "description": "Model for user response data.",
             "example": {
                 "id": "a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6",
@@ -197,7 +222,7 @@ class UserListResponse(BaseModel):
     )
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "description": "Model for a paginated list of user responses.",
             "example": {
                 "items": [
@@ -260,7 +285,7 @@ class LoginRequest(BaseModel):
     )
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "description": "Model for user login request.",
             "example": {
                 "username": "john_doe_123",
@@ -281,7 +306,7 @@ class ErrorResponse(BaseModel):
     )
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "description": "Model for error responses.",
             "example": {
                 "error": "Invalid username or password.",

@@ -83,6 +83,9 @@ async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, 
 
     return UserResponse.model_construct(
         id=updated_user.id,
+        bio=updated_user.bio,
+        full_name=updated_user.full_name,
+        profile_picture_url=updated_user.profile_picture_url,
         username=updated_user.username,
         email=updated_user.email,
         last_login_at=updated_user.last_login_at,
@@ -131,17 +134,20 @@ async def create_user(user: UserCreate, request: Request, db: AsyncSession = Dep
     if not created_user:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create user")
     
-    links = create_user_links(created_user.id, request)
     
     return UserResponse.model_construct(
         id=created_user.id,
+        bio=created_user.bio,
+        full_name=created_user.full_name,
+        profile_picture_url=created_user.profile_picture_url,
         username=created_user.username,
         email=created_user.email,
         last_login_at=created_user.last_login_at,
         created_at=created_user.created_at,
         updated_at=created_user.updated_at,
-        links=links
+        links=create_user_links(created_user.id, request)
     )
+
 
 @router.get("/users/", response_model=UserListResponse, name="list_users", tags=["User Management"])
 async def list_users(request: Request, skip: int = 0, limit: int = 10, db: AsyncSession = Depends(get_async_db), token: str = Depends(oauth2_scheme)):
@@ -150,6 +156,9 @@ async def list_users(request: Request, skip: int = 0, limit: int = 10, db: Async
 
     user_responses = [UserResponse.model_construct(
         id=user.id,
+        bio=user.bio,
+        full_name=user.full_name,
+        profile_picture_url=user.profile_picture_url,
         username=user.username,
         email=user.email,
         last_login_at=user.last_login_at,

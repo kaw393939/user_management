@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional, Dict, List
 from pydantic import ValidationError
-from sqlalchemy import update, select
+from sqlalchemy import func, update, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_settings
@@ -47,7 +47,7 @@ class UserService:
     @classmethod
     async def create(cls, session: AsyncSession, user_data: Dict[str, str]) -> Optional[User]:
         try:
-            validated_data = UserCreate(**user_data).dict(exclude_unset=True)
+            validated_data = UserCreate(**user_data).model_dump()
             existing_user = await cls.get_by_username(session, validated_data['username']) or await cls.get_by_email(session, validated_data['email'])
             if existing_user:
                 logger.error("User with given email or username already exists.")
@@ -64,16 +64,24 @@ class UserService:
     @classmethod
     async def update(cls, session: AsyncSession, user_id: UUID, update_data: Dict[str, str]) -> Optional[User]:
         try:
+            # validated_data = UserUpdate(**update_data).dict(exclude_unset=True)
             validated_data = UserUpdate(**update_data).dict(exclude_unset=True)
+
+
             if 'password' in validated_data:
                 validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
             query = update(User).where(User.id == user_id).values(**validated_data).execution_options(synchronize_session="fetch")
-            result = await cls._execute_query(session, query)
-            if result:
-                return await cls.get_by_id(session, user_id)
+            await cls._execute_query(session, query)
+            updated_user = await cls.get_by_id(session, user_id)
+            if updated_user:
+                session.refresh(updated_user)  # Explicitly refresh the updated user object
+                logger.info(f"User {user_id} updated successfully.")
+                return updated_user
+            else:
+                logger.error(f"User {user_id} not found after update attempt.")
             return None
-        except ValidationError as e:
-            logger.error(f"Validation error during user update: {e}")
+        except Exception as e:  # Broad exception handling for debugging
+            logger.error(f"Error during user update: {e}")
             return None
 
     @classmethod
@@ -145,7 +153,19 @@ class UserService:
             return True
         return False
 
+    @classmethod
+    async def count(cls, session: AsyncSession) -> int:
+        """
+        Count the number of users in the database.
 
+        :param session: The AsyncSession instance for database access.
+        :return: The count of users.
+        """
+        query = select(func.count()).select_from(User)
+        result = await session.execute(query)
+        count = result.scalar()
+        return count
+    
     @classmethod
     async def unlock_user_account(cls, session: AsyncSession, user_id: UUID) -> bool:
         user = await cls.get_by_id(session, user_id)
