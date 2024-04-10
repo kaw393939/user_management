@@ -30,7 +30,7 @@ class UserService:
     @classmethod
     async def create(cls, session: AsyncSession, user_data: Dict[str, str]) -> Optional[User]:
         try:
-            validated_data = UserCreate(**user_data).dict(exclude_unset=True)
+            validated_data = UserCreate(**user_data).model_dump(exclude_unset=True)
             # Check for existing username or email
             existing_user = await session.execute(select(User).where(
                 or_(User.email == validated_data['email'], User.username == validated_data['username'])))

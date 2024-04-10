@@ -36,23 +36,32 @@ from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from app.database import Base
 
+from sqlalchemy import Column, DateTime, String, Integer, func
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.sql import expression
+import uuid
+from app.database import Base
+
 class User(Base):
-    """Represents a user entity within the application, mapping to the 'users' table in the database."""
+    """
+    Represents a user entity within the application, mapping to the 'users' table in the database.
+    Enhanced to ensure timezone awareness in datetime fields and to adhere to best practices in 
+    ORM modeling with SQLAlchemy.
+    """
     __tablename__ = "users"
     __mapper_args__ = {"eager_defaults": True}
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, comment="Unique identifier for the user")
-    username = Column(String(50), unique=True, nullable=False, comment="User's username, must be unique")
-    email = Column(String(255), unique=True, nullable=False, comment="User's email address, must be unique")
+    username = Column(String(50), unique=True, nullable=False, index=True, comment="User's username, must be unique")
+    email = Column(String(255), unique=True, nullable=False, index=True, comment="User's email address, must be unique")
     hashed_password = Column(String(255), nullable=False, comment="User's hashed password for security")
     full_name = Column(String(100), nullable=True, comment="User's full name")
     bio = Column(String(500), nullable=True, comment="Short biography or description about the user")
     profile_picture_url = Column(String(255), nullable=True, comment="URL to the user's profile picture")
-    last_login_at = Column(DateTime, nullable=True, comment="Timestamp of the user's last login")
-    failed_login_attempts = Column(Integer, default=0, comment="Number of consecutive failed login attempts")
     last_login_at = Column(DateTime(timezone=True), nullable=True, comment="Timestamp of the user's last login, timezone-aware")
-    created_at = Column(DateTime(timezone=True), default=func.now(), nullable=False, comment="Timestamp when the user record was created, timezone-aware")
-    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now(), nullable=False, comment="Timestamp when the user record was last updated, timezone-aware")
+    failed_login_attempts = Column(Integer, default=0, comment="Number of consecutive failed login attempts")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, comment="Timestamp when the user record was created, timezone-aware")
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False, comment="Timestamp when the user record was last updated, timezone-aware")
     
     def __repr__(self):
         """Provides a string representation of the User object."""
