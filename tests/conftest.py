@@ -13,7 +13,7 @@ from faker import Faker  # Used for generating fake data
 # Application-specific imports
 from app.main import app  # The FastAPI application
 from app.database import Base, get_async_db, initialize_async_db  # Database-related imports
-from app.models.user_model import User  # User model
+from app.models.user_model import User, UserRole  # User model
 from app.dependencies import get_db, get_settings
 from app.utils.security import hash_password  # Dependency injection and settings
 
@@ -78,6 +78,8 @@ async def user(db_session):
         "username": fake.user_name(),
         "email": unique_email,
         "hashed_password": hash_password("MySuperPassword$1234"),
+        "role": UserRole.USER,
+
     }
     user = User(**user_data)
     db_session.add(user)  # Add the user to the database session
