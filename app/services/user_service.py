@@ -1,206 +1,82 @@
-"""
-This Python file serves as a comprehensive guide to implementing CRUD (Create, Read, Update, Delete) operations 
-on a User model in a FastAPI application using SQLAlchemy with asynchronous operations. It demonstrates best practices 
-for structuring service layer logic that interacts with the database asynchronously, ensuring non-blocking database 
-operations. This approach enhances the application's performance, especially under high load, by allowing it to handle 
-other tasks while awaiting database responses.
-
-The UserService class contains methods for managing User records, including fetching by ID, username, email, creating, 
-updating, deleting users, and listing users with basic pagination. Each method showcases asynchronous handling of 
-database sessions, queries, and transactions, with added error handling and logging for robustness and easier debugging.
-
-Key concepts covered include:
-- Asynchronous session management in SQLAlchemy.
-- Executing CRUD operations asynchronously.
-- Using transactions and rolling back in case of errors.
-- Securely handling sensitive information like passwords.
-- Implementing pagination in database queries.
-"""
-
-from datetime import datetime
-from typing import List, Optional, Dict
-from sqlalchemy import func, update
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
+from datetime import datetime, timezone
+from typing import Optional, Dict, List
+from pydantic import ValidationError
+from sqlalchemy import update, select, and_, or_
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import selectinload
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.dependencies import get_settings
 from app.models.user_model import User
+from app.schemas.user_schemas import UserCreate, UserUpdate
 from app.utils.security import hash_password, verify_password
 from uuid import UUID
-from app.dependencies import get_settings
 import logging
-settings = get_settings()
+
+settings = get_settings()  # Ensure settings are appropriately configured for max login attempts, etc.
 logger = logging.getLogger(__name__)
 
 class UserService:
     @classmethod
-    async def _execute_query(cls, session: AsyncSession, query):
-        """Helper method to execute a query with error handling.
-        
-        Args:
-            session (AsyncSession): The database session.
-            query: The SQLAlchemy query object.
-            
-        Returns:
-            The result of the query execution or None if an error occurred.
-        """
-        try:
-            result = await session.execute(query)
-            return result
-        except SQLAlchemyError as e:
-            logger.error(f"Database error: {e}")
-            await session.rollback()
-            return None
-
-    @classmethod
-    async def _fetch_one(cls, session: AsyncSession, model, **filters) -> Optional[User]:
-        """Generic method to fetch a single record based on filters.
-        
-        Args:
-            session (AsyncSession): The database session.
-            model: The SQLAlchemy model class to query.
-            **filters: Keyword arguments representing filter conditions.
-            
-        Returns:
-            The first result based on the filter conditions or None if no results found.
-        """
-        query = select(model).filter_by(**filters)
-        result = await cls._execute_query(session, query)
-        return result.scalars().first() if result else None
-    @classmethod
-    async def count(cls, db_session: AsyncSession) -> int:
-        """
-        Count the total number of users in the database.
-
-        :param db_session: The database session.
-        :return: The total number of users.
-        """
-        async with db_session as session:
-            total = await session.execute(select(func.count(User.id)))
-            return total.scalar()
-        
-    @classmethod
     async def get_by_id(cls, session: AsyncSession, user_id: UUID) -> Optional[User]:
-        """Fetch a user by ID without relationships.
-        
-        Args:
-            session (AsyncSession): The database session.
-            user_id (UUID): The unique identifier of the user.
-            
-        Returns:
-            The User object if found, otherwise None.
-        """
         return await cls._fetch_one(session, User, id=user_id)
 
     @classmethod
     async def get_by_username(cls, session: AsyncSession, username: str) -> Optional[User]:
-        """Fetch a user by username.
-        
-        Args:
-            session (AsyncSession): The database session.
-            username (str): The username of the user.
-            
-        Returns:
-            The User object if found, otherwise None.
-        """
         return await cls._fetch_one(session, User, username=username)
 
     @classmethod
     async def get_by_email(cls, session: AsyncSession, email: str) -> Optional[User]:
-        """Fetch a user by email.
-        
-        Args:
-            session (AsyncSession): The database session.
-            email (str): The email of the user.
-            
-        Returns:
-            The User object if found, otherwise None.
-        """
         return await cls._fetch_one(session, User, email=email)
 
     @classmethod
-    async def create(cls, session: AsyncSession, user_data: Dict) -> Optional[User]:
-        """Create a new user with the given data.
-        
-        Args:
-            session (AsyncSession): The database session.
-            user_data (Dict): A dictionary containing the user's data.
-            
-        Returns:
-            The newly created User object or None if the creation failed.
-        """
+    async def create(cls, session: AsyncSession, user_data: Dict[str, str]) -> Optional[User]:
         try:
-            if 'password' in user_data:
-                user_data['hashed_password'] = hash_password(user_data.pop('password'))
-            user = User(**user_data)
-            session.add(user)
+            validated_data = UserCreate(**user_data).dict(exclude_unset=True)
+            # Check for existing username or email
+            existing_user = await session.execute(select(User).where(
+                or_(User.email == validated_data['email'], User.username == validated_data['username'])))
+            if existing_user.scalars().first():
+                logger.error("User with given email or username already exists.")
+                return None
+            validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
+            new_user = User(**validated_data)
+            session.add(new_user)
             await session.commit()
-            await session.refresh(user)
-            return user
+            return new_user
+        except ValidationError as e:
+            logger.error(f"Validation error: {e}")
+            return None
         except SQLAlchemyError as e:
-            logger.error(f"Failed to create user {user_data.get('username', '')}: {e}")
+            logger.error(f"Failed to create user: {e}")
             await session.rollback()
             return None
 
     @classmethod
     async def update(cls, session: AsyncSession, user_id: UUID, update_data: Dict[str, str]) -> Optional[User]:
-        """Update an existing user's information.
-
-        Args:
-            session (AsyncSession): The database session.
-            user_id (UUID): The ID of the user to update.
-            update_data (Dict[str, str]): A dictionary of fields to update.
-
-        Returns:
-            Optional[User]: The updated user object, or None if the update failed.
-        """
         try:
-            # Fetch the user to be updated
+            validated_data = UserUpdate(**update_data).model_dump(exclude_unset=True)
+            if 'password' in validated_data:
+                validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
+            await cls._update_user_fields(session, user_id, **validated_data)
             user = await cls.get_by_id(session, user_id)
-            if not user:
-                logger.info(f"User {user_id} not found.")
-                return None
-
-            # Update the user attributes
-            for key, value in update_data.items():
-                if hasattr(user, key):
-                    setattr(user, key, value)
-                else:
-                    logger.warning(f"Attempted to update unknown attribute '{key}' for user {user_id}.")
-            
-            # Commit the transaction
-            await session.commit()
-
-            # Refresh and return the updated user object
-            await session.flush()
-            await session.refresh(user)
             return user
+        except ValidationError as e:
+            logger.error(f"Validation error: {e}")
+            return None
         except SQLAlchemyError as e:
-            # Log the exception and rollback the transaction
             logger.error(f"Failed to update user {user_id}: {e}")
             await session.rollback()
             return None
 
     @classmethod
     async def delete(cls, session: AsyncSession, user_id: UUID) -> bool:
-        """Delete a user by ID.
-        
-        Args:
-            session (AsyncSession): The database session.
-            user_id (UUID): The ID of the user to delete.
-            
-        Returns:
-            True if the user was successfully deleted, False otherwise.
-        """
+        user = await cls.get_by_id(session, user_id)
+        if not user:
+            logger.info(f"User {user_id} not found for deletion.")
+            return False
         try:
-            user = await cls.get_by_id(session, user_id)
-            if user:
-                await session.delete(user)
-                await session.commit()
-                return True
-            else:
-                logger.info(f"User {user_id} not found for deletion.")
-                return False
+            await session.delete(user)
+            await session.commit()
+            return True
         except SQLAlchemyError as e:
             logger.error(f"Failed to delete user {user_id}: {e}")
             await session.rollback()
@@ -208,79 +84,56 @@ class UserService:
 
     @classmethod
     async def list_users(cls, session: AsyncSession, skip: int = 0, limit: int = 10) -> List[User]:
-        """
-        List users with basic pagination.
-
-        Parameters:
-        - session (AsyncSession): The database session to use for the query.
-        - skip (int): Number of records to skip (for pagination).
-        - limit (int): Maximum number of records to return.
-
-        Returns:
-        - List[User]: A list of users.
-        """
         try:
-            # Prepare query with pagination
-            query = select(User).offset(skip).limit(limit)
-            result = await cls._execute_query(session, query)
-            # Fetch all results
-            return result.scalars().all() if result else []
+            results = await session.execute(select(User).offset(skip).limit(limit))
+            return results.scalars().all()
         except SQLAlchemyError as e:
             logger.error(f"Failed to list users: {e}")
             return []
 
     @classmethod
-    async def register_user(cls, session: AsyncSession, user_data: dict) -> Optional[User]:
-        """Registers a new user."""
+    async def register_user(cls, session: AsyncSession, user_data: Dict[str, str]) -> Optional[User]:
         return await cls.create(session, user_data)
 
     @classmethod
     async def login_user(cls, session: AsyncSession, username: str, password: str) -> Optional[User]:
-        """Attempts to log in a user."""
+        # logging.debug(f"username: {username} and password {password}")
         user = await cls.get_by_username(session, username)
+        # logging.debug(f"username Found: {user.username}")
+        # logging.debug(f"password Found: {user.hashed_password}")
+        # logging.debug(f"hashed input password Found: {hash_password(password)}")
+        # logging.debug(f"verify password results {verify_password(password, user.hashed_password)}")
+
         if user and verify_password(password, user.hashed_password):
-            # Reset failed login attempts on successful login
-            await cls._reset_failed_login_attempts(session, user.id)
-            # Update last login timestamp
-            await cls._update_last_login(session, user.id)
+            await cls._update_user_fields(session, user.id, last_login_at=datetime.now(timezone.utc), failed_login_attempts=0)
             return user
-        else:
-            if user:
-                # Increment failed login attempts
-                await cls._increment_failed_login_attempts(session, user.id)
-            return None
-
-    @classmethod
-    async def _reset_failed_login_attempts(cls, session: AsyncSession, user_id: UUID):
-        """Resets the failed login attempts counter for a user."""
-        await cls._update_user_field(session, user_id, failed_login_attempts=0)
-
-    @classmethod
-    async def _increment_failed_login_attempts(cls, session: AsyncSession, user_id: UUID):
-        """Increments the failed login attempts counter for a user."""
-        user = await cls.get_by_id(session, user_id)
-        if user and user.failed_login_attempts < settings.max_login_attempts:
-            new_attempts = user.failed_login_attempts + 1
-            await cls._update_user_field(session, user_id, failed_login_attempts=new_attempts)
-
-    @classmethod
-    async def _update_last_login(cls, session: AsyncSession, user_id: UUID):
-        """Updates the last login timestamp for a user."""
-        await cls._update_user_field(session, user_id, last_login_at=datetime.utcnow())
-
-    @classmethod
-    async def _update_user_field(cls, session: AsyncSession, user_id: UUID, **fields):
-        """Generic method to update user fields."""
-        try:
-            query = update(User).where(User.id == user_id).values(**fields)
-            await session.execute(query)
-            await session.commit()
-        except SQLAlchemyError as e:
-            logger.error(f"Failed to update user {user_id}: {e}")
-            await session.rollback()
+        elif user:
+            failed_attempts = user.failed_login_attempts + 1
+            await cls._update_user_fields(session, user.id, failed_login_attempts=failed_attempts)
+        return None
 
     @classmethod
     async def is_account_locked(cls, session: AsyncSession, username: str) -> bool:
-        """Checks if a user's account is locked due to too many failed login attempts."""
         user = await cls.get_by_username(session, username)
         return user.failed_login_attempts >= settings.max_login_attempts if user else False
+
+    # Utility Methods
+    @classmethod
+    async def _fetch_one(cls, session: AsyncSession, model, **filters) -> Optional[User]:
+        try:
+            result = await session.execute(select(model).filter_by(**filters))
+            return result.scalars().first()
+        except SQLAlchemyError as e:
+            logger.error(f"Query execution error: {e}")
+            return None
+
+    @classmethod
+    async def _update_user_fields(cls, session: AsyncSession, user_id: UUID, **fields):
+        try:
+            if not fields:
+                return
+            await session.execute(update(User).where(User.id == user_id).values(**fields))
+            await session.commit()
+        except SQLAlchemyError as e:
+            logger.error(f"Failed to update user fields for user {user_id}: {e}")
+            await session.rollback()

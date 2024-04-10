@@ -65,3 +65,7 @@ class UserResponse(UserBase):
 class UserListResponse(BaseModel):
     items: List[UserResponse] = Field(..., description="A list of user responses.")
     pagination: EnhancedPagination = Field(..., description="Pagination details including navigational links.")
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str

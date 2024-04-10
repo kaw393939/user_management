@@ -1,16 +1,9 @@
 import pytest
 from httpx import AsyncClient
 from app.database import get_async_db
-from app.main import app  # Import your FastAPI app
-
-
-
-@pytest.fixture(scope="function")
-async def async_client(db_session):
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        app.dependency_overrides[get_async_db] = lambda: db_session
-        yield client
-    app.dependency_overrides.clear()
+from app.main import app
+from app.models.user_model import User
+from app.utils.security import hash_password  # Import your FastAPI app
 
 # Example of a test function using the async_client fixture
 @pytest.mark.asyncio
@@ -61,3 +54,65 @@ async def test_delete_user(async_client, user, token):
     # Verify the user is deleted
     fetch_response = await async_client.get(f"/users/{user.id}", headers=headers)
     assert fetch_response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_login_success(async_client, user):
+    # Set up the test client for FastAPI application
+
+    # Attempt to login with the test user
+    response = await async_client.post("/login/", json={"username": user.username, "password": "MySuperPassword$1234"})
+    
+    # Check for successful login response
+    assert response.status_code == 200
+    assert "access_token" in response.json()
+    assert response.json()["token_type"] == "bearer"
+
+@pytest.mark.asyncio
+async def test_create_user_duplicate_username(async_client, user):
+    user_data = {
+        "username": user.username,
+        "email": "unique@example.com",
+        "password": "AnotherPassword123!",
+    }
+    response = await async_client.post("/register/", json=user_data)
+    assert response.status_code == 400
+    assert "Username already exists" in response.json().get("detail", "")
+
+@pytest.mark.asyncio
+async def test_create_user_invalid_email(async_client):
+    user_data = {
+        "username": "uniqueuser",
+        "email": "notanemail",
+        "password": "ValidPassword123!",
+    }
+    response = await async_client.post("/register/", json=user_data)
+    assert response.status_code == 422
+
+@pytest.mark.asyncio
+async def test_login_user_not_found(async_client):
+    login_data = {
+        "username": "nonexistentuser",
+        "password": "DoesNotMatter123!"
+    }
+    response = await async_client.post("/login/", json=login_data)
+    assert response.status_code == 401
+    assert "Incorrect username or password" in response.json().get("detail", "")
+
+@pytest.mark.asyncio
+async def test_login_incorrect_password(async_client, user):
+    login_data = {
+        "username": user.username,
+        "password": "IncorrectPassword123!"
+    }
+    response = await async_client.post("/login/", json=login_data)
+    assert response.status_code == 401
+    assert "Incorrect username or password" in response.json().get("detail", "")
+
+@pytest.mark.asyncio
+async def test_delete_user_does_not_exist(async_client, token):
+    non_existent_user_id = "00000000-0000-0000-0000-000000000000"  # Valid UUID format
+    headers = {"Authorization": f"Bearer {token}"}
+    delete_response = await async_client.delete(f"/users/{non_existent_user_id}", headers=headers)
+    assert delete_response.status_code == 404
+

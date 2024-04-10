@@ -50,8 +50,9 @@ class User(Base):
     profile_picture_url = Column(String(255), nullable=True, comment="URL to the user's profile picture")
     last_login_at = Column(DateTime, nullable=True, comment="Timestamp of the user's last login")
     failed_login_attempts = Column(Integer, default=0, comment="Number of consecutive failed login attempts")
-    created_at = Column(DateTime, default=func.now(), nullable=False, comment="Timestamp when the user record was created")
-    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False, comment="Timestamp when the user record was last updated")
+    last_login_at = Column(DateTime(timezone=True), nullable=True, comment="Timestamp of the user's last login, timezone-aware")
+    created_at = Column(DateTime(timezone=True), default=func.now(), nullable=False, comment="Timestamp when the user record was created, timezone-aware")
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now(), nullable=False, comment="Timestamp when the user record was last updated, timezone-aware")
     
     def __repr__(self):
         """Provides a string representation of the User object."""
