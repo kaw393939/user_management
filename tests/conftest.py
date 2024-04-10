@@ -100,24 +100,3 @@ async def users_with_same_role_50_users(db_session):
         users.append(user)  # Append the user to the list of users
     await db_session.commit()  # Commit the changes to the database
     return users  # Return the list of created users
-
-@pytest.mark.asyncio
-async def test_create_user_duplicate_username(async_client, user):
-    user_data = {
-        "username": user.username,
-        "email": "unique@example.com",
-        "password": "AnotherPassword123!",
-    }
-    response = await async_client.post("/users/", json=user_data)
-    assert response.status_code == 400
-    assert "Username already exists" in response.json().get("detail", "")
-
-@pytest.mark.asyncio
-async def test_create_user_invalid_email(async_client):
-    user_data = {
-        "username": "uniqueuser",
-        "email": "notanemail",
-        "password": "ValidPassword123!",
-    }
-    response = await async_client.post("/users/", json=user_data)
-    assert response.status_code == 422
