@@ -1,9 +1,7 @@
 from datetime import datetime, timezone
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 from app.models.user_model import User, UserRole
-from uuid import UUID
 
 @pytest.fixture
 async def admin_user(db_session: AsyncSession):
@@ -15,6 +13,7 @@ async def admin_user(db_session: AsyncSession):
         email="admin@example.com",
         hashed_password="securepassword",  # Assume a hashed value
         role=UserRole.ADMIN,
+        is_locked=False,
     )
     db_session.add(user)
     await db_session.commit()
@@ -30,6 +29,7 @@ async def pro_user(db_session: AsyncSession):
         email="pro@example.com",
         hashed_password="securepassword",  # Assume a hashed value
         role=UserRole.PRO,
+        is_locked=False,
     )
     db_session.add(user)
     await db_session.commit()
@@ -83,4 +83,22 @@ async def test_last_login_update(db_session: AsyncSession, user: User):
     await db_session.refresh(user)
     assert user.last_login_at == new_last_login, "Last login timestamp should update correctly"
 
-# More tests can be added to cover additional functionalities and edge cases.
+@pytest.mark.asyncio
+async def test_account_lock_and_unlock(db_session: AsyncSession, user: User):
+    """
+    Tests locking and unlocking the user account.
+    """
+    # Initially, the account should not be locked.
+    assert not user.is_locked, "Account should initially be unlocked"
+    
+    # Lock the account and verify.
+    user.lock_account()
+    await db_session.commit()
+    await db_session.refresh(user)
+    assert user.is_locked, "Account should be locked after calling lock_account()"
+    
+    # Unlock the account and verify.
+    user.unlock_account()
+    await db_session.commit()
+    await db_session.refresh(user)
+    assert not user.is_locked, "Account should be unlocked after calling unlock_account()"

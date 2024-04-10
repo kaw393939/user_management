@@ -1,4 +1,5 @@
 import pytest
+from app.dependencies import get_settings
 from app.services.user_service import UserService
 from app.models.user_model import User
 
@@ -132,13 +133,20 @@ async def test_login_user_incorrect_password(db_session, user):
     user = await UserService.login_user(db_session, user.username, "IncorrectPassword!")
     assert user is None
 
-# Test for account lock after failed login attempts
 async def test_account_lock_after_failed_logins(db_session):
     username = "lock_test_user"
     password = "LockTestPass123!"
     user_data = {"username": username, "email": f"{username}@example.com", "password": password}
+    # Create a user to test with
     await UserService.register_user(db_session, user_data)
-    for _ in range(5):  # Assuming 5 attempts are enough to lock the account
+    
+    # Simulate failed login attempts
+    max_login_attempts = get_settings().max_login_attempts
+    for _ in range(max_login_attempts):
         await UserService.login_user(db_session, username, "wrongpassword")
+    
+    # Check if the account is locked
     is_locked = await UserService.is_account_locked(db_session, username)
-    assert is_locked
+    
+    # Assert the account is locked
+    assert is_locked, "The account should be locked after the maximum number of failed login attempts."
