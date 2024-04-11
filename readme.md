@@ -117,3 +117,8 @@ By following these testing procedures and utilizing the provided testing setup, 
 Testing database interactions in a FastAPI application requires careful setup and consideration of asynchronous programming concepts. By leveraging fixtures, database initialization, session management, and asynchronous programming with SQLAlchemy and FastAPI testing, we can create a robust testing environment that allows us to verify the correctness and reliability of our application's database operations.
 
 Remember to write comprehensive tests that cover various scenarios, including positive and negative cases, edge cases, and error handling. By doing so, we
+=======
+# RestAPI for Creating QR Codes
+
+# Instructor Videos
+* [Rest API Project Overview](https://youtu.be/xEcBKSSXxhQ)
