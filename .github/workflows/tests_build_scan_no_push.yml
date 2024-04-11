@@ -14,6 +14,17 @@ jobs:
     strategy:
       matrix:
         python-version: [3.10.12] # Define Python versions here
+    services:
+      postgres:
+        image: postgres:13  # Use PostgreSQL version 13 for consistency with production
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: myappdb
+        ports:
+          - 5432:5432  # Map PostgreSQL port 5432 on the container to the same port on the host
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5  # Ensure PostgreSQL is ready before proceeding
+
     steps:
       - uses: actions/checkout@v4
       
@@ -71,3 +82,6 @@ jobs:
           exit-code: '1' # Fail the job if vulnerabilities are found
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
+
+
+          
