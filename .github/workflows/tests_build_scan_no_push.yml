@@ -63,7 +63,7 @@ jobs:
       - name: Build Docker image (without pushing)
         uses: docker/build-push-action@v5
         with:
-          push: true  # This configuration prevents pushing the built image to a registry
+          push: true  
           tags: kaw393939/event_manager:${{ github.sha }}  # Customize the tag with your DockerHub username
           load: true
           cache-from: type=local,src=/tmp/.buildx-cache
@@ -72,7 +72,7 @@ jobs:
       - name: Scan the Docker image with Trivy
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'yourusername/devops_demo:${{ github.sha }}'  # Ensure this matches the tag used during build
+          image-ref: 'kaw393939/event_manager:${{ github.sha }}'  # Ensure this matches the tag used during build
           format: 'table'
           exit-code: '1'  # Fail the job if vulnerabilities are found
           ignore-unfixed: true
