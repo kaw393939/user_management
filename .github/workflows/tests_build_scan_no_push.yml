@@ -1,84 +1,73 @@
-name: CI with PostgreSQL, Docker Build, and Security Scan
+name: CI/CD Pipeline
 
 on:
   push:
-    branches-ignore:
-      - 'main'  # Ignore main branch to avoid duplicate checks on PR merges
+    branches:
+      - main
   pull_request:
-    branches-ignore:
-      - 'main'  # Ensure PRs targeting non-main branches are evaluated
+    branches:
+      - main
 
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.10.12]  # Specify the Python version to use
-    services:
-      postgres:
-        image: postgres:13  # Use PostgreSQL version 13 for consistency with production
-        env:
-          POSTGRES_USER: user
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: myappdb
-        ports:
-          - 5432:5432  # Map PostgreSQL port 5432 on the container to the same port on the host
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5  # Ensure PostgreSQL is ready before proceeding
+        python-version: [3.10.12] # Define Python versions here
     steps:
-      - uses: actions/checkout@v4  # Check out the repository code
-
+      - uses: actions/checkout@v4
+      
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-
+          
+      - name: Cache Python packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          mkdir qr_codes
           pip install -r requirements.txt
-
+          
       - name: Run tests with Pytest
-        env:
-          DATABASE_URL: postgresql+asyncpg://user:password@localhost:5432/myappdb  # Configure the DATABASE_URL environment variable for tests
-        run: pytest  # Execute the test suite using pytest
+        run: pytest
 
-  build-docker-image:
-    needs: test  # Ensure this job runs after the tests have passed
+  build-and-push-docker:
+    needs: test
     runs-on: ubuntu-latest
     environment: production
     steps:
       - uses: actions/checkout@v4
-
+      
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Create cache directory
-        run: mkdir -p /tmp/.buildx-cache
-      - name: Cache Docker layers
-        uses: actions/cache@v4
+      
+      - name: Log in to DockerHub
+        uses: docker/login-action@v3
         with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: ${{ runner.os }}-buildx-
-
-      - name: Build Docker image (without pushing)
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: kaw393939/event_manager:${{ github.sha }}
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache,mode=max
-            
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Scan the Docker image with Trivy
+          tags: kaw393939/event_manager:${{ github.sha }} # Uses the Git SHA for tagging
+          platforms: linux/amd64,linux/arm64 # Multi-platform support
+          cache-from: type=registry,ref=kaw393939/event_manager:cache
+          cache-to: type=inline,mode=max
+          
+      - name: Scan the Docker image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'yourusername/devops_demo:${{ github.sha }}'  # Ensure this matches the tag used during build
+          image-ref: 'kaw393939/event_manager:${{ github.sha }}'
           format: 'table'
-          exit-code: '1'  # Fail the job if vulnerabilities are found
+          exit-code: '1' # Fail the job if vulnerabilities are found
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
