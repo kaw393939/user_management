@@ -46,6 +46,8 @@ jobs:
           pip install -r requirements.txt
           
       - name: Run tests with Pytest
+        env:
+          DATABASE_URL: postgresql+asyncpg://user:password@localhost:5432/myappdb  # Configure the DATABASE_URL environment variable for tests
         run: pytest
 
   build-and-push-docker:
