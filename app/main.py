@@ -1,8 +1,7 @@
 from fastapi import FastAPI
 from app.database import initialize_async_db
 from app.dependencies import get_settings
-from app.routers import qr_code, oauth, user_routes
-from app.services.qr_service import create_directory
+from app.routers import oauth, user_routes
 from app.utils.common import setup_logging
 
 # This function sets up logging based on the configuration specified in your logging configuration file.
@@ -10,10 +9,6 @@ setup_logging()
 
 # Retrieve settings
 settings = get_settings()
-
-# Ensure that the directory for storing QR codes exists when the application starts.
-# If it doesn't exist, it will be created.
-create_directory(settings.qr_directory)
 
 # Create an instance of the FastAPI application.
 app = FastAPI(
@@ -37,7 +32,6 @@ settings = get_settings()
 def startup_event():
     initialize_async_db(settings.database_url)
 # Include the routers for your application.
-app.include_router(qr_code.router)  # QR code management routes
 app.include_router(oauth.router)  # OAuth authentication routes
 # app.include_router(events.router)
 app.include_router(user_routes.router)
