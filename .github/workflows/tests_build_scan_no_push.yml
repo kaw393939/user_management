@@ -62,8 +62,8 @@ jobs:
       - name: Build Docker image (without pushing)
         uses: docker/build-push-action@v5
         with:
-          push: false  # This configuration prevents pushing the built image to a registry
-          tags: yourusername/devops_demo:${{ github.sha }}  # Customize the tag with your DockerHub username
+          push: true  # This configuration prevents pushing the built image to a registry
+          tags: kaw393939/event_manager:${{ github.sha }}  # Customize the tag with your DockerHub username
           load: true
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
