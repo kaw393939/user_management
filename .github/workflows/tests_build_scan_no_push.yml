@@ -46,6 +46,7 @@ jobs:
   build-docker-image:
     needs: test  # Ensure this job runs after the tests have passed
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - uses: actions/checkout@v4
 
