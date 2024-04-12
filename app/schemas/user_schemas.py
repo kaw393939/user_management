@@ -76,7 +76,7 @@ class UserCreate(UserBase):
         ...,
         min_length=8,
         description="A strong password for the user's account. Must be at least 8 characters long and include uppercase and lowercase letters, a digit, and a special character.",
-        example="StrongPassword123!"
+        example="SecurePassword123!"
     )
 
     @validator('password')
@@ -97,10 +97,10 @@ class UserCreate(UserBase):
         json_schema_extra = {
             "description": "Model for creating a new user account.",
             "example": {
-                "username": "jane_smith_456",
-                "email": "jane.smith@example.com",
+                "username": "john_doe_123",
+                "email": "john.doe@example.com",
                 "password": "SecurePassword123!",
-                "full_name": "Jane Smith",
+                "full_name": "John Doe",
                 "bio": "I am a data scientist passionate about machine learning and big data analytics.",
                 "profile_picture_url": "https://example.com/profile_pictures/jane_smith.jpg"
             }
@@ -281,7 +281,7 @@ class LoginRequest(BaseModel):
     password: str = Field(
         ...,
         description="Password of the user trying to login.",
-        example="StrongPassword123!"
+        example="SecurePassword123!"
     )
 
     class Config:
@@ -289,7 +289,7 @@ class LoginRequest(BaseModel):
             "description": "Model for user login request.",
             "example": {
                 "username": "john_doe_123",
-                "password": "StrongPassword123!"
+                "password": "SecurePassword123!"
             }
         }
 
