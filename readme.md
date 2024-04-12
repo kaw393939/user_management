@@ -9,9 +9,27 @@
 * https://alembic.sqlalchemy.org/en/latest/index.html The database migrations
 
 
-Install note
+Install Instructions
+* git clone git@github.com:kaw393939/event_manager.git
+* cd ./event_manager
+* docker compose up --build -d
+* docker compose exec fastapi alembic upgrade head
+* get pgadmin setup at http://localhost:5050 
+  - Ypu must add the server and use the settings in the [./docker-compose.yml](docker-compose.yml) file.  See Video for Setup
+  -  Verify that you have the alembic and user table in the public->schemas->tables menu in pgadmin after the server is added
+  -  See video for how to view the records
+* docker compose exec fastap pytest  (see video for variations for this command)
 
-chmod a+x start.sh
+**NOTE** When you run pytest it will drop the tables in the database.  This will cause the docs page to malfunction because it won't have tables. To fix this you need to manually drop the alembic table using pgadmin and then run the migration again with the command you used to install. This is why you should use the tests first and not need to go into the UI to manually do it.  So i save doing the API testing on the docs page until last to find edge cases or any issues I didn't account for.
+
+Important Links
+* http://localhost/docs <open api spec>
+* http://localhost:5050
+  * Login 
+    - Username: admin@example.com
+    - Password: adminpassword
+
+
 
 # Commands
 
