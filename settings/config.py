@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     postgres_server: str = Field(default='localhost', description="PostgreSQL server address")
     postgres_port: str = Field(default='5432', description="PostgreSQL port")
     postgres_db: str = Field(default='myappdb', description="PostgreSQL database name")
+    # Discord configuration
+    discord_bot_token: str = Field(default='NONE', description="Discord bot token")
+    discord_channel_id: int = Field(default=1234567890, description="Default Discord channel ID for the bot to interact", example=1234567890)
+    #Open AI Key 
+    openai_api_key: str = Field(default='NONE', description="Open AI Api Key")
 
     class Config:
         # If your .env file is not in the root directory, adjust the path accordingly.
