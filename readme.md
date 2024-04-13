@@ -1,142 +1,132 @@
-# Instructor Videos
-1.  https://youtu.be/dgMCSND2FQw
+## Event Manager Company: Software QA Analyst/Developer Onboarding Assignment - REST API Testing and Quality Assurance with Alembic Migrations
 
+Welcome aboard Event Manager Company! As a newly hired Software QA Analyst/Developer, you are embarking on an exciting journey to contribute to our project aimed at developing a secure, robust REST API that supports JWT token-based OAuth2 authentication. This API is the backbone of our user management system and will eventually expand to include features for event management and registration.
 
-# Libraries
-* https://www.sqlalchemy.org/ This is to handle the database
-* https://docs.pydantic.dev/latest/  this is to handle the validation json serialization and deserialization>
-* https://fastapi.tiangolo.com/ This is the api
-* https://alembic.sqlalchemy.org/en/latest/index.html The database migrations
+### The Importance of This Assignment
 
+This project is designed to immerse you in a realistic software development environment, focusing on API development, automated testing, and collaborative problem-solving using Git. It offers hands-on experience with REST API development and emphasizes the critical role of quality assurance in software projects.
 
-Install Instructions
-* git clone git@github.com:kaw393939/event_manager.git
-* cd ./event_manager
-* docker compose up --build -d
-* docker compose exec fastapi alembic upgrade head
-* get pgadmin setup at http://localhost:5050 
-  - Ypu must add the server and use the settings in the [./docker-compose.yml](docker-compose.yml) file.  See Video for Setup
-  -  Verify that you have the alembic and user table in the public->schemas->tables menu in pgadmin after the server is added
-  -  See video for how to view the records
-* docker compose exec fastap pytest  (see video for variations for this command)
+As a Software QA Analyst/Developer, you play a pivotal role in ensuring the reliability, security, and performance of our software. This assignment will challenge you to apply your skills in testing, debugging, and collaborating with a team to deliver high-quality software. **Your work will directly impact the success of our project and the satisfaction of our users.**
 
-**NOTE** When you run pytest it will drop the tables in the database.  This will cause the docs page to malfunction because it won't have tables. To fix this you need to manually drop the alembic table using pgadmin and then run the migration again with the command you used to install. This is why you should use the tests first and not need to go into the UI to manually do it.  So i save doing the API testing on the docs page until last to find edge cases or any issues I didn't account for.
+### Learning Objectives: A Deep Dive
 
-Important Links
-* http://localhost/docs <open api spec>
-* http://localhost:5050
-  * Login 
-    - Username: admin@example.com
-    - Password: adminpassword
+1. **Familiarize with REST API functionality and structure**:
+  REST (Representational State Transfer) is an architectural style for designing networked applications. In this assignment, you'll gain hands-on experience working with a REST API, understanding its endpoints, request/response formats, and authentication mechanisms.
 
+2. **Implement and refine documentation**:
+  Clear and comprehensive documentation is essential for effective collaboration and maintaining software quality. In this assignment, you'll learn to critically analyze and improve existing documentation based on issues identified in the instructor videos. *You'll understand the importance of keeping documentation up-to-date and ensuring that it accurately reflects the current state of the software.*
 
+3. **Engage in manual and automated testing**:
+  Testing is a cornerstone of quality assurance, and it will be a significant part of your role. In this assignment, you'll develop a keen eye for potential issues and edge cases. You'll write comprehensive test cases and leverage automated testing tools like [pytest](https://docs.pytest.org/) to push the project's test coverage towards 90%. You'll learn about different types of testing, such as unit testing, integration testing, and end-to-end testing, and understand their roles in ensuring software quality.
 
-# Commands
+4. **Explore and debug issues**:
+  Debugging is an essential skill for any developer. In this assignment, you'll dive deep into the codebase to investigate and resolve issues related to user profile updates and OAuth token generation. *You'll learn how to use debugging tools, interpret error messages, and trace the flow of execution to identify the root cause of problems.* You'll also learn how to write clean, maintainable code that is easier to debug and understand.
 
-1. docker compose up --build
-2. docker compose exec fastapi pytest
-    * docker compose exec fastapi pytest tests/test_services/test_user_service.py::test_list_users
-3. Need to apply database migrationss: docker compose exec fastapi alembic upgrade head
-4. Creating database migration: docker compose exec fastapi alembic revision --autogenerate -m 'added admin'
+5. **Collaborate effectively**:
+  Effective collaboration is key to success in modern software development. In this assignment, you'll experience the power of collaboration using Git for version control and GitHub for code reviews and issue tracking. **You'll learn to work with issues, branches, create pull requests, and merge code.** You'll understand the importance of clear communication, constructive feedback, and teamwork in delivering high-quality software.
 
-# Introduction to Database Testing and Asynchronous Programming
+### Setup and Preliminary Steps: Getting Started
 
-When testing applications that interact with databases, it's crucial to ensure the integrity and reliability of the data. Database testing involves verifying that the application can correctly communicate with the database, perform the necessary operations, and handle data consistency and accuracy.
+1. **Fork the Project Repository**:
+  To begin, you'll fork the [project repository](https://github.com/yourusername/event_manager) to your own GitHub account. This creates a copy of the repository under your account, allowing you to work on the project independently. *Forking is a common practice in open-source development, as it allows developers to contribute to a project without affecting the original codebase.*
 
-In this code, we will explore how to set up a testing environment for a FastAPI application that uses an asynchronous database connection. We will cover the concepts of fixtures, database initialization, session management, and the use of asynchronous programming with SQLAlchemy and FastAPI testing.
+2. **Clone the Forked Repository**:
+  After forking, you'll clone the repository to your local machine using the `git clone` command. Cloning creates a local copy of the repository on your computer, enabling you to make changes and run the project locally.
 
-## Asynchronous Programming
+3. **Verify the Project Setup**:
+  Following the steps in the instructor video, you'll set up the project using [Docker](https://www.docker.com/). Docker is a platform that allows you to package an application with all its dependencies into a standardized unit called a container. By using Docker, you ensure that the project runs consistently across different environments. *You'll verify that you can access the API documentation at `http://localhost/docs` and the database using [PGAdmin](https://www.pgadmin.org/) at `http://localhost:5050`.*
 
-Asynchronous programming is a programming paradigm that allows multiple tasks to be executed concurrently without blocking the main execution flow. In the context of web applications, asynchronous programming is particularly useful for handling long-running operations, such as database queries or external API requests, without blocking the server's ability to handle other incoming requests.
+### Testing and Database Management: Ensuring Quality
 
-In Python, asynchronous programming is achieved using the asyncio library and the async/await syntax. Functions that are defined with the `async def` keyword are called coroutines, and they can be paused and resumed during execution, allowing other tasks to be executed in the meantime.
+1. **Explore the API**:
+  Using the Swagger UI at `http://localhost/docs`, you'll familiarize yourself with the API endpoints, request/response formats, and authentication mechanisms. Swagger UI provides an interactive interface to explore and test the API endpoints, making it easier to understand how the API works and what data it expects and returns.
 
-In this code, we utilize asynchronous programming to efficiently interact with the database using SQLAlchemy's asynchronous extensions. We create an asynchronous engine, session maker, and scoped session to manage the database connection and perform database operations asynchronously.
+2. **Run Tests**:
+  You'll execute the provided test suite using pytest, a popular testing framework for Python. Running tests ensures that the existing functionality of the API is working as expected. **Note that running tests will drop the database tables, so you may need to manually drop the Alembic version table using PGAdmin and re-run migrations to ensure a clean state.**
 
-## Database Testing Setup
+3. **Increase Test Coverage**:
+  To enhance the reliability of the API, you'll aim to increase the project's test coverage to 90%. Test coverage measures the percentage of code that is executed during testing. *By writing additional tests for various scenarios and edge cases, you'll ensure that the API handles different situations correctly and provide confidence in its behavior.*
 
-To set up a testing environment for a FastAPI application with a database, we need to consider several aspects:
+### Collaborative Development Using Git: Working as a Team
 
-### Database Configuration:
-- We retrieve the database configuration settings using the `get_settings()` function.
-- We modify the database URL to use the `postgresql+asyncpg://` scheme for asynchronous communication with the database.
-- We create an asynchronous engine using `create_async_engine` with the modified database URL.
-- We define `AsyncTestingSessionLocal` as a session maker for creating asynchronous sessions.
-- We create a scoped session `AsyncSessionScoped` using the `AsyncTestingSessionLocal` session maker.
+1. **Enable Issue Tracking**:
+  You'll enable GitHub issues in your repository settings. [GitHub Issues](https://guides.github.com/features/issues/) is a powerful tool for tracking bugs, enhancements, and other tasks related to the project. *It allows you to create, assign, and prioritize issues, facilitating effective collaboration among team members.*
 
-### Fixtures:
-Fixtures are reusable objects that are created and managed by the testing framework (pytest in this case).
-They provide a way to set up the necessary objects and dependencies for testing, such as database connections, test clients, and test data.
-Fixtures are defined using the `@pytest.fixture` decorator and can have different scopes (e.g., function, module, session) to control their lifecycle.
+2. **Create Branches**:
+  For each issue or task you work on, you'll create a new branch with a descriptive name using the `git checkout -b` command. Branching allows you to work on different features or fixes independently without affecting the main codebase. **It enables parallel development and helps maintain a stable main branch.**
 
-#### a. async_client fixture:
-- This fixture creates an asynchronous test client using `AsyncClient` from `httpx`.
-- It allows us to make HTTP requests to the FastAPI application during testing.
-- It overrides the `get_async_db` dependency with a lambda function that returns the database session.
-- The fixture yields the client for use in tests and clears the dependency overrides after the test.
+3. **Pull Requests and Code Reviews**:
+  When you have completed work on an issue, you'll create a [pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests) to merge your changes into the main branch. Pull requests provide an opportunity for code review, where your team members can examine your changes, provide feedback, and suggest improvements. *Code reviews help maintain code quality, catch potential issues, and promote knowledge sharing among the team.*
 
-#### b. token fixture:
-- This fixture generates an access token by making a POST request to the `/token` endpoint with test credentials.
-- It returns the access token for use in authenticated requests during testing.
+### Specific Issues to Address: Diving into the Details
 
-#### c. initialize_database fixture:
-- This fixture initializes the database by calling `initialize_async_db` with the database URL.
-- It has a session scope and is automatically used in all tests.
+In this assignment, you'll identify, document, and resolve five specific issues related to:
 
-#### d. setup_database fixture:
-- This fixture sets up the database before each test function.
-- It creates all the database tables using `Base.metadata.create_all`.
-- After the test, it drops all the tables using `Base.metadata.drop_all` and disposes of the database engine.
-- This ensures that each test starts with a clean database state.
+1. **Username validation**:
+  You'll investigate and resolve any issues related to username validation. This may involve handling special characters, enforcing length constraints, or ensuring uniqueness. *Proper username validation is essential to maintain data integrity and prevent potential security vulnerabilities.*
 
-#### e. db_session fixture:
-- This fixture creates an asynchronous database session using `AsyncSessionScoped`.
-- It yields the session for use in tests and closes the session after the test.
-- It allows us to interact with the database during testing.
+2. **Password validation**:
+  Ensuring the security of user passwords is crucial. You'll validate that password validation follows security best practices, such as enforcing minimum length, requiring complexity (e.g., a mix of uppercase, lowercase, numbers, and special characters), and properly hashing passwords before storing them in the database. **Robust password validation protects user accounts and mitigates the risk of unauthorized access.**
 
-#### f. user fixture:
-- This fixture creates a single User object with fake data using the Faker instance.
-- It adds the user to the database session and commits the changes.
-- It returns the created user object for use in tests.
+3. **Profile field edge cases**:
+  You'll test and handle various scenarios related to updating profile fields. This may include updating the bio and profile picture URL simultaneously or individually. You'll consider different combinations of fields being updated and ensure that the API handles these cases gracefully. *Edge case testing helps uncover potential issues and ensures a smooth user experience.*
 
-#### g. users_with_same_role_50_users fixture:
-- This fixture creates 50 User objects with the same role and fake data.
-- It adds each user to the database session and commits the changes.
-- It returns the list of created users for use in tests.
+Additionally, you'll resolve a sixth issue demonstrated in the instructor video. These issues will test various combinations and scenarios to simulate real-world usage and potential edge cases. **By addressing these specific issues, you'll gain experience in identifying and resolving common challenges in API development.**
 
-## Testing Procedures
+### Submission Requirements: Showcasing Your Work
 
-With the testing setup in place, we can now write tests to verify the behavior of our FastAPI application and its interaction with the database. Here are some common testing procedures:
+To complete this assignment, you'll submit the following:
 
-- **Test database connectivity:**
-  - Ensure that the application can successfully connect to the database.
-  - Verify that the database session is properly created and managed.
-- **Test database queries:**
-  - Write tests to check that the application can execute database queries correctly.
-  - Verify that the expected data is retrieved from the database based on the query parameters.
-  - Test edge cases and error scenarios to ensure proper handling of invalid or missing data.
-- **Test data integrity:**
-  - Write tests to verify that the application maintains data integrity when performing database operations.
-  - Check that data is properly inserted, updated, and deleted in the database.
-  - Validate that the application enforces any constraints or business rules related to the data.
-- **Test asynchronous behavior:**
-  - Write tests to verify that the application handles asynchronous database operations correctly.
-  - Ensure that the application can handle concurrent requests and manage the asynchronous flow of execution.
-  - Test scenarios where multiple asynchronous operations are performed simultaneously to check for proper synchronization and data consistency.
-- **Test error handling:**
-  - Write tests to verify that the application handles database errors and exceptions gracefully.
-  - Check that appropriate error messages and status codes are returned when database operations fail.
-  - Verify that the application can recover from database errors and maintain a stable state.
+1. **GitHub Repository Link**:
+  Ensure that your repository is well-organized and includes:
+  - Links to five closed issues, each with accompanying test code and necessary application code modifications.
+  - Each issue should be well-documented, explaining the problem, the steps taken to resolve it, and the outcome. *Proper documentation helps others understand your work and facilitates future maintenance.*
+  - All issues should be merged into the main branch, following the Git workflow and best practices.
 
-By following these testing procedures and utilizing the provided testing setup, we can ensure that our FastAPI application interacts with the database correctly, handles asynchronous operations efficiently, and maintains data integrity.
+2. **Updated README**:
+  Replace the existing README with:
+  - Links to the closed issues, providing easy access to your work.
+  - Link to project image deployed to dockerhub.
+  - A 2-3 paragraph reflection on what you learned from this assignment, focusing on both technical skills and collaborative processes. Reflect on the challenges you faced, the solutions you implemented, and the insights you gained. **This reflection helps solidify your learning and provides valuable feedback for improving the assignment in the future.**
 
-## Conclusion
+## Grading Rubric 
+| Criteria                                                                                                                | Points |
+|-------------------------------------------------------------------------------------------------------------------------|--------|
+| Resolved 5 issues related to username validation, password validation, and profile field edge cases                      | 30     |
+| Resolved the issue demonstrated in the instructor video                                                                 | 20     |
+| Increased test coverage to 90% by writing comprehensive test cases                                                      | 20     |
+| Followed collaborative development practices using Git and GitHub (branching, pull requests, code reviews)              | 15     |
+| Submitted a well-organized GitHub repository with clear documentation, links to closed issues, and a reflective summary | 15     |
+| **Total**                                                                                                               | **100**|
+### Resources and Documentation: Supporting Your Learning
 
-Testing database interactions in a FastAPI application requires careful setup and consideration of asynchronous programming concepts. By leveraging fixtures, database initialization, session management, and asynchronous programming with SQLAlchemy and FastAPI testing, we can create a robust testing environment that allows us to verify the correctness and reliability of our application's database operations.
+- **Instructor Videos and Important Links**:
+ - [Introduction to REST API with Postgres](https://youtu.be/dgMCSND2FQw) - This video provides an overview of the REST API you'll be working with, including its structure, endpoints, and interaction with the PostgreSQL database.
+ - [Assignment Instructions](https://youtu.be/TFblm7QrF6o) - Detailed instructions on your tasks, guiding you through the assignment step by step.
+ - API Documentation: `http://localhost/docs` - The Swagger UI documentation for the API, providing information on endpoints, request/response formats, and authentication.
+ - Database Management: `http://localhost:5050` - The PGAdmin interface for managing the PostgreSQL database, allowing you to view and manipulate the database tables.
 
-Remember to write comprehensive tests that cover various scenarios, including positive and negative cases, edge cases, and error handling. By doing so, we
-=======
-# RestAPI for Creating QR Codes
+- **Code Documentation**:
+ The project codebase includes docstrings and comments explaining various concepts and functionalities. Take the time to read through the code and understand how different components work together. *Pay attention to the structure of the code, the naming conventions used, and the purpose of each function or class.* Understanding the existing codebase will help you write code that is consistent and integrates well with the project.
 
-# Instructor Videos
-* [Rest API Project Overview](https://youtu.be/xEcBKSSXxhQ)
+- **Additional Resources**:
+ - [SQLAlchemy Library](https://www.sqlalchemy.org/) - SQLAlchemy is a powerful SQL toolkit and Object-Relational Mapping (ORM) library for Python. It provides a set of tools for interacting with databases, including query building, database schema management, and data serialization. *Familiarize yourself with SQLAlchemy's documentation to understand how it is used in the project for database operations.*
+ - [Pydantic Documentation](https://docs.pydantic.dev/latest/) - Pydantic is a data validation and settings management library for Python. It allows you to define data models with type annotations and provides automatic validation, serialization, and deserialization. **Consult the Pydantic documentation to understand how it is used in the project for request/response validation and serialization.**
+ - [FastAPI Framework](https://fastapi.tiangolo.com/) - FastAPI is a modern, fast (high-performance) Python web framework for building APIs. It leverages Python's type hints and provides automatic API documentation, request/response validation, and easy integration with other libraries. *Explore the FastAPI documentation to gain a deeper understanding of its features and how it is used in the project.*
+ - [Alembic Documentation](https://alembic.sqlalchemy.org/en/latest/index.html) - Alembic is a lightweight database migration tool for usage with SQLAlchemy. It allows you to define and manage database schema changes over time, ensuring that the database structure remains consistent across different environments. **Refer to the Alembic documentation to learn how to create and apply database migrations in the project.**
+
+These resources will provide you with a solid foundation to understand the tools, technologies, and concepts used in the project. *Don't hesitate to explore them further and consult the documentation whenever you encounter challenges or need clarification.*
+
+### Conclusion: Embracing the Learning Journey
+
+This assignment is designed to challenge you, help you grow as a developer, and prepare you for the real-world responsibilities of a Software QA Analyst/Developer. By working on realistic issues, collaborating with your team, and focusing on testing and quality assurance, you'll gain valuable experience that will serve you throughout your career.
+
+**Remember, the goal is not just to complete the assignment but to embrace the learning journey.** Take the time to understand the codebase, ask questions, and explore new concepts. Engage with your team members, seek feedback, and learn from their experiences. *Your dedication, curiosity, and willingness to learn will be the key to your success in this role.*
+
+We are excited to have you on board and look forward to seeing your contributions to the project. Your fresh perspective and skills will undoubtedly make a positive impact on our team and the quality of our software.
+
+If you have any questions or need assistance, don't hesitate to reach out to your mentor or team lead. We are here to support you and ensure that you have a rewarding and enriching experience.
+
+Once again, welcome to the Event Manager Company! Let's embark on this exciting journey together and create something remarkable.
+
+Happy coding and happy learning!

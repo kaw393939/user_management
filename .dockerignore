@@ -5,4 +5,5 @@ qr_codes
 *.sqlite
 .vscode
 .env
+.coverage
 
