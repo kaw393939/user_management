@@ -80,6 +80,16 @@ To complete this assignment, submit the following:
 - **Instructor Videos and Important Links**:
  - [Introduction to REST API with Postgres](https://youtu.be/dgMCSND2FQw) - This video provides an overview of the REST API you'll be working with, including its structure, endpoints, and interaction with the PostgreSQL database.
  - [Assignment Instructions](https://youtu.be/TFblm7QrF6o) - Detailed instructions on your tasks, guiding you through the assignment step by step.
+ - Look at the code comments:
+    - [Test Configuration and Fixtures](tests/conftest.py)
+    - [API User Routes](app/routers/user_routes.py)
+    - [API Oauth Routes - Connection to HTTP](app/routers/oauth.py)
+    - [User Service - Business Logic - This implements whats called the service repository pattern](app/services/user_service.py)
+    - [User Schema - Pydantic models](app/schemas/user_schemas.py)
+    - [User Model - SQl Alchemy Model ](app/models/user_model.py)
+    - [Alembic Migration - this is what runs to create the tables when you do alembic upgrade head](alembic/versions/628adcb2d60e_initial_migration.py)
+    - See the tests folder for all the tests
+
  - API Documentation: `http://localhost/docs` - The Swagger UI documentation for the API, providing information on endpoints, request/response formats, and authentication.
  - Database Management: `http://localhost:5050` - The PGAdmin interface for managing the PostgreSQL database, allowing you to view and manipulate the database tables.
 
