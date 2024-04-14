@@ -80,6 +80,8 @@ To complete this assignment, submit the following:
 - **Instructor Videos and Important Links**:
  - [Introduction to REST API with Postgres](https://youtu.be/dgMCSND2FQw) - This video provides an overview of the REST API you'll be working with, including its structure, endpoints, and interaction with the PostgreSQL database.
  - [Assignment Instructions](https://youtu.be/TFblm7QrF6o) - Detailed instructions on your tasks, guiding you through the assignment step by step.
+ - [Git Command Reference I created and some explanation for collaboration with git](git.md)
+ - [Docker Commands and Running The Tests in the Application](docker.md)
  - Look at the code comments:
     - [Test Configuration and Fixtures](tests/conftest.py)
     - [API User Routes](app/routers/user_routes.py)
