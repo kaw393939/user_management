@@ -20,7 +20,7 @@ async def admin_user(db_session: AsyncSession):
     return user
 
 @pytest.fixture
-async def pro_user(db_session: AsyncSession):
+async def editor_user(db_session: AsyncSession):
     """
     Fixture to create a pro user instance for testing.
     """
@@ -28,7 +28,7 @@ async def pro_user(db_session: AsyncSession):
         username="pro_user",
         email="pro@example.com",
         hashed_password="securepassword",  # Assume a hashed value
-        role=UserRole.PRO,
+        role=UserRole.EDITOR,
         is_locked=False,
     )
     db_session.add(user)
@@ -36,23 +36,23 @@ async def pro_user(db_session: AsyncSession):
     return user
 
 @pytest.mark.asyncio
-async def test_user_role(db_session: AsyncSession, user: User, admin_user: User, pro_user: User):
+async def test_user_role(db_session: AsyncSession, user: User, admin_user: User, editor_user: User):
     """
     Tests that the default role is assigned correctly and can be updated.
     """
-    assert user.role == UserRole.USER, "Default role should be USER"
+    assert user.role == UserRole.AUTHENTICATED, "Default role should be USER"
     assert admin_user.role == UserRole.ADMIN, "Admin role should be correctly assigned"
-    assert pro_user.role == UserRole.PRO, "Pro role should be correctly assigned"
+    assert editor_user.role == UserRole.EDITOR, "Pro role should be correctly assigned"
 
 @pytest.mark.asyncio
-async def test_has_role(user: User, admin_user: User, pro_user: User):
+async def test_has_role(user: User, admin_user: User, editor_user: User):
     """
     Tests the has_role method to ensure it accurately checks the user's role.
     """
-    assert user.has_role(UserRole.USER), "User should have USER role"
+    assert user.has_role(UserRole.AUTHENTICATED), "User should have USER role"
     assert not user.has_role(UserRole.ADMIN), "User should not have ADMIN role"
     assert admin_user.has_role(UserRole.ADMIN), "Admin user should have ADMIN role"
-    assert pro_user.has_role(UserRole.PRO), "Pro user should have PRO role"
+    assert editor_user.has_role(UserRole.EDITOR), "Pro user should have PRO role"
 
 @pytest.mark.asyncio
 async def test_user_repr(user: User):

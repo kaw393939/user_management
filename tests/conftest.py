@@ -13,6 +13,7 @@ Key Components:
 """
 
 # Standard library imports
+from builtins import range
 from unittest.mock import patch  # Used for mocking dependencies during testing
 from uuid import uuid4  # Generates unique identifiers, useful in creating objects with a unique key
 
@@ -92,7 +93,7 @@ async def locked_user(db_session):
         "username": fake.user_name(),
         "email": unique_email,
         "hashed_password": hash_password("MySuperPassword$1234"),
-        "role": UserRole.USER,
+        "role": UserRole.AUTHENTICATED,
         "email_verified": False,
         "is_locked": True,
         "failed_login_attempts": get_settings().max_login_attempts,
@@ -110,7 +111,7 @@ async def user(db_session):
         "username": fake.user_name(),
         "email": unique_email,
         "hashed_password": hash_password("MySuperPassword$1234"),
-        "role": UserRole.USER,
+        "role": UserRole.AUTHENTICATED,
         "email_verified": False,
         "is_locked": False,
     }
@@ -127,7 +128,7 @@ async def verified_user(db_session):
         "username": fake.user_name(),
         "email": unique_email,
         "hashed_password": hash_password("MySuperPassword$1234"),
-        "role": UserRole.USER,
+        "role": UserRole.AUTHENTICATED,
         "email_verified": True,
         "is_locked": False,
     }
@@ -146,6 +147,7 @@ async def users_with_same_role_50_users(db_session):
             "username": fake.user_name(),
             "email": unique_email,
             "hashed_password": fake.password(),
+            "role": UserRole.AUTHENTICATED,
             "email_verified": False,
             "is_locked": False,
         }
