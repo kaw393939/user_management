@@ -27,7 +27,6 @@ app = FastAPI(
         "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
     }
 )
-settings = get_settings()
 @app.on_event("startup")
 def startup_event():
     initialize_async_db(settings.database_url)

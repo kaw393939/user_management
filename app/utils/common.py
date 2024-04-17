@@ -1,3 +1,4 @@
+from builtins import ValueError, dict, len, str
 import logging.config
 import os
 import base64
@@ -71,34 +72,3 @@ def verify_refresh_token(refresh_token: str):
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
     
-def encode_url_to_filename(url):
-    """
-    Encodes a URL into a base64 string safe for filenames, after validating and sanitizing.
-    Removes padding to ensure filename compatibility.
-    """
-    sanitized_url = validate_and_sanitize_url(str(url))
-    if sanitized_url is None:
-        raise ValueError("Provided URL is invalid and cannot be encoded.")
-    encoded_bytes = base64.urlsafe_b64encode(sanitized_url.encode('utf-8'))
-    encoded_str = encoded_bytes.decode('utf-8').rstrip('=')
-    return encoded_str
-
-def decode_filename_to_url(encoded_str: str) -> str:
-    """
-    Decodes a base64 encoded string back into a URL, adding padding if necessary.
-    This reverses the process done by `encode_url_to_filename`.
-    """
-    padding_needed = 4 - (len(encoded_str) % 4)
-    if padding_needed:
-        encoded_str += "=" * padding_needed
-    decoded_bytes = base64.urlsafe_b64decode(encoded_str)
-    return decoded_bytes.decode('utf-8')
-
-def generate_links(action: str, qr_filename: str, base_api_url: str, download_url: str) -> List[Link]:
-    links = []
-    if action in ["list", "create"]:
-        links.append(Link(rel="view", href=download_url, action="GET", type="image/png"))
-    if action in ["list", "create", "delete"]:
-        delete_url = f"{base_api_url}/qr-codes/{qr_filename}"
-        links.append(Link(rel="delete", href=delete_url, action="DELETE", type="application/json"))
-    return links
