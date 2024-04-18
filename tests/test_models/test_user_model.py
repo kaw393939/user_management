@@ -1,3 +1,4 @@
+from builtins import repr
 from datetime import datetime, timezone
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -84,3 +85,46 @@ async def test_email_verification(db_session: AsyncSession, user: User):
     await db_session.commit()
     await db_session.refresh(user)
     assert user.email_verified, "Email should be verified after calling verify_email()"
+
+@pytest.mark.asyncio
+async def test_user_profile_pic_url_update(db_session: AsyncSession, user: User):
+    """
+    Tests the profile pic update functionality.
+    """
+    # Initially, the profile pic should be updated.
+
+    # Verify the email and check.
+    profile_pic_url = "http://myprofile/picture.png"
+    user.profile_picture_url = profile_pic_url
+    await db_session.commit()
+    await db_session.refresh(user)
+    assert user.profile_picture_url == profile_pic_url, "The profile pic did not update"
+
+@pytest.mark.asyncio
+async def test_user_linkedin_url_update(db_session: AsyncSession, user: User):
+    """
+    Tests the profile pic update functionality.
+    """
+    # Initially, the linkedin should  be updated.
+
+    # Verify the linkedin profile url.
+    profile_linkedin_url = "http://www.linkedin.com/profile"
+    user.linkedin_profile_url = profile_linkedin_url
+    await db_session.commit()
+    await db_session.refresh(user)
+    assert user.linkedin_profile_url == profile_linkedin_url, "The profile pic did not update"
+
+
+@pytest.mark.asyncio
+async def test_user_github_url_update(db_session: AsyncSession, user: User):
+    """
+    Tests the profile pic update functionality.
+    """
+    # Initially, the linkedin should  be updated.
+
+    # Verify the linkedin profile url.
+    profile_github_url = "http://www.github.com/profile"
+    user.github_profile_url = profile_github_url
+    await db_session.commit()
+    await db_session.refresh(user)
+    assert user.github_profile_url == profile_github_url, "The github did not update"
