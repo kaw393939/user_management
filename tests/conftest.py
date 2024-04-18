@@ -14,7 +14,7 @@ Fixtures:
 """
 
 # Standard library imports
-from builtins import range
+from builtins import Exception, range, str
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -41,6 +41,7 @@ engine = create_async_engine(TEST_DATABASE_URL, echo=True)
 AsyncTestingSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 AsyncSessionScoped = scoped_session(AsyncTestingSessionLocal)
 
+# this is what creates the http client for your api tests
 @pytest.fixture(scope="function")
 async def async_client(db_session):
     async with AsyncClient(app=app, base_url="http://testserver") as client:
@@ -50,6 +51,7 @@ async def async_client(db_session):
         finally:
             app.dependency_overrides.clear()
 
+#this fixure tests the admin login for tokens
 @pytest.fixture(scope="function")
 async def token():
     form_data = {
@@ -68,12 +70,14 @@ def initialize_database():
     except Exception as e:
         pytest.fail(f"Failed to initialize the database: {str(e)}")
 
+# this function setup and tears down (drops tales) for each test function, so you have a clean database for each test.
 @pytest.fixture(scope="function", autouse=True)
 async def setup_database():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
     async with engine.begin() as conn:
+        # you can comment out this line during development if you are debugging a single test
         await conn.run_sync(Base.metadata.drop_all)
     await engine.dispose()
 
