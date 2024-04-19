@@ -10,6 +10,7 @@ from app.models.user_model import User
 from app.schemas.user_schemas import UserCreate, UserUpdate
 from app.utils.security import hash_password, verify_password
 from uuid import UUID
+from app.services.email_service import EmailService
 import logging
 
 settings = get_settings()
@@ -46,7 +47,7 @@ class UserService:
         return await cls._fetch_user(session, email=email)
 
     @classmethod
-    async def create(cls, session: AsyncSession, user_data: Dict[str, str]) -> Optional[User]:
+    async def create(cls, session: AsyncSession, user_data: Dict[str, str], email_service) -> Optional[User]:
         try:
             validated_data = UserCreate(**user_data).model_dump()
             existing_user = await cls.get_by_username(session, validated_data['username']) or await cls.get_by_email(session, validated_data['email'])
@@ -57,6 +58,9 @@ class UserService:
             new_user = User(**validated_data)
             session.add(new_user)
             await session.commit()
+            
+            await email_service.send_verification_email(new_user)
+
             return new_user
         except ValidationError as e:
             logger.error(f"Validation error during user creation: {e}")
@@ -102,8 +106,8 @@ class UserService:
         return result.scalars().all() if result else []
 
     @classmethod
-    async def register_user(cls, session: AsyncSession, user_data: Dict[str, str]) -> Optional[User]:
-        return await cls.create(session, user_data)
+    async def register_user(cls, session: AsyncSession, user_data: Dict[str, str], get_email_service) -> Optional[User]:
+        return await cls.create(session, user_data, get_email_service)
 
     @classmethod
     async def login_user(cls, session: AsyncSession, username: str, password: str) -> Optional[User]:
@@ -145,10 +149,11 @@ class UserService:
         return False
 
     @classmethod
-    async def verify_email(cls, session: AsyncSession, user_id: UUID) -> bool:
+    async def verify_email_with_token(cls, session: AsyncSession, user_id: UUID, token: str) -> bool:
         user = await cls.get_by_id(session, user_id)
-        if user:
+        if user and user.verification_token == token:
             user.email_verified = True
+            user.verification_token = None  # Clear the token once used
             session.add(user)
             await session.commit()
             return True

@@ -1,3 +1,4 @@
+from builtins import bool
 from datetime import datetime
 from enum import Enum
 import uuid
@@ -68,6 +69,7 @@ class User(Base):
     is_locked: Mapped[bool] = Column(Boolean, default=False)
     created_at: Mapped[datetime] = Column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    verification_token = Column(String, nullable=True)
 
     def __repr__(self) -> str:
         """Provides a readable representation of a user object."""

@@ -32,6 +32,8 @@ from app.database import Base, Database
 from app.models.user_model import User, UserRole
 from app.dependencies import get_db, get_settings
 from app.utils.security import hash_password
+from app.utils.template_manager import TemplateManager
+from app.services.email_service import EmailService
 
 fake = Faker()
 
@@ -40,6 +42,15 @@ TEST_DATABASE_URL = settings.database_url.replace("postgresql://", "postgresql+a
 engine = create_async_engine(TEST_DATABASE_URL, echo=settings.debug)
 AsyncTestingSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 AsyncSessionScoped = scoped_session(AsyncTestingSessionLocal)
+
+
+@pytest.fixture
+def email_service():
+    # Assuming the TemplateManager does not need any arguments for initialization
+    template_manager = TemplateManager()
+    email_service = EmailService(template_manager=template_manager)
+    return email_service
+
 
 # this is what creates the http client for your api tests
 @pytest.fixture(scope="function")

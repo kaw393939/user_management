@@ -18,18 +18,20 @@ Key Highlights:
 - Utilizes OAuth2PasswordBearer for securing API endpoints, requiring valid access tokens for operations.
 """
 
+from builtins import str
 from datetime import timedelta
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.dependencies import get_db
+from app.dependencies import get_db, get_email_service
 from app.schemas.pagination_schema import EnhancedPagination
 from app.schemas.user_schemas import LoginRequest, UserCreate, UserListResponse, UserResponse, UserUpdate
 from app.services.user_service import UserService
 from app.utils.common import create_access_token
 from app.utils.link_generation import create_user_links, generate_pagination_links
 from app.dependencies import get_settings
+from app.services.email_service import EmailService
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 settings = get_settings()
@@ -112,7 +114,7 @@ async def delete_user(user_id: UUID, db: AsyncSession = Depends(get_db), token: 
 
 
 @router.post("/users/", response_model=UserResponse, status_code=status.HTTP_201_CREATED, tags=["User Management"], name="create_user")
-async def create_user(user: UserCreate, request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+async def create_user(user: UserCreate, request: Request, db: AsyncSession = Depends(get_db), email_service: EmailService = Depends(get_email_service), token: str = Depends(oauth2_scheme)):
     """
     Create a new user.
 
@@ -132,7 +134,7 @@ async def create_user(user: UserCreate, request: Request, db: AsyncSession = Dep
     if existing_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists")
     
-    created_user = await UserService.create(db, user.model_dump())
+    created_user = await UserService.create(db, user.model_dump(),email_service)
     if not created_user:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create user")
     
@@ -182,8 +184,8 @@ async def list_users(request: Request, skip: int = 0, limit: int = 10, db: Async
 
 
 @router.post("/register/", response_model=UserResponse)
-async def register(user_data: UserCreate, session: AsyncSession = Depends(get_db)):
-    user = await UserService.register_user(session, user_data.dict())
+async def register(user_data: UserCreate, session: AsyncSession = Depends(get_db), email_service: EmailService = Depends(get_email_service)):
+    user = await UserService.register_user(session, user_data.dict(), get_email_service)
     if user:
         return user
     raise HTTPException(status_code=400, detail="Username already exists")
@@ -206,3 +208,15 @@ async def login(login_request: LoginRequest, session: AsyncSession = Depends(get
 
         return {"access_token": access_token, "token_type": "bearer"}
     raise HTTPException(status_code=401, detail="Incorrect username or password.")
+
+@router.get("/verify-email/{user_id}/{token}", status_code=status.HTTP_200_OK, name="verify_email", tags=["User Management"])
+async def verify_email(user_id: UUID, token: str, db: AsyncSession = Depends(get_db), email_service: EmailService = Depends(get_email_service)):
+    """
+    Verify user's email with a provided token.
+    
+    - **user_id**: UUID of the user to verify.
+    - **token**: Verification token sent to the user's email.
+    """
+    if await UserService.verify_email_with_token(db, user_id, token):
+        return {"message": "Email verified successfully"}
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired verification token")

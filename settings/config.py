@@ -1,4 +1,4 @@
-from builtins import bool, str
+from builtins import bool, int, str
 from pathlib import Path
 from pydantic import  Field, AnyUrl, DirectoryPath
 from pydantic_settings import BaseSettings
@@ -33,6 +33,13 @@ class Settings(BaseSettings):
     discord_channel_id: int = Field(default=1234567890, description="Default Discord channel ID for the bot to interact", example=1234567890)
     #Open AI Key 
     openai_api_key: str = Field(default='NONE', description="Open AI Api Key")
+
+    # Email settings for Mailtrap
+    smtp_server: str = Field(default='smtp.mailtrap.io', description="SMTP server for sending emails")
+    smtp_port: int = Field(default=2525, description="SMTP port for sending emails")
+    smtp_username: str = Field(default='your-mailtrap-username', description="Username for SMTP server")
+    smtp_password: str = Field(default='your-mailtrap-password', description="Password for SMTP server")
+
 
     class Config:
         # If your .env file is not in the root directory, adjust the path accordingly.
