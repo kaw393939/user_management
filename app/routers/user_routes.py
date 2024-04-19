@@ -89,6 +89,8 @@ async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, 
         username=updated_user.username,
         email=updated_user.email,
         last_login_at=updated_user.last_login_at,
+        github_profile_url=updated_user.github_profile_url,
+        linkedin_profile_url=updated_user.linkedin_profile_url,
         created_at=updated_user.created_at,
         updated_at=updated_user.updated_at,
         links=create_user_links(updated_user.id, request)

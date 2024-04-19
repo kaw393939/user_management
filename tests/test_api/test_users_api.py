@@ -39,7 +39,7 @@ async def test_retrieve_user(async_client, user, token):
     assert response.json()["id"] == str(user.id)
 
 @pytest.mark.asyncio
-async def test_update_user(async_client, user, token):
+async def test_update_user_email(async_client, user, token):
     updated_data = {"email": f"updated_{user.id}@example.com"}
     headers = {"Authorization": f"Bearer {token}"}
     response = await async_client.put(f"/users/{user.id}", json=updated_data, headers=headers)
@@ -116,3 +116,18 @@ async def test_delete_user_does_not_exist(async_client, token):
     delete_response = await async_client.delete(f"/users/{non_existent_user_id}", headers=headers)
     assert delete_response.status_code == 404
 
+@pytest.mark.asyncio
+async def test_update_user_github(async_client, user, token):
+    updated_data = {"github_profile_url": "http://www.github.com/kaw393939"}
+    headers = {"Authorization": f"Bearer {token}"}
+    response = await async_client.put(f"/users/{user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["github_profile_url"] == updated_data["github_profile_url"]
+
+@pytest.mark.asyncio
+async def test_update_user_linkedin(async_client, user, token):
+    updated_data = {"linkedin_profile_url": "http://www.linkedin.com/kaw393939"}
+    headers = {"Authorization": f"Bearer {token}"}
+    response = await async_client.put(f"/users/{user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["linkedin_profile_url"] == updated_data["linkedin_profile_url"]

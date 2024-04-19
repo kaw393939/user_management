@@ -36,6 +36,7 @@ Data Serialization and Deserialization: Pydantic handles the secure conversion o
 Overall, the use of Pydantic models in this file contributes to building a secure, validated, and well-documented API for user-related operations in a FastAPI application. The combination of type annotations, regex-based validators, and inheritance promotes code reusability, maintainability, and adherence to security best practices.
 """
 # Import required libraries and modules
+from builtins import str
 from datetime import datetime, timezone  # Provides classes for manipulating dates and times in both simple and complex ways.
 from urllib.parse import urlparse  # Functions for breaking down and reconstructing URLs.
 from pydantic import BaseModel, EmailStr, Field, HttpUrl, validator  # Pydantic is used for data validation and settings management using Python type annotations.
@@ -166,10 +167,22 @@ class UserUpdate(BaseModel):
         description="An updated biography or description of the user.",
         example="I am a senior software engineer specializing in backend development with Python and Node.js."
     )
-    profile_picture_url: Optional[HttpUrl] = Field(
+    profile_picture_url: Optional[str] = Field(
         None,
         description="An updated URL to the user's profile picture.",
         example="https://example.com/profile_pictures/john_doe_updated.jpg"
+    )
+
+    github_profile_url: Optional[str] = Field(
+        None,
+        description="An updated URL to the user's linkedin profile url",
+        example="https://linkedin.com/kaw393939"
+    )
+
+    linkedin_profile_url: Optional[str] = Field(
+        None,
+        description="An updated URL to the user's linkedin profile url",
+        example="https://linkedin.com/kaw393939"
     )
 
     @validator('profile_picture_url', pre=True, always=True)
@@ -208,6 +221,16 @@ class UserResponse(UserBase):
         None,
         description="The timestamp of the user's last successful login, timezone-aware.",
         example="2023-04-09T14:30:00+00:00"
+    )
+    github_profile_url: Optional[str] = Field(
+        None,
+        description="An updated URL to the user's github profile url",
+        example="https://github.com/kaw393939"
+    )
+    linkedin_profile_url: Optional[str] = Field(
+        None,
+        description="An updated URL to the user's linkedin profile url",
+        example="https://linkedin/kaw393939"
     )
     created_at: datetime = Field(
         ...,
