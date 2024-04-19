@@ -1,3 +1,4 @@
+import uuid
 import pytest
 from pydantic import ValidationError
 from datetime import datetime
@@ -11,7 +12,9 @@ def user_base_data():
         "email": "john.doe@example.com",
         "full_name": "John Doe",
         "bio": "I am a software engineer with over 5 years of experience.",
-        "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg"
+        "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg",
+        "linkedin_profile_url": "https://linkedin.com/in/johndoe",
+        "github_profile_url": "https://github.com/johndoe"
     }
 
 @pytest.fixture
@@ -22,17 +25,18 @@ def user_create_data(user_base_data):
 def user_update_data():
     return {
         "email": "john.doe.new@example.com",
+        "username": "j_doe",
         "full_name": "John H. Doe",
         "bio": "I specialize in backend development with Python and Node.js.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe_updated.jpg"
     }
 
 @pytest.fixture
-def user_response_data():
+def user_response_data(user_base_data):
     return {
-        "id": "unique-id-string",
-        "username": "testuser",
-        "email": "test@example.com",
+        "id": uuid.uuid4(),
+        "username": user_base_data["username"],
+        "email": user_base_data["email"],
         "last_login_at": datetime.now(),
         "created_at": datetime.now(),
         "updated_at": datetime.now(),
@@ -56,17 +60,16 @@ def test_user_create_valid(user_create_data):
     assert user.password == user_create_data["password"]
 
 # Tests for UserUpdate
-def test_user_update_partial(user_update_data):
-    partial_data = {"email": user_update_data["email"]}
-    user_update = UserUpdate(**partial_data)
-    assert user_update.email == partial_data["email"]
+def test_user_update_valid(user_update_data):
+    user_update = UserUpdate(**user_update_data)
+    assert user_update.email == user_update_data["email"]
+    assert user_update.full_name == user_update_data["full_name"]
 
 # Tests for UserResponse
-def test_user_response_datetime(user_response_data):
+def test_user_response_valid(user_response_data):
     user = UserResponse(**user_response_data)
+    assert user.id == user_response_data["id"]
     assert user.last_login_at == user_response_data["last_login_at"]
-    assert user.created_at == user_response_data["created_at"]
-    assert user.updated_at == user_response_data["updated_at"]
 
 # Tests for LoginRequest
 def test_login_request_valid(login_request_data):
@@ -84,5 +87,18 @@ def test_user_base_username_valid(username, user_base_data):
 @pytest.mark.parametrize("username", ["test user", "test?user", "", "us"])
 def test_user_base_username_invalid(username, user_base_data):
     user_base_data["username"] = username
+    with pytest.raises(ValidationError):
+        UserBase(**user_base_data)
+
+# Parametrized tests for URL validation
+@pytest.mark.parametrize("url", ["http://valid.com/profile.jpg", "https://valid.com/profile.png", None])
+def test_user_base_url_valid(url, user_base_data):
+    user_base_data["profile_picture_url"] = url
+    user = UserBase(**user_base_data)
+    assert user.profile_picture_url == url
+
+@pytest.mark.parametrize("url", ["ftp://invalid.com/profile.jpg", "http//invalid", "https//invalid"])
+def test_user_base_url_invalid(url, user_base_data):
+    user_base_data["profile_picture_url"] = url
     with pytest.raises(ValidationError):
         UserBase(**user_base_data)

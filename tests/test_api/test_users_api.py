@@ -1,6 +1,5 @@
 import pytest
 from httpx import AsyncClient
-from app.database import get_async_db
 from app.main import app
 from app.models.user_model import User
 from app.utils.security import hash_password  # Import your FastAPI app

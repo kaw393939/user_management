@@ -128,3 +128,25 @@ async def test_user_github_url_update(db_session: AsyncSession, user: User):
     await db_session.commit()
     await db_session.refresh(user)
     assert user.github_profile_url == profile_github_url, "The github did not update"
+
+    
+@pytest.mark.asyncio
+async def test_default_role_assignment(db_session: AsyncSession):
+    """
+    Tests that a user without a specified role defaults to 'anonymous' or the expected default role.
+    """
+    user = User(username="newuser", email="newuser@example.com", hashed_password="hashed_password")
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    assert user.role == UserRole.ANONYMOUS, "Default role should be 'anonymous' if not specified"
+
+@pytest.mark.asyncio
+async def test_update_user_role(db_session: AsyncSession, user: User):
+    """
+    Tests updating the user's role and ensuring it persists correctly.
+    """
+    user.role = UserRole.ADMIN
+    await db_session.commit()
+    await db_session.refresh(user)
+    assert user.role == UserRole.ADMIN, "Role update should persist correctly in the database"

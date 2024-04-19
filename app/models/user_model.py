@@ -1,12 +1,11 @@
-from builtins import bool, int, str
 from datetime import datetime
 from enum import Enum
+import uuid
 from sqlalchemy import (
     Column, String, Integer, DateTime, Boolean, func, Enum as SQLAlchemyEnum
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ENUM
 from sqlalchemy.orm import Mapped, mapped_column
-import uuid
 from app.database import Base
 
 class UserRole(Enum):
@@ -30,6 +29,8 @@ class User(Base):
         full_name (str): Optional full name of the user.
         bio (str): Optional biographical information.
         profile_picture_url (str): Optional URL to a profile picture.
+        linkedin_profile_url (str): Optional LinkedIn profile URL.
+        github_profile_url (str): Optional GitHub profile URL.
         role (UserRole): Role of the user within the application.
         is_professional (bool): Flag indicating professional status.
         professional_status_updated_at (datetime): Timestamp of last professional status update.
@@ -59,7 +60,7 @@ class User(Base):
     profile_picture_url: Mapped[str] = Column(String(255), nullable=True)
     linkedin_profile_url: Mapped[str] = Column(String(255), nullable=True)
     github_profile_url: Mapped[str] = Column(String(255), nullable=True)
-    role: Mapped[UserRole] = Column(SQLAlchemyEnum(UserRole), default=UserRole.ANONYMOUS, nullable=False)
+    role: Mapped[UserRole] = Column(SQLAlchemyEnum(UserRole, name='UserRole', create_constraint=False, metadata=Base.metadata), default=UserRole.ANONYMOUS, nullable=False)
     is_professional: Mapped[bool] = Column(Boolean, default=False)
     professional_status_updated_at: Mapped[datetime] = Column(DateTime(timezone=True), nullable=True)
     last_login_at: Mapped[datetime] = Column(DateTime(timezone=True), nullable=True)
