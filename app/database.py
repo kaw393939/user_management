@@ -19,48 +19,43 @@ and the importance of managing database sessions properly to avoid resource leak
 efficiency and reliability.
 """
 
+from builtins import Exception, bool, classmethod, str
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 # Base class for declarative model definition. All models will inherit from this class.
 Base = declarative_base()
 
-# Initialize these variables in your application startup routine.
-# `async_engine` will hold the connection pool to the database, and
-# `AsyncSessionLocal` will be a factory for creating new sessions.
-async_engine = None
-AsyncSessionLocal = None
+class Database:
+    """Encapsulate database engine and sessionmaker to avoid global state."""
+    engine = None
+    session_factory = None
 
-def initialize_async_db(database_url: str):
-    """
-    Initializes the asynchronous database engine and sessionmaker.
-
-    :param database_url: The database URL to connect to, as a string.
-    """
-    global async_engine, AsyncSessionLocal
-    # Create an async engine. This is the starting point for any SQLAlchemy application.
-    # The `echo=True` flag is useful for debugging by showing the generated SQL queries.
-    # The `future=True` flag is to enable future SQLAlchemy features.
-    async_engine = create_async_engine(database_url, echo=True, future=True)
-    
-    # Create a sessionmaker, configured to use the async engine, for generating new database sessions.
-    # The `class_=AsyncSession` parameter tells sessionmaker to use SQLAlchemy's async session class.
-    # `expire_on_commit=False` prevents attributes from being expired after commit.
-    AsyncSessionLocal = sessionmaker(
-        bind=async_engine, class_=AsyncSession, expire_on_commit=False, future=True
-    )
+    @classmethod
+    def initialize(cls, database_url: str, echo: bool = False):
+        """
+        Initializes the asynchronous database engine and sessionmaker.
+        
+        :param database_url: The database URL to connect to.
+        :param echo: Enable SQL query logging.
+        """
+        cls.engine = create_async_engine(database_url, echo=echo, future=True)
+        cls.session_factory = sessionmaker(
+            bind=cls.engine, class_=AsyncSession, expire_on_commit=False, future=True
+        )
 
 async def get_async_db():
     """
     An asynchronous generator function to yield a database session and ensure it gets closed properly.
-
+    
     This function should be used as a dependency in FastAPI route handlers to provide a session for each request.
     """
-    # Use async with statement to automatically manage session lifecycle.
-    async with AsyncSessionLocal() as async_session:
+    async with Database.session_factory() as async_session:
         try:
-            # Yield the session to the request handler.
             yield async_session
+        except Exception as e:
+            # Optionally add more specific database exception handling here
+            raise HTTPException(status_code=500, detail=str(e))
         finally:
-            # Ensure the session is closed when the request handler is complete.
             await async_session.close()

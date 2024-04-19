@@ -1,3 +1,4 @@
+from builtins import bool, str
 from pathlib import Path
 from pydantic import  Field, AnyUrl, DirectoryPath
 from pydantic_settings import BaseSettings
@@ -16,7 +17,8 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = Field(default=30, description="Expiration time for access tokens in minutes")
     admin_user: str = Field(default='admin', description="Default admin username")
     admin_password: str = Field(default='secret', description="Default admin password")
-    
+    debug: bool = Field(default=False, description="Debug mode outputs errors and sqlalchemy queries")
+
     # Database configuration
     database_url: str = Field(default='postgresql+asyncpg://user:password@postgres/myappdb', description="URL for connecting to the database")
 

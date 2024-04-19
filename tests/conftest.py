@@ -28,7 +28,7 @@ from faker import Faker
 
 # Application-specific imports
 from app.main import app
-from app.database import Base, get_async_db, initialize_async_db
+from app.database import Base, get_async_db, Database
 from app.models.user_model import User, UserRole
 from app.dependencies import get_db, get_settings
 from app.utils.security import hash_password
@@ -37,7 +37,7 @@ fake = Faker()
 
 settings = get_settings()
 TEST_DATABASE_URL = settings.database_url.replace("postgresql://", "postgresql+asyncpg://")
-engine = create_async_engine(TEST_DATABASE_URL, echo=True)
+engine = create_async_engine(TEST_DATABASE_URL, echo=settings.debug)
 AsyncTestingSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 AsyncSessionScoped = scoped_session(AsyncTestingSessionLocal)
 
@@ -66,7 +66,7 @@ async def token():
 @pytest.fixture(scope="session", autouse=True)
 def initialize_database():
     try:
-        initialize_async_db(settings.database_url)
+        Database.initialize(settings.database_url)
     except Exception as e:
         pytest.fail(f"Failed to initialize the database: {str(e)}")
 
@@ -78,7 +78,7 @@ async def setup_database():
     yield
     async with engine.begin() as conn:
         # you can comment out this line during development if you are debugging a single test
-        await conn.run_sync(Base.metadata.drop_all)
+         await conn.run_sync(Base.metadata.drop_all)
     await engine.dispose()
 
 @pytest.fixture(scope="function")
