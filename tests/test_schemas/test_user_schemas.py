@@ -11,6 +11,7 @@ def user_base_data():
         "username": "john_doe_123",
         "email": "john.doe@example.com",
         "full_name": "John Doe",
+        "role": "AUTHENTICATED",
         "bio": "I am a software engineer with over 5 years of experience.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg",
         "linkedin_profile_url": "https://linkedin.com/in/johndoe",
@@ -36,6 +37,7 @@ def user_response_data(user_base_data):
     return {
         "id": uuid.uuid4(),
         "username": user_base_data["username"],
+        "role": user_base_data["role"],
         "email": user_base_data["email"],
         "last_login_at": datetime.now(),
         "created_at": datetime.now(),

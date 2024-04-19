@@ -1,4 +1,4 @@
-from builtins import bool
+from builtins import bool, int, str
 from datetime import datetime
 from enum import Enum
 import uuid

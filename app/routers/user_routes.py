@@ -18,13 +18,13 @@ Key Highlights:
 - Utilizes OAuth2PasswordBearer for securing API endpoints, requiring valid access tokens for operations.
 """
 
-from builtins import str
+from builtins import dict, int, len, str
 from datetime import timedelta
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.dependencies import get_db, get_email_service
+from app.dependencies import get_db, get_email_service, require_role
 from app.schemas.pagination_schema import EnhancedPagination
 from app.schemas.user_schemas import LoginRequest, UserCreate, UserListResponse, UserResponse, UserUpdate
 from app.services.user_service import UserService
@@ -153,34 +153,31 @@ async def create_user(user: UserCreate, request: Request, db: AsyncSession = Dep
     )
 
 
-@router.get("/users/", response_model=UserListResponse, name="list_users", tags=["User Management"])
-async def list_users(request: Request, skip: int = 0, limit: int = 10, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+@router.get("/users/", response_model=UserListResponse, tags=["User Management"])
+async def list_users(
+    request: Request,
+    skip: int = 0,
+    limit: int = 10,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))
+):
     total_users = await UserService.count(db)
-    users = await UserService.list_users(db, skip=skip, limit=limit)
+    users = await UserService.list_users(db, skip, limit)
 
-    user_responses = [UserResponse.model_construct(
-        id=user.id,
-        bio=user.bio,
-        full_name=user.full_name,
-        profile_picture_url=user.profile_picture_url,
-        username=user.username,
-        email=user.email,
-        last_login_at=user.last_login_at,
-        created_at=user.created_at,
-        updated_at=user.updated_at,
-        links=create_user_links(user.id, request)
-    ) for user in users]
-
+    user_responses = [
+        UserResponse.model_validate(user) for user in users
+    ]
+    
     pagination_links = generate_pagination_links(request, skip, limit, total_users)
-    pagination = EnhancedPagination(
+    
+    # Construct the final response with pagination details
+    return UserListResponse(
+        items=user_responses,
+        total=total_users,
         page=skip // limit + 1,
-        per_page=limit,
-        total_items=total_users,
-        total_pages=(total_users + limit - 1) // limit,
-        links=pagination_links
+        size=len(user_responses),
+        links=pagination_links  # Ensure you have appropriate logic to create these links
     )
-
-    return UserListResponse(items=user_responses, pagination=pagination)
 
 
 @router.post("/register/", response_model=UserResponse)

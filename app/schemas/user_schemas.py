@@ -58,6 +58,7 @@ class UserResponse(UserBase):
     id: uuid.UUID
     created_at: datetime
     updated_at: datetime
+    role: str
 
 class LoginRequest(BaseModel):
     username: str

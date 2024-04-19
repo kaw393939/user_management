@@ -15,6 +15,7 @@ Fixtures:
 
 # Standard library imports
 from builtins import Exception, range, str
+from datetime import timedelta
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -34,6 +35,7 @@ from app.dependencies import get_db, get_settings
 from app.utils.security import hash_password
 from app.utils.template_manager import TemplateManager
 from app.services.email_service import EmailService
+from app.services.jwt_service import create_access_token
 
 fake = Faker()
 
@@ -193,3 +195,20 @@ async def manager_user(db_session: AsyncSession):
     db_session.add(user)
     await db_session.commit()
     return user
+
+# Configure a fixture for each type of user role you want to test
+@pytest.fixture(scope="function")
+def admin_token(admin_user):
+    # Assuming admin_user has an 'id' and 'role' attribute
+    token_data = {"sub": str(admin_user.id), "role": admin_user.role.name}
+    return create_access_token(data=token_data, expires_delta=timedelta(minutes=30))
+
+@pytest.fixture(scope="function")
+def manager_token(manager_user):
+    token_data = {"sub": str(manager_user.id), "role": manager_user.role.name}
+    return create_access_token(data=token_data, expires_delta=timedelta(minutes=30))
+
+@pytest.fixture(scope="function")
+def user_token(user):
+    token_data = {"sub": str(user.id), "role": user.role.name}
+    return create_access_token(data=token_data, expires_delta=timedelta(minutes=30))
