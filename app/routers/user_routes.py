@@ -23,7 +23,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.dependencies import get_async_db
+from app.dependencies import get_db
 from app.schemas.pagination_schema import EnhancedPagination
 from app.schemas.user_schemas import LoginRequest, UserCreate, UserListResponse, UserResponse, UserUpdate
 from app.services.user_service import UserService
@@ -34,7 +34,7 @@ router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 settings = get_settings()
 @router.get("/users/{user_id}", response_model=UserResponse, name="get_user", tags=["User Management"])
-async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(get_async_db), token: str = Depends(oauth2_scheme)):
+async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
     """
     Endpoint to fetch a user by their unique identifier (UUID).
 
@@ -69,7 +69,7 @@ async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(g
 # experience by adhering to REST principles and providing self-discoverable operations.
 
 @router.put("/users/{user_id}", response_model=UserResponse, name="update_user", tags=["User Management"])
-async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, db: AsyncSession = Depends(get_async_db), token: str = Depends(oauth2_scheme)):
+async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
     """
     Update user information.
 
@@ -98,7 +98,7 @@ async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, 
 
 
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT, name="delete_user", tags=["User Management"])
-async def delete_user(user_id: UUID, db: AsyncSession = Depends(get_async_db), token: str = Depends(oauth2_scheme)):
+async def delete_user(user_id: UUID, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
     """
     Delete a user by their ID.
 
@@ -112,7 +112,7 @@ async def delete_user(user_id: UUID, db: AsyncSession = Depends(get_async_db), t
 
 
 @router.post("/users/", response_model=UserResponse, status_code=status.HTTP_201_CREATED, tags=["User Management"], name="create_user")
-async def create_user(user: UserCreate, request: Request, db: AsyncSession = Depends(get_async_db), token: str = Depends(oauth2_scheme)):
+async def create_user(user: UserCreate, request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
     """
     Create a new user.
 
@@ -152,7 +152,7 @@ async def create_user(user: UserCreate, request: Request, db: AsyncSession = Dep
 
 
 @router.get("/users/", response_model=UserListResponse, name="list_users", tags=["User Management"])
-async def list_users(request: Request, skip: int = 0, limit: int = 10, db: AsyncSession = Depends(get_async_db), token: str = Depends(oauth2_scheme)):
+async def list_users(request: Request, skip: int = 0, limit: int = 10, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
     total_users = await UserService.count(db)
     users = await UserService.list_users(db, skip=skip, limit=limit)
 
@@ -182,14 +182,14 @@ async def list_users(request: Request, skip: int = 0, limit: int = 10, db: Async
 
 
 @router.post("/register/", response_model=UserResponse)
-async def register(user_data: UserCreate, session: AsyncSession = Depends(get_async_db)):
+async def register(user_data: UserCreate, session: AsyncSession = Depends(get_db)):
     user = await UserService.register_user(session, user_data.dict())
     if user:
         return user
     raise HTTPException(status_code=400, detail="Username already exists")
 
 @router.post("/login/")
-async def login(login_request: LoginRequest, session: AsyncSession = Depends(get_async_db)):
+async def login(login_request: LoginRequest, session: AsyncSession = Depends(get_db)):
     if await UserService.is_account_locked(session, login_request.username):
         raise HTTPException(status_code=400, detail="Account locked due to too many failed login attempts.")
 

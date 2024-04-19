@@ -28,7 +28,7 @@ from faker import Faker
 
 # Application-specific imports
 from app.main import app
-from app.database import Base, get_async_db, Database
+from app.database import Base, Database
 from app.models.user_model import User, UserRole
 from app.dependencies import get_db, get_settings
 from app.utils.security import hash_password
@@ -45,7 +45,7 @@ AsyncSessionScoped = scoped_session(AsyncTestingSessionLocal)
 @pytest.fixture(scope="function")
 async def async_client(db_session):
     async with AsyncClient(app=app, base_url="http://testserver") as client:
-        app.dependency_overrides[get_async_db] = lambda: db_session
+        app.dependency_overrides[get_db] = lambda: db_session
         try:
             yield client
         finally:
