@@ -11,10 +11,10 @@ from app.database import Base
 
 class UserRole(Enum):
     """Enumeration of user roles within the application, stored as ENUM in the database."""
-    ANONYMOUS = "anonymous"
-    AUTHENTICATED = "authenticated"
-    MANAGER = "manager"
-    ADMIN = "admin"
+    ANONYMOUS = "ANONYMOUS"
+    AUTHENTICATED = "AUTHENTICATED"
+    MANAGER = "MANAGER"
+    ADMIN = "ADMIN"
 
 class User(Base):
     """
@@ -61,7 +61,7 @@ class User(Base):
     profile_picture_url: Mapped[str] = Column(String(255), nullable=True)
     linkedin_profile_url: Mapped[str] = Column(String(255), nullable=True)
     github_profile_url: Mapped[str] = Column(String(255), nullable=True)
-    role: Mapped[UserRole] = Column(SQLAlchemyEnum(UserRole, name='UserRole', create_constraint=False, metadata=Base.metadata), default=UserRole.ANONYMOUS, nullable=False)
+    role: Mapped[UserRole] = Column(SQLAlchemyEnum(UserRole, name='UserRole', create_constraint=False), default=UserRole.ANONYMOUS, nullable=False)
     is_professional: Mapped[bool] = Column(Boolean, default=False)
     professional_status_updated_at: Mapped[datetime] = Column(DateTime(timezone=True), nullable=True)
     last_login_at: Mapped[datetime] = Column(DateTime(timezone=True), nullable=True)

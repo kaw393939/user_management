@@ -2,7 +2,8 @@ import pytest
 from httpx import AsyncClient
 from app.main import app
 from app.models.user_model import User
-from app.utils.security import hash_password  # Import your FastAPI app
+from app.utils.security import hash_password
+from app.services.jwt_service import decode_token  # Import your FastAPI app
 
 # Example of a test function using the async_client fixture
 @pytest.mark.asyncio
@@ -18,7 +19,6 @@ async def test_create_user(async_client):
 
     # Define user data for the test
     user_data = {
-        "username": "testuser",
         "email": "test@example.com",
         "password": "sS#fdasrongPassword123!",
     }
@@ -31,47 +31,50 @@ async def test_create_user(async_client):
 
 # You can similarly refactor other test functions to use the async_client fixture
 @pytest.mark.asyncio
-async def test_retrieve_user(async_client, user, token):
+async def test_retrieve_user(async_client, verified_user, token):
     headers = {"Authorization": f"Bearer {token}"}
-    response = await async_client.get(f"/users/{user.id}", headers=headers)
+    response = await async_client.get(f"/users/{verified_user.id}", headers=headers)
     assert response.status_code == 200
-    assert response.json()["id"] == str(user.id)
+    assert response.json()["id"] == str(verified_user.id)
 
 @pytest.mark.asyncio
-async def test_update_user_email(async_client, user, token):
-    updated_data = {"email": f"updated_{user.id}@example.com"}
+async def test_update_user_email(async_client, verified_user, token):
+    updated_data = {"email": f"updated_{verified_user.id}@example.com"}
     headers = {"Authorization": f"Bearer {token}"}
-    response = await async_client.put(f"/users/{user.id}", json=updated_data, headers=headers)
+    response = await async_client.put(f"/users/{verified_user.id}", json=updated_data, headers=headers)
     assert response.status_code == 200
     assert response.json()["email"] == updated_data["email"]
 
 @pytest.mark.asyncio
-async def test_delete_user(async_client, user, token):
+async def test_delete_user(async_client, verified_user, token):
     headers = {"Authorization": f"Bearer {token}"}
-    delete_response = await async_client.delete(f"/users/{user.id}", headers=headers)
+    delete_response = await async_client.delete(f"/users/{verified_user.id}", headers=headers)
     assert delete_response.status_code == 204
     # Verify the user is deleted
-    fetch_response = await async_client.get(f"/users/{user.id}", headers=headers)
+    fetch_response = await async_client.get(f"/users/{verified_user.id}", headers=headers)
     assert fetch_response.status_code == 404
 
 
 @pytest.mark.asyncio
-async def test_login_success(async_client, user):
-    # Set up the test client for FastAPI application
-
+async def test_login_success(async_client, verified_user):
     # Attempt to login with the test user
-    response = await async_client.post("/login/", json={"username": user.username, "password": "MySuperPassword$1234"})
+    response = await async_client.post("/login/", json={"email": verified_user.email, "password": "MySuperPassword$1234"})
     
     # Check for successful login response
     assert response.status_code == 200
-    assert "access_token" in response.json()
-    assert response.json()["token_type"] == "bearer"
+    data = response.json()
+    assert "access_token" in data
+    assert data["token_type"] == "bearer"
+    
+    # Use the decode_token method from jwt_service to decode the JWT
+    decoded_token = decode_token(data["access_token"])
+    assert decoded_token is not None, "Failed to decode token"
+    assert decoded_token["role"] == "AUTHENTICATED", "The user role should be AUTHENTICATED"
 
 @pytest.mark.asyncio
-async def test_create_user_duplicate_username(async_client, user):
+async def test_create_user_duplicate_email(async_client, verified_user):
     user_data = {
-        "username": user.username,
-        "email": "unique@example.com",
+        "email": verified_user.email,
         "password": "AnotherPassword123!",
     }
     response = await async_client.post("/register/", json=user_data)
@@ -81,7 +84,6 @@ async def test_create_user_duplicate_username(async_client, user):
 @pytest.mark.asyncio
 async def test_create_user_invalid_email(async_client):
     user_data = {
-        "username": "uniqueuser",
         "email": "notanemail",
         "password": "ValidPassword123!",
     }
@@ -91,22 +93,22 @@ async def test_create_user_invalid_email(async_client):
 @pytest.mark.asyncio
 async def test_login_user_not_found(async_client):
     login_data = {
-        "username": "nonexistentuser",
+        "email": "nonexistentuser@here.edu",
         "password": "DoesNotMatter123!"
     }
     response = await async_client.post("/login/", json=login_data)
     assert response.status_code == 401
-    assert "Incorrect username or password" in response.json().get("detail", "")
+    assert "Incorrect email or password" in response.json().get("detail", "")
 
 @pytest.mark.asyncio
-async def test_login_incorrect_password(async_client, user):
+async def test_login_incorrect_password(async_client, verified_user):
     login_data = {
-        "username": user.username,
+        "email": verified_user.email,
         "password": "IncorrectPassword123!"
     }
     response = await async_client.post("/login/", json=login_data)
     assert response.status_code == 401
-    assert "Incorrect username or password" in response.json().get("detail", "")
+    assert "Incorrect email or password" in response.json().get("detail", "")
 
 @pytest.mark.asyncio
 async def test_delete_user_does_not_exist(async_client, token):
@@ -116,18 +118,18 @@ async def test_delete_user_does_not_exist(async_client, token):
     assert delete_response.status_code == 404
 
 @pytest.mark.asyncio
-async def test_update_user_github(async_client, user, token):
+async def test_update_user_github(async_client, verified_user, user_token):
     updated_data = {"github_profile_url": "http://www.github.com/kaw393939"}
-    headers = {"Authorization": f"Bearer {token}"}
-    response = await async_client.put(f"/users/{user.id}", json=updated_data, headers=headers)
+    headers = {"Authorization": f"Bearer {user_token}"}
+    response = await async_client.put(f"/users/{verified_user.id}", json=updated_data, headers=headers)
     assert response.status_code == 200
     assert response.json()["github_profile_url"] == updated_data["github_profile_url"]
 
 @pytest.mark.asyncio
-async def test_update_user_linkedin(async_client, user, token):
+async def test_update_user_linkedin(async_client, verified_user, user_token):
     updated_data = {"linkedin_profile_url": "http://www.linkedin.com/kaw393939"}
-    headers = {"Authorization": f"Bearer {token}"}
-    response = await async_client.put(f"/users/{user.id}", json=updated_data, headers=headers)
+    headers = {"Authorization": f"Bearer {user_token}"}
+    response = await async_client.put(f"/users/{verified_user.id}", json=updated_data, headers=headers)
     assert response.status_code == 200
     assert response.json()["linkedin_profile_url"] == updated_data["linkedin_profile_url"]
 
