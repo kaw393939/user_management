@@ -64,18 +64,6 @@ async def async_client(db_session):
         finally:
             app.dependency_overrides.clear()
 
-#this fixure tests the admin login for tokens
-@pytest.fixture(scope="function")
-async def token():
-    form_data = {
-        "username": "admin",
-        "password": "secret",
-    }
-    async with AsyncClient(app=app, base_url="http://testserver") as ac:
-        response = await ac.post("/token", data=form_data)
-        assert response.status_code == 200  # Ensure the request was successful
-        return response.json()["access_token"]
-
 @pytest.fixture(scope="session", autouse=True)
 def initialize_database():
     try:
@@ -106,7 +94,9 @@ async def db_session(setup_database):
 async def locked_user(db_session):
     unique_email = fake.email()
     user_data = {
-        "username": fake.user_name(),
+        "nickname": fake.user_name(),
+        "first_name": fake.first_name(),
+        "last_name": fake.last_name(),
         "email": unique_email,
         "hashed_password": hash_password("MySuperPassword$1234"),
         "role": UserRole.AUTHENTICATED,
@@ -121,10 +111,11 @@ async def locked_user(db_session):
 
 @pytest.fixture(scope="function")
 async def user(db_session):
-    unique_email = fake.email()
     user_data = {
-        "username": fake.user_name(),
-        "email": unique_email,
+        "nickname": fake.user_name(),
+        "first_name": fake.first_name(),
+        "last_name": fake.last_name(),
+        "email": fake.email(),
         "hashed_password": hash_password("MySuperPassword$1234"),
         "role": UserRole.AUTHENTICATED,
         "email_verified": False,
@@ -137,10 +128,11 @@ async def user(db_session):
 
 @pytest.fixture(scope="function")
 async def verified_user(db_session):
-    unique_email = fake.email()
     user_data = {
-        "username": fake.user_name(),
-        "email": unique_email,
+        "nickname": fake.user_name(),
+        "first_name": fake.first_name(),
+        "last_name": fake.last_name(),
+        "email": fake.email(),
         "hashed_password": hash_password("MySuperPassword$1234"),
         "role": UserRole.AUTHENTICATED,
         "email_verified": True,
@@ -155,10 +147,11 @@ async def verified_user(db_session):
 async def users_with_same_role_50_users(db_session):
     users = []
     for _ in range(50):
-        unique_email = fake.email()
         user_data = {
-            "username": fake.user_name(),
-            "email": unique_email,
+            "nickname": fake.user_name(),
+            "first_name": fake.first_name(),
+            "last_name": fake.last_name(),
+            "email": fake.email(),
             "hashed_password": fake.password(),
             "role": UserRole.AUTHENTICATED,
             "email_verified": False,
@@ -173,8 +166,10 @@ async def users_with_same_role_50_users(db_session):
 @pytest.fixture
 async def admin_user(db_session: AsyncSession):
     user = User(
-        username="admin_user",
+        nickname="admin_user",
         email="admin@example.com",
+        first_name="John",
+        last_name="Doe",
         hashed_password="securepassword",
         role=UserRole.ADMIN,
         is_locked=False,
@@ -186,7 +181,9 @@ async def admin_user(db_session: AsyncSession):
 @pytest.fixture
 async def manager_user(db_session: AsyncSession):
     user = User(
-        username="manager_user",
+        nickname="manager_john",
+        first_name="John",
+        last_name="Doe",
         email="manager_user@example.com",
         hashed_password="securepassword",
         role=UserRole.MANAGER,

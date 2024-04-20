@@ -20,7 +20,7 @@ async def test_create_user_with_valid_data(db_session, email_service):
 # Test creating a user with invalid data
 async def test_create_user_with_invalid_data(db_session, email_service):
     user_data = {
-        "username": "",  # Invalid username
+        "nickname": "",  # Invalid nickname
         "email": "invalidemail",  # Invalid email
         "password": "short",  # Invalid password
     }
@@ -38,14 +38,14 @@ async def test_get_by_id_user_does_not_exist(db_session):
     retrieved_user = await UserService.get_by_id(db_session, non_existent_user_id)
     assert retrieved_user is None
 
-# Test fetching a user by username when the user exists
-async def test_get_by_username_user_exists(db_session, user):
-    retrieved_user = await UserService.get_by_username(db_session, user.username)
-    assert retrieved_user.username == user.username
+# Test fetching a user by nickname when the user exists
+async def test_get_by_nickname_user_exists(db_session, user):
+    retrieved_user = await UserService.get_by_nickname(db_session, user.nickname)
+    assert retrieved_user.nickname == user.nickname
 
-# Test fetching a user by username when the user does not exist
-async def test_get_by_username_user_does_not_exist(db_session):
-    retrieved_user = await UserService.get_by_username(db_session, "non_existent_username")
+# Test fetching a user by nickname when the user does not exist
+async def test_get_by_nickname_user_does_not_exist(db_session):
+    retrieved_user = await UserService.get_by_nickname(db_session, "non_existent_nickname")
     assert retrieved_user is None
 
 # Test fetching a user by email when the user exists
@@ -102,7 +102,6 @@ async def test_register_user_with_valid_data(db_session, email_service):
 # Test attempting to register a user with invalid data
 async def test_register_user_with_invalid_data(db_session, email_service):
     user_data = {
-        "username": "",  # Invalid username
         "email": "registerinvalidemail",  # Invalid email
         "password": "short",  # Invalid password
     }
@@ -118,9 +117,9 @@ async def test_login_user_successful(db_session, verified_user):
     logged_in_user = await UserService.login_user(db_session, user_data["email"], user_data["password"])
     assert logged_in_user is not None
 
-# Test user login with incorrect username
-async def test_login_user_incorrect_username(db_session):
-    user = await UserService.login_user(db_session, "nonexistentuser", "Password123!")
+# Test user login with incorrect email
+async def test_login_user_incorrect_email(db_session):
+    user = await UserService.login_user(db_session, "nonexistentuser@noway.com", "Password123!")
     assert user is None
 
 # Test user login with incorrect password

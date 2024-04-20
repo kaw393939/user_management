@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_email_service, get_settings
 from app.models.user_model import User
 from app.schemas.user_schemas import UserCreate, UserUpdate
+from app.utils.nickname_gen import generate_nickname
 from app.utils.security import generate_verification_token, hash_password, verify_password
 from uuid import UUID
 from app.services.email_service import EmailService
@@ -41,8 +42,8 @@ class UserService:
         return await cls._fetch_user(session, id=user_id)
 
     @classmethod
-    async def get_by_username(cls, session: AsyncSession, username: str) -> Optional[User]:
-        return await cls._fetch_user(session, username=username)
+    async def get_by_nickname(cls, session: AsyncSession, nickname: str) -> Optional[User]:
+        return await cls._fetch_user(session, nickname=nickname)
 
     @classmethod
     async def get_by_email(cls, session: AsyncSession, email: str) -> Optional[User]:
@@ -54,20 +55,19 @@ class UserService:
             validated_data = UserCreate(**user_data).model_dump()
             existing_user = await cls.get_by_email(session, validated_data['email'])
             if existing_user:
-                logger.error("User with given email or username already exists.")
+                logger.error("User with given email already exists.")
                 return None
             validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
             new_user = User(**validated_data)
             new_user.verification_token = generate_verification_token()
-            new_username = f"{new_user.email.split('@')[0]}_{secrets.token_hex(5)}"
-            while await cls.get_by_username(session, new_username):
-                new_username = f"{new_user.email.split('@')[0]}_{secrets.token_hex(5)}"
-            new_user.username = new_username
+            new_nickname = generate_nickname()
+            while await cls.get_by_nickname(session, new_nickname):
+                new_nickname = generate_nickname()
+            new_user.nickname = new_nickname
             session.add(new_user)
             await session.commit()
             await email_service.send_verification_email(new_user)
             
-
             return new_user
         except ValidationError as e:
             logger.error(f"Validation error during user creation: {e}")

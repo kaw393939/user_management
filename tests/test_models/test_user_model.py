@@ -28,7 +28,7 @@ async def test_user_repr(user: User):
     """
     Tests the __repr__ method for accurate representation of the User object.
     """
-    assert repr(user) == f"<User {user.username}, Role: {user.role.name}>", "__repr__ should include username and role"
+    assert repr(user) == f"<User {user.nickname}, Role: {user.role.name}>", "__repr__ should include nickname and role"
 
 @pytest.mark.asyncio
 async def test_failed_login_attempts_increment(db_session: AsyncSession, user: User):
@@ -135,7 +135,7 @@ async def test_default_role_assignment(db_session: AsyncSession):
     """
     Tests that a user without a specified role defaults to 'anonymous' or the expected default role.
     """
-    user = User(username="newuser", email="newuser@example.com", hashed_password="hashed_password")
+    user = User(nickname="noob", email="newuser@example.com", hashed_password="hashed_password")
     db_session.add(user)
     await db_session.commit()
     await db_session.refresh(user)

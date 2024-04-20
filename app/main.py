@@ -1,9 +1,9 @@
-from fastapi import FastAPI, Depends
+from builtins import Exception
+from fastapi import FastAPI
 from starlette.responses import JSONResponse
 from app.database import Database
-from app.dependencies import get_settings, get_db
-from app.routers import oauth, user_routes
-import logging
+from app.dependencies import get_settings
+from app.routers import user_routes
 
 app = FastAPI(
     title="Event Management",
@@ -26,5 +26,6 @@ async def startup_event():
 async def exception_handler(request, exc):
     return JSONResponse(status_code=500, content={"message": "An unexpected error occurred."})
 
-app.include_router(oauth.router)
 app.include_router(user_routes.router)
+
+
