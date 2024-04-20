@@ -19,24 +19,6 @@ async def test_create_user_access_denied(async_client, user_token):
     # Asserts
     assert response.status_code == 403
 
-# Example of a test function using the async_client fixture
-@pytest.mark.asyncio
-async def test_create_user_access_denied(async_client, user_token):
-    headers = {"Authorization": f"Bearer {user_token}"}
-
-    # Define user data for the test
-    user_data = {
-        "email": "test@example.com",
-        "password": "sS#fdasrongPassword123!",
-    }
-
-    # Send a POST request to create a user
-    response = await async_client.post("/users/", json=user_data, headers=headers)
-
-    # Asserts
-    assert response.status_code == 201
-
-
 # You can similarly refactor other test functions to use the async_client fixture
 @pytest.mark.asyncio
 async def test_retrieve_user(async_client, verified_user, user_token):
