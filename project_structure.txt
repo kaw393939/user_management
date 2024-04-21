@@ -1,0 +1,167 @@
+.
+├── Dockerfile
+├── __pycache__
+│   ├── database.cpython-310.pyc
+│   ├── database.cpython-312.pyc
+│   ├── factory.cpython-310.pyc
+│   └── main.cpython-310.pyc
+├── alembic
+│   ├── README
+│   ├── __pycache__
+│   │   ├── env.cpython-310.pyc
+│   │   └── env.cpython-312.pyc
+│   ├── env.py
+│   ├── script.py.mako
+│   └── versions
+│       ├── 7e8c0f36de08_first_migration.py
+│       └── __pycache__
+├── alembic.ini
+├── app
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── __init__.cpython-310.pyc
+│   │   ├── __init__.cpython-312.pyc
+│   │   ├── config.cpython-310.pyc
+│   │   ├── config.cpython-312.pyc
+│   │   ├── database.cpython-310.pyc
+│   │   ├── database.cpython-312.pyc
+│   │   ├── dependencies.cpython-310.pyc
+│   │   ├── dependencies.cpython-312.pyc
+│   │   ├── event_factory.cpython-310.pyc
+│   │   ├── main.cpython-310.pyc
+│   │   ├── main.cpython-312.pyc
+│   │   ├── models.cpython-310.pyc
+│   │   ├── models.cpython-312.pyc
+│   │   ├── schema.cpython-310.pyc
+│   │   ├── schema.cpython-312.pyc
+│   │   ├── schemas.cpython-310.pyc
+│   │   ├── schemas.cpython-312.pyc
+│   │   ├── security.cpython-310.pyc
+│   │   └── security.cpython-312.pyc
+│   ├── database.py
+│   ├── dependencies.py
+│   ├── factories
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   └── event_factory.py
+│   ├── main.py
+│   ├── models
+│   │   ├── __pycache__
+│   │   └── models.py
+│   ├── routers
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   ├── events.py
+│   │   ├── oauth.py
+│   │   ├── qr_code.py
+│   │   └── users.py
+│   ├── schemas
+│   │   ├── __pycache__
+│   │   └── schemas.py
+│   ├── services
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   ├── event_service.py
+│   │   ├── qr_service.py
+│   │   └── user_service.py
+│   └── utils
+│       ├── __init__.py
+│       ├── __pycache__
+│       ├── common.py
+│       └── security.py
+├── docker-compose.yml
+├── logging.conf
+├── nginx
+│   └── nginx.conf
+├── project_structure.txt
+├── pytest.ini
+├── qr_codes
+│   └── aHR0cHM6Ly9leGFtcGxlLmNvbS9lNDk0MzgwYi1lZjlkLTQ1NDItYWM2NC01YzgwNzVkNGM1NTE.png
+├── readme.md
+├── requirements.txt
+├── settings
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── __init__.cpython-310.pyc
+│   │   ├── __init__.cpython-312.pyc
+│   │   ├── config.cpython-310.pyc
+│   │   └── config.cpython-312.pyc
+│   └── config.py
+├── start.sh
+├── test_db.sqlite
+├── tests
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── __init__.cpython-310.pyc
+│   │   ├── conftest.cpython-310-pytest-8.1.1.pyc
+│   │   └── start_test.cpython-310-pytest-8.1.1.pyc
+│   ├── conftest.py
+│   ├── test_api
+│   │   ├── __pycache__
+│   │   ├── test_events.py
+│   │   ├── test_oauth.py
+│   │   ├── test_qrcodes.py
+│   │   ├── test_user_roles.py
+│   │   └── test_users.py
+│   ├── test_models
+│   │   ├── __pycache__
+│   │   └── test_models.py
+│   └── test_services
+│       ├── __pycache__
+│       ├── test_event_service.py
+│       ├── test_qr_service.py
+│       └── test_user_services.py
+└── venv
+    ├── bin
+    │   ├── Activate.ps1
+    │   ├── activate
+    │   ├── activate.csh
+    │   ├── activate.fish
+    │   ├── alembic
+    │   ├── coverage
+    │   ├── coverage-3.10
+    │   ├── coverage3
+    │   ├── dotenv
+    │   ├── email_validator
+    │   ├── faker
+    │   ├── gunicorn
+    │   ├── httpx
+    │   ├── mako-render
+    │   ├── pip
+    │   ├── pip3
+    │   ├── pip3.10
+    │   ├── prichunkpng
+    │   ├── pricolpng
+    │   ├── priditherpng
+    │   ├── priforgepng
+    │   ├── prigreypng
+    │   ├── pripalpng
+    │   ├── pripamtopng
+    │   ├── priplan9topng
+    │   ├── pripnglsch
+    │   ├── pripngtopam
+    │   ├── prirowpng
+    │   ├── priweavepng
+    │   ├── py.test
+    │   ├── pyrsa-decrypt
+    │   ├── pyrsa-encrypt
+    │   ├── pyrsa-keygen
+    │   ├── pyrsa-priv2pub
+    │   ├── pyrsa-sign
+    │   ├── pyrsa-verify
+    │   ├── pytest
+    │   ├── python -> /home/kwilliams/devops_demo/venv/bin/python
+    │   ├── python3 -> python
+    │   ├── python3.10 -> python
+    │   ├── qr
+    │   └── uvicorn
+    ├── include
+    │   └── site
+    ├── lib
+    │   └── python3.10
+    ├── lib64 -> lib
+    ├── pyvenv.cfg
+    └── share
+        └── man
+
+40 directories, 124 files
