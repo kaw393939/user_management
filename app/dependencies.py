@@ -27,7 +27,7 @@ async def get_db() -> AsyncSession:
             raise HTTPException(status_code=500, detail=str(e))
         
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
 def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
