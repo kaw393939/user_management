@@ -6,6 +6,7 @@ The core components of the architecture include:
 
 - FastAPI Application: The main entry point of the application, handling API requests and responses.
 - Database Layer: Utilizes SQLAlchemy ORM for efficient database interactions and data persistence.
+- Alembic for database migrations
 - Service Layer: Contains the business logic and core functionalities of the application.
 - API Layer: Defines the API endpoints, request validation, and response serialization.
 - Authentication and Authorization: Implements OAuth2 with Password Flow for secure user authentication and role-based access control.
@@ -57,6 +58,9 @@ The project adheres to best practices and coding standards, including:
 
 ### Administrator User Creation:
 The project includes a mechanism to automatically assign the administrator role to the first user created in the system. When the user table is empty, the first user who registers will be granted the administrator role. This ensures that there is at least one user with administrative privileges to manage the system. (Refer to `user_service.py create method` for the implementation)
+
+### CORS
+The application has basic CORS support allthough it isn't configured for a specific domain. See the main.py file in app.
 
 ## Open Source and MIT License:
 The project is open-sourced under the MIT License, allowing for free use, modification, and distribution of the codebase. By making the project open source, it encourages collaboration, knowledge sharing, and community contribution. The MIT License provides flexibility for students and other developers to learn from and build upon the project.
