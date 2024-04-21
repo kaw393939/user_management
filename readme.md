@@ -1,4 +1,4 @@
-# Project Introduction:
+# Final Project Introduction:
 The User Management System is an open-source project developed by Professor Keith Williams for his students at NJIT. This project aims to provide a robust foundation for an event management system that bridges the gap between professionals in the software industry and college students. By facilitating company tours, guest lectures, and mock interviews, the system fosters valuable interactions and knowledge exchange between industry experts and aspiring software engineers.
 
 [Introduction to the system features and overview of the project - please read](system_documentation.md)
