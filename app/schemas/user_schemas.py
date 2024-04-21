@@ -5,14 +5,9 @@ from datetime import datetime
 from enum import Enum
 import uuid
 import re
-
+from app.models.user_model import UserRole
 from app.utils.nickname_gen import generate_nickname
 
-class UserRole(str, Enum):
-    ANONYMOUS = "ANONYMOUS"
-    AUTHENTICATED = "AUTHENTICATED"
-    MANAGER = "MANAGER"
-    ADMIN = "ADMIN"
 
 def validate_url(url: Optional[str]) -> Optional[str]:
     if url is None:
@@ -31,6 +26,7 @@ class UserBase(BaseModel):
     profile_picture_url: Optional[str] = Field(None, example="https://example.com/profiles/john.jpg")
     linkedin_profile_url: Optional[str] =Field(None, example="https://linkedin.com/in/johndoe")
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
+    role: UserRole
 
     _validate_urls = validator('profile_picture_url', 'linkedin_profile_url', 'github_profile_url', pre=True, allow_reuse=True)(validate_url)
  
@@ -50,6 +46,7 @@ class UserUpdate(UserBase):
     profile_picture_url: Optional[str] = Field(None, example="https://example.com/profiles/john.jpg")
     linkedin_profile_url: Optional[str] =Field(None, example="https://linkedin.com/in/johndoe")
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
+    role: Optional[str] = Field(None, example="AUTHENTICATED")
 
     @root_validator(pre=True)
     def check_at_least_one_value(cls, values):
@@ -59,11 +56,10 @@ class UserUpdate(UserBase):
 
 class UserResponse(UserBase):
     id: uuid.UUID = Field(..., example=uuid.uuid4())
-    role: UserRole = Field(default=UserRole.AUTHENTICATED, example="AUTHENTICATED")
     email: EmailStr = Field(..., example="john.doe@example.com")
     nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example=generate_nickname())    
-    role: UserRole = Field(default=UserRole.AUTHENTICATED, example="AUTHENTICATED")
     is_professional: Optional[bool] = Field(default=False, example=True)
+    role: UserRole
 
 class LoginRequest(BaseModel):
     email: str = Field(..., example="john.doe@example.com")

@@ -2,7 +2,7 @@ from builtins import str
 import pytest
 from httpx import AsyncClient
 from app.main import app
-from app.models.user_model import User
+from app.models.user_model import User, UserRole
 from app.utils.nickname_gen import generate_nickname
 from app.utils.security import hash_password
 from app.services.jwt_service import decode_token  # Import your FastAPI app
@@ -66,6 +66,7 @@ async def test_create_user_duplicate_email(async_client, verified_user):
     user_data = {
         "email": verified_user.email,
         "password": "AnotherPassword123!",
+        "role": UserRole.ADMIN.name
     }
     response = await async_client.post("/register/", json=user_data)
     assert response.status_code == 400

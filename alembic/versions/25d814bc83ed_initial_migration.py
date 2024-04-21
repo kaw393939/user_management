@@ -1,8 +1,8 @@
 """initial migration
 
-Revision ID: ef1d775276c0
+Revision ID: 25d814bc83ed
 Revises: 
-Create Date: 2024-04-20 21:20:32.839580
+Create Date: 2024-04-21 09:51:44.977108
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'ef1d775276c0'
+revision: str = '25d814bc83ed'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -30,7 +30,7 @@ def upgrade() -> None:
     sa.Column('profile_picture_url', sa.String(length=255), nullable=True),
     sa.Column('linkedin_profile_url', sa.String(length=255), nullable=True),
     sa.Column('github_profile_url', sa.String(length=255), nullable=True),
-    sa.Column('role', sa.Enum('ANONYMOUS', 'AUTHENTICATED', 'MANAGER', 'ADMIN', name='UserRole'), nullable=False),
+    sa.Column('role', sa.Enum('ANONYMOUS', 'AUTHENTICATED', 'MANAGER', 'ADMIN', name='UserRole', create_constraint=True), nullable=False),
     sa.Column('is_professional', sa.Boolean(), nullable=True),
     sa.Column('professional_status_updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('last_login_at', sa.DateTime(timezone=True), nullable=True),
