@@ -6,8 +6,9 @@ Here's the content with a more engaging and motivational tone:
 
 Welcome to the User Management System project - an epic open-source adventure crafted by the legendary Professor Keith Williams for his rockstar students at NJIT! 🏫👨‍🏫⭐ This project is your gateway to coding glory, providing a bulletproof foundation for an event management system that will blow your mind! 🤯 You'll bridge the gap between the realms of seasoned software pros and aspiring student developers like yourselves. Brace yourselves for mind-blowing company tours, captivating guest speaker sessions, and realistic mock interviews that will give you an electrifying taste of the real deal! 💼⚡
 
+### [Instructor Video - Project Overview and Tips](https://youtu.be/gairLNAp6mA) 🎥
+
 - [Introduction to the system features and overview of the project - please read](system_documentation.md) 📚
-- [Instructor Video - Project Overview and Tips - TBA I'll do it Monday and you will have 2 weeks from tuesday to finish it]() 🎥
 - [Project Setup Instructions](setup.md) ⚒️
 - [Features to Select From](features.md) 🛠️
 - [About the Project](about.md)🔥🌟
