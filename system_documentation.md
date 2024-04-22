@@ -95,7 +95,7 @@ The project adheres to industry best practices and coding standards to ensure co
 
 [Additional Features Required](features.md)
 
-## 📜 Open Source and MIT License
+## 📜 Open Source and MIT License - [Here](https://github.com/kaw393939/user_management/blob/main/license.txt)
 
 The User Management System is open-sourced under the MIT License, allowing for free use, modification, and distribution of the codebase. By making the project open source, it encourages:
 
