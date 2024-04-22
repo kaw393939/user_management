@@ -71,13 +71,10 @@ Welcome, future software engineering rock stars! 🌟 Here are some exciting pro
 - **Difficulty Level:** Medium
 - **Minimum Viable Feature:**
   - Implement API endpoints for administrators to change user roles.
-  - Update the user management frontend to provide an interface for role management.
   - Ensure that role changes are properly validated and propagated throughout the system.
   - Log all role changes for auditing purposes.
 - **Optional Enhancements:**
-  - Implement granular permissions within each role to allow for more fine-grained access control.
-  - Add notifications to users when their role is changed.
-  - Implement a role hierarchy system to allow for inherited permissions.
+  - Add an event publisher a role is changed.
 - **Getting Started:**
   - Review the existing RBAC implementation in the codebase.
   - Design the API endpoints and request/response schemas for role management.
@@ -94,7 +91,6 @@ Welcome, future software engineering rock stars! 🌟 Here are some exciting pro
   - Implement API endpoints for event management with BREAD operations.
   - Create database models and schemas for storing event information.
   - Implement authorization checks to ensure only managers and admins can create and manage events.
-  - Provide a user-friendly frontend interface for event management.
 - **Optional Enhancements:**
   - Implement event registration functionality for users to sign up for events.
   - Add event categories and tags for better organization and searchability.
@@ -114,12 +110,13 @@ Welcome, future software engineering rock stars! 🌟 Here are some exciting pro
 - **Difficulty Level:** Medium
 - **Minimum Viable Feature:**
   - Add localization support to the application, allowing for easy translation of user-facing text.
-  - Create language resource files for storing translated text.
+  - Research how to best handle localization for content translation of api responses and request handling.
   - Implement a way for users to switch between available languages.
+  - Research best practices in handling timezones
 - **Optional Enhancements:**
   - Support dynamic language switching without requiring a page reload.
   - Implement language fallback mechanism to handle missing translations gracefully.
-  - Provide a user-friendly interface for managing and editing language resource files.
+
 - **Getting Started:**
   - Research and choose a localization library or framework that integrates well with your application.
   - Define the supported languages and create language resource files for each language.
@@ -136,7 +133,7 @@ Welcome, future software engineering rock stars! 🌟 Here are some exciting pro
   - Track the number of anonymous users requesting published content.
   - Monitor the conversion rate of anonymous users becoming authenticated users.
   - Analyze user login activity to identify users who haven't logged in for 24 hours, 48 hours, 1 week, or 1 year.
-  - Implement user invitation functionality, allowing users to invite others to join the platform via email.
+
 - **Optional Enhancements:**
   - Visualize user retention data through charts and graphs.
   - Implement cohort analysis to track user retention over time.
@@ -153,25 +150,27 @@ Welcome, future software engineering rock stars! 🌟 Here are some exciting pro
 ## 8. 🎫 QR Code Generation for User Profiles with Minio
 
 - **Description:** Implement QR code generation functionality for user profiles, allowing users to share their profile information easily. Store the generated QR codes using Minio.
-- **User Story:** As a user, I want to be able to generate a QR code for my profile that others can scan to view my information.
+- **User Story:** As a user, I want to be able to invite people to the site through email by inputing their name and email address..
 - **Difficulty Level:** Medium
 - **Minimum Viable Feature:**
-  - Generate unique QR codes for each user profile.
-  - Store the generated QR codes securely in Minio.
-  - Provide an API endpoint for users to retrieve their profile QR code image.
-  - Display the user's QR code on their profile page.
+  - Implement user invitation functionality through the API, allowing users to invite others to join the platform via email with a QR code in the invitation email.
+  - Generate unique QR codes for each invite that encodes parameter for a base64 encoded nickname field (nickname exists in the db) that identifies the user that invited them, so that we can track sucessful invitations.  Create a table to track invitations and their usage.  When you scan the QR code, the user should just be forwarded to another address set with a setting in config.py and their QR invite should be marked accepted in the database.
+  - Store the generated QR codes securely in Minio.  [Setting up Object Storage with Minio with Docker](https://kodekloud.com/community/t/setting-up-object-storage-with-minio-with-docker/336624)
+  - Provide an API endpoint for QR codes to show a user the number of invites sent and used.
+  - Provide an API endpoint to accept the invite
+  - Use .env file for forward email
+  - Provide a management BREAD HATEOS complete set of endpoints to administer invitations
 - **Optional Enhancements:**
-  - Allow users to customize the design and color scheme of their QR code.
-  - Implement QR code scanning functionality within the application to view user profiles.
+  - 
   - Provide options to share the QR code image on social media or via email.
 - **Getting Started:**
   - Set up Minio for storing the generated QR code images.
   - Research and select a suitable QR code generation library for your programming language.
   - Design the QR code generation process, including the data to be encoded in the QR code (e.g., user profile URL).
   - Implement the QR code generation functionality, storing the generated images in Minio.
-  - Create an API endpoint for users to retrieve their profile QR code image.
-  - Update the user profile page to display the user's QR code.
   - Write unit tests to verify the QR code generation, storage, and retrieval functionality.
+  - Write tests for testing the usage of the QR code to accept the invite by simulating the incoming request and updating the QR code
+  - WRite any additional tests to verify the BREAD HATEOS functionality similar to the Users table, but simpler.
 
 ## 9. 👤 User Profile Management
 
