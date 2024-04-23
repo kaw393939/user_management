@@ -7,6 +7,7 @@ from app.dependencies import get_settings
 from app.routers import user_routes
 from app.utils.api_description import getDescription
 app = FastAPI(
+    root_path="/api",
     title="User Management",
     description=getDescription(),
     version="0.0.1",
