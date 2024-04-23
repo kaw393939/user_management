@@ -1,5 +1,5 @@
-# Define a base stage with a Debian Bullseye base image that supports the needed glibc update
-FROM python:3.12-bullseye as base
+# Define a base stage with a Debian Bookworm base image that includes the latest glibc update
+FROM python:3.12-bookworm as base
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -11,11 +11,11 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /myapp
 
-# Update system and specifically upgrade libc-bin to address the security vulnerability
+# Update system and specifically upgrade libc-bin to the required security patch version
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
-    && apt-get install -y libc-bin=2.31-13+deb11u9 \
+    && apt-get install -y libc-bin=2.36-9+deb12u6 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -26,11 +26,11 @@ RUN python -m venv /.venv \
     && pip install --upgrade pip \
     && pip install -r requirements.txt
 
-# Define a second stage for the runtime, using the same Debian Bullseye slim image
-FROM python:3.12-slim-bullseye as final
+# Define a second stage for the runtime, using the same Debian Bookworm slim image
+FROM python:3.12-slim-bookworm as final
 
 # Upgrade libc-bin in the final stage to ensure security patch is applied
-RUN apt-get update && apt-get install -y libc-bin=2.31-13+deb11u9 \
+RUN apt-get update && apt-get install -y libc-bin=2.36-9+deb12u6 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
