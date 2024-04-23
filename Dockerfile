@@ -1,5 +1,5 @@
 # Define a base stage
-FROM python:3.12-slim-bullseye as base
+FROM python:3.12-bookworm as base
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
