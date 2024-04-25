@@ -79,7 +79,6 @@ Welcome, future software engineering rock stars! 🌟 Here are some exciting pro
   - Review the existing RBAC implementation in the codebase.
   - Design the API endpoints and request/response schemas for role management.
   - Implement the role change functionality in the user management service.
-  - Update the frontend to provide an interface for administrators to manage user roles.
   - Write unit tests to verify the role change functionality and permission propagation.
 
 ## 5. 🎉 Event Management with BREAD Functionality
