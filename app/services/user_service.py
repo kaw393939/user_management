@@ -6,9 +6,12 @@ from pydantic import ValidationError
 from sqlalchemy import func, null, update, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi.responses import RedirectResponse
+
 from app.dependencies import get_email_service, get_settings
 from app.models.user_model import User
 from app.schemas.user_schemas import UserCreate, UserUpdate
+from app.services.db_service import DbService
 from app.utils.nickname_gen import generate_nickname
 from app.utils.security import generate_verification_token, hash_password, verify_password
 from uuid import UUID
@@ -19,24 +22,8 @@ import logging
 settings = get_settings()
 logger = logging.getLogger(__name__)
 
-class UserService:
-    @classmethod
-    async def _execute_query(cls, session: AsyncSession, query):
-        try:
-            result = await session.execute(query)
-            await session.commit()
-            return result
-        except SQLAlchemyError as e:
-            logger.error(f"Database error: {e}")
-            await session.rollback()
-            return None
-
-    @classmethod
-    async def _fetch_user(cls, session: AsyncSession, **filters) -> Optional[User]:
-        query = select(User).filter_by(**filters)
-        result = await cls._execute_query(session, query)
-        return result.scalars().first() if result else None
-
+class UserService(DbService):
+    
     @classmethod
     async def get_by_id(cls, session: AsyncSession, user_id: UUID) -> Optional[User]:
         return await cls._fetch_user(session, id=user_id)

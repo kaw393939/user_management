@@ -15,7 +15,7 @@ Fixtures:
 
 # Standard library imports
 from builtins import Exception, range, str
-from datetime import timedelta
+from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
@@ -30,7 +30,7 @@ from faker import Faker
 # Application-specific imports
 from app.main import app
 from app.database import Base, Database
-from app.models.user_model import User, UserRole
+from app.models.user_model import Event, EventType, User, UserRole
 from app.dependencies import get_db, get_settings
 from app.utils.security import hash_password
 from app.utils.template_manager import TemplateManager
@@ -238,3 +238,52 @@ def email_service():
         mock_service.send_verification_email.return_value = None
         mock_service.send_user_email.return_value = None
         return mock_service
+
+# Example event fixtures
+@pytest.fixture(scope="function")
+async def company_tour_event(db_session, user):
+    event_data = {
+        "title": "Company Tour",
+        "description": "A tour around our new facility.",
+        "start_datetime": datetime.now(),
+        "end_datetime": datetime.now() + timedelta(hours=2),
+        "published": False,
+        "event_type": EventType.COMPANY_TOUR,
+        "creator_id": user.id
+    }
+    event = Event(**event_data)
+    db_session.add(event)
+    await db_session.commit()
+    return event
+
+@pytest.fixture(scope="function")
+async def mock_interview_event(db_session, verified_user):
+    event_data = {
+        "title": "Mock Interview Session",
+        "description": "Prepare for your upcoming interviews with a practice session.",
+        "start_datetime": datetime.now(),
+        "end_datetime": datetime.now() + timedelta(hours=1),
+        "published": True,
+        "event_type": EventType.MOCK_INTERVIEW,
+        "creator_id": verified_user.id
+    }
+    event = Event(**event_data)
+    db_session.add(event)
+    await db_session.commit()
+    return event
+
+@pytest.fixture(scope="function")
+async def guest_lecture_event(db_session, manager_user):
+    event_data = {
+        "title": "Guest Lecture",
+        "description": "An informative session with an industry expert.",
+        "start_datetime": datetime.now(),
+        "end_datetime": datetime.now() + timedelta(hours=3),
+        "published": True,
+        "event_type": EventType.GUEST_LECTURE,
+        "creator_id": manager_user.id
+    }
+    event = Event(**event_data)
+    db_session.add(event)
+    await db_session.commit()
+    return event

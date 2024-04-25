@@ -22,6 +22,7 @@ from builtins import dict, int, len, str
 from datetime import timedelta
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Request
+from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_current_user, get_db, get_email_service, require_role
@@ -243,5 +244,5 @@ async def verify_email(user_id: UUID, token: str, db: AsyncSession = Depends(get
     - **token**: Verification token sent to the user's email.
     """
     if await UserService.verify_email_with_token(db, user_id, token):
-        return {"message": "Email verified successfully"}
+            return RedirectResponse(url=settings.account_verfiy_destination)
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired verification token")

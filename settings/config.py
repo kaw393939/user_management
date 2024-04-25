@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     smtp_port: int = Field(default=2525, description="SMTP port for sending emails")
     smtp_username: str = Field(default='your-mailtrap-username', description="Username for SMTP server")
     smtp_password: str = Field(default='your-mailtrap-password', description="Password for SMTP server")
+    account_verfiy_destination: str = Field(default='http://localhost/docs', description="Where to redirect the user after account verification")
 
 
     class Config:
