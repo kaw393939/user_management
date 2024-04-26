@@ -20,9 +20,6 @@ class EventService(DbService):
         query = select(Event).filter_by(**kwargs)
         result = await cls._execute_query(session, query)
         return result.scalars().first()
-        @classmethod
-        async def get_by_id(cls, session: AsyncSession, event_id: UUID) -> Optional[Event]:
-            return await cls._fetch_event(session, id=event_id)
 
     @classmethod
     async def get_by_id(cls, session: AsyncSession, event_id: UUID) -> Optional[Event]:

@@ -124,10 +124,13 @@ class Event(Base):
     def publish_event(self):
         """Marks the event as published."""
         self.published = True
+        updated_at = func.now()
 
     def unpublish_event(self):
         """Marks the event as unpublished."""
         self.published = False
+        updated_at = func.now()
+
 
     def validate_event_dates(self):
         """Ensure that the event cannot start after it ends."""
