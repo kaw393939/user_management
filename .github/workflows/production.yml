@@ -70,7 +70,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: aa358/user_management:${{ github.sha }} # Uses the Git SHA for tagging
+          tags: arqam24/user_management:${{ github.sha }} # Uses the Git SHA for tagging
           platforms: linux/amd64,linux/arm64 # Multi-platform support
           cache-from: type=registry,ref=kaw393939/wis_club_api:cache
           cache-to: type=inline,mode=max
@@ -78,7 +78,7 @@ jobs:
       - name: Scan the Docker image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'aa358/user_management:${{ github.sha }}'
+          image-ref: 'arqam24/user_management:${{ github.sha }}'
           format: 'table'
           exit-code: '1' # Fail the job if vulnerabilities are found
           ignore-unfixed: true
