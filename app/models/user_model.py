@@ -9,6 +9,7 @@ from sqlalchemy.dialects.postgresql import UUID, ENUM
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.asyncio import AsyncAttrs
 
 class UserRole(Enum):
     """Enumeration of user roles within the application, stored as ENUM in the database."""
@@ -23,7 +24,7 @@ class EventType(Enum):
     MOCK_INTERVIEW = "mock_interview"
     GUEST_LECTURE = "guest_lecture"
 
-class User(Base):
+class User(Base, AsyncAttrs):
     """
     Represents a user within the application, corresponding to the 'users' table in the database.
     This class uses SQLAlchemy ORM for mapping attributes to database columns efficiently.
@@ -80,6 +81,7 @@ class User(Base):
     verification_token = Column(String, nullable=True)
     email_verified: Mapped[bool] = Column(Boolean, default=False, nullable=False)
     hashed_password: Mapped[str] = Column(String(255), nullable=False)
+    events = relationship("Event", back_populates="creator", lazy='dynamic', cascade="all, delete-orphan")
 
 
     def __repr__(self) -> str:
@@ -114,8 +116,10 @@ class Event(Base):
     published: Mapped[bool] = Column(Boolean, default=False, nullable=False)
     event_type: Mapped[EventType] = Column(SQLAlchemyEnum(EventType), nullable=False)
     creator_id: Mapped[uuid.UUID] = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
-
-    creator = relationship("User", backref="events", lazy='select')
+    created_at: Mapped[datetime] = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    creator = relationship("User", back_populates="events")
 
     def publish_event(self):
         """Marks the event as published."""

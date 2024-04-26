@@ -1,18 +1,3 @@
-"""
-File: test_database_operations.py
-
-Overview:
-This Python test file utilizes pytest to manage database states and HTTP clients for testing a web application built with FastAPI and SQLAlchemy. It includes detailed fixtures to mock the testing environment, ensuring each test is run in isolation with a consistent setup.
-
-Fixtures:
-- `async_client`: Manages an asynchronous HTTP client for testing interactions with the FastAPI application.
-- `db_session`: Handles database transactions to ensure a clean database state for each test.
-- User fixtures (`user`, `locked_user`, `verified_user`, etc.): Set up various user states to test different behaviors under diverse conditions.
-- `token`: Generates an authentication token for testing secured endpoints.
-- `initialize_database`: Prepares the database at the session start.
-- `setup_database`: Sets up and tears down the database before and after each test.
-"""
-
 # Standard library imports
 from builtins import Exception, range, str
 from datetime import datetime, timedelta
@@ -54,7 +39,7 @@ def email_service():
     return email_service
 
 
-# this is what creates the http client for your api tests
+# This fixture creates the http client for your API tests
 @pytest.fixture(scope="function")
 async def async_client(db_session):
     async with AsyncClient(app=app, base_url="http://testserver") as client:
@@ -71,15 +56,15 @@ def initialize_database():
     except Exception as e:
         pytest.fail(f"Failed to initialize the database: {str(e)}")
 
-# this function setup and tears down (drops tales) for each test function, so you have a clean database for each test.
+# This function sets up and tears down (drops tables) for each test function, ensuring a clean database for each test.
 @pytest.fixture(scope="function", autouse=True)
 async def setup_database():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
     async with engine.begin() as conn:
-        # you can comment out this line during development if you are debugging a single test
-         await conn.run_sync(Base.metadata.drop_all)
+        # You can comment out this line during development if you are debugging a single test
+        await conn.run_sync(Base.metadata.drop_all)
     await engine.dispose()
 
 @pytest.fixture(scope="function")
@@ -210,7 +195,6 @@ async def manager_user(db_session: AsyncSession):
     await db_session.commit()
     return user
 
-# Configure a fixture for each type of user role you want to test
 @pytest.fixture(scope="function")
 def admin_token(admin_user):
     # Assuming admin_user has an 'id' and 'role' attribute
@@ -241,7 +225,7 @@ def email_service():
 
 # Example event fixtures
 @pytest.fixture(scope="function")
-async def company_tour_event(db_session, user):
+async def company_tour_event(db_session, verified_user):
     event_data = {
         "title": "Company Tour",
         "description": "A tour around our new facility.",
@@ -249,7 +233,7 @@ async def company_tour_event(db_session, user):
         "end_datetime": datetime.now() + timedelta(hours=2),
         "published": False,
         "event_type": EventType.COMPANY_TOUR,
-        "creator_id": user.id
+        "creator_id": verified_user.id
     }
     event = Event(**event_data)
     db_session.add(event)
@@ -287,3 +271,37 @@ async def guest_lecture_event(db_session, manager_user):
     db_session.add(event)
     await db_session.commit()
     return event
+
+
+@pytest.fixture
+async def user_with_events(db_session: AsyncSession, verified_user):
+    user = User(
+        nickname="testuser",
+        email="testuser@example.com",
+        first_name="Test",
+        last_name="User",
+        hashed_password="password",
+        role=UserRole.AUTHENTICATED,
+        is_locked=False,
+    )
+    event1 = Event(
+        title="Event 1",
+        description="Test event 1",
+        start_datetime=datetime.now(),
+        end_datetime=datetime.now() + timedelta(hours=1),
+        published=True,
+        event_type=EventType.COMPANY_TOUR,
+        creator=user,
+    )
+    event2 = Event(
+        title="Event 2",
+        description="Test event 2",
+        start_datetime=datetime.now() + timedelta(days=1),
+        end_datetime=datetime.now() + timedelta(days=1, hours=1),
+        published=False,
+        event_type=EventType.MOCK_INTERVIEW,
+        creator=user,
+    )
+    db_session.add_all([user, event1, event2])
+    await db_session.commit()
+    yield user
