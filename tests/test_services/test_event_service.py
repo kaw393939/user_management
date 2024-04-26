@@ -32,7 +32,6 @@ async def test_create_event_with_valid_data(db_session, verified_user):
         "creator_id": verified_user.id  # Add this line
     }
     
-    logging.info(f"verified user: {event_data["creator_id"]}")
     event = await EventService.create(db_session, event_data)
 
     assert event is not None
