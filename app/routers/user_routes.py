@@ -33,8 +33,27 @@ from app.services.jwt_service import create_access_token
 from app.utils.link_generation import create_user_links, generate_pagination_links
 from app.dependencies import get_settings
 from app.services.email_service import EmailService
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+@router.post("/token", response_model=TokenResponse)
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: AsyncSession = Depends(get_db)):
+    if await UserService.is_account_locked(session, form_data.username):
+        raise HTTPException(status_code=400, detail="Account locked due to too many failed login attempts.")
+
+    user = await UserService.login_user(session, form_data.username, form_data.password)
+    if user:
+        access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
+
+        access_token = create_access_token(
+            data={"sub": user.email, "role": str(user.role.name)},
+            expires_delta=access_token_expires
+        )
+
+        return {"access_token": access_token, "token_type": "bearer"}
+    raise HTTPException(status_code=401, detail="Incorrect email or password.")
+
 settings = get_settings()
 @router.get("/users/{user_id}", response_model=UserResponse, name="get_user", tags=["User Management Requires (Admin or Manager Roles)"])
 async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme), current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))):
@@ -68,7 +87,7 @@ async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(g
         last_login_at=user.last_login_at,
         created_at=user.created_at,
         updated_at=user.updated_at,
-        links=create_user_links(user.id, request)  
+        links=create_user_links(user.id, request)
     )
 
 # Additional endpoints for update, delete, create, and list users follow a similar pattern, using
@@ -143,12 +162,12 @@ async def create_user(user: UserCreate, request: Request, db: AsyncSession = Dep
     existing_user = await UserService.get_by_email(db, user.email)
     if existing_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists")
-    
+
     created_user = await UserService.create(db, user.model_dump(), email_service)
     if not created_user:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create user")
-    
-    
+
+
     return UserResponse.model_construct(
         id=created_user.id,
         bio=created_user.bio,
@@ -179,9 +198,9 @@ async def list_users(
     user_responses = [
         UserResponse.model_validate(user) for user in users
     ]
-    
+
     pagination_links = generate_pagination_links(request, skip, limit, total_users)
-    
+
     # Construct the final response with pagination details
     return UserListResponse(
         items=user_responses,
@@ -238,7 +257,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Async
 async def verify_email(user_id: UUID, token: str, db: AsyncSession = Depends(get_db), email_service: EmailService = Depends(get_email_service)):
     """
     Verify user's email with a provided token.
-    
+
     - **user_id**: UUID of the user to verify.
     - **token**: Verification token sent to the user's email.
     """
