@@ -14,6 +14,8 @@ services:
       retries: 5
     networks:
       - app-network
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
 
   pgadmin:
     image: dpage/pgadmin4
@@ -24,7 +26,7 @@ services:
     depends_on:
       - postgres
     ports:
-      - "5050:80" # Expose PgAdmin on port 5050 of the host
+      - "5050:80"
     volumes:
       - pgadmin-data:/var/lib/pgadmin
     networks:
@@ -39,6 +41,7 @@ services:
         condition: service_healthy
     networks:
       - app-network
+    restart: always
 
   nginx:
     image: nginx:latest
@@ -50,18 +53,27 @@ services:
       - fastapi
     networks:
       - app-network
+    restart: always
 
   frontend:
-      image: kaw393939/event_manager_frontend:latest
-      depends_on:
-        - fastapi
-      volumes:
+    image: kaw393939/event_manager_frontend:latest
+    depends_on:
+      - fastapi
+    volumes:
       - .:/frontend
       - /frontend/node_modules
-      ports:
-        - "3000:3000"
-      networks:
-        - app-network
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+    restart: always
+
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 30 frontend
+    restart: always
 
 volumes:
   postgres-data:
