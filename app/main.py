@@ -7,12 +7,13 @@ from app.dependencies import get_settings
 from app.routers import event_routes, user_routes
 from app.utils.api_description import getDescription
 app = FastAPI(
+    root_path="/api",
     title="User Management",
     description=getDescription(),
     version="0.0.1",
     contact={
         "name": "API Support",
-        "url": "http://www.example.com/support",
+        "url": "https://github.com/WISClub/user_management",
         "email": "support@example.com",
     },
     license_info={"name": "MIT", "url": "https://opensource.org/licenses/MIT"},

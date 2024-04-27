@@ -2,6 +2,9 @@
 
 # The User Management System Final Project: Your Epic Coding Adventure Awaits! 🎉✨🔥
 
+Dockerhub for frontend:
+https://hub.docker.com/r/kaw393939/event_manager_frontend
+
 ## Introduction: Buckle Up for the Ride of a Lifetime 🚀🎬
 
 Welcome to the User Management System project - an epic open-source adventure crafted by the legendary Professor Keith Williams for his rockstar students at NJIT! 🏫👨‍🏫⭐ This project is your gateway to coding glory, providing a bulletproof foundation for a user management system that will blow your mind! 🤯 You'll bridge the gap between the realms of seasoned software pros and aspiring student developers like yourselves. 

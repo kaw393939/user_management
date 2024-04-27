@@ -51,6 +51,18 @@ services:
     networks:
       - app-network
 
+  frontend:
+      image: kaw393939/event_manager_frontend:latest
+      depends_on:
+        - fastapi
+      volumes:
+      - .:/frontend
+      - /frontend/node_modules
+      ports:
+        - "3000:3000"
+      networks:
+        - app-network
+
 volumes:
   postgres-data:
   pgadmin-data:
