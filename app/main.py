@@ -7,7 +7,6 @@ from app.dependencies import get_settings
 from app.routers import event_routes, user_routes
 from app.utils.api_description import getDescription
 app = FastAPI(
-    root_path="/api",
     title="User Management",
     description=getDescription(),
     version="0.0.1",
@@ -23,20 +22,16 @@ app = FastAPI(
 # It can be configured to allow specific methods, headers, and origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # List of origins that are allowed to access the server, ["*"] allows all
-    allow_credentials=True,  # Support credentials (cookies, authorization headers, etc.)
-    allow_methods=["*"],  # Allowed HTTP methods
-    allow_headers=["*"],  # Allowed HTTP headers
+    allow_origins=["http://localhost:3000"],  # Update this to match your Next.js app's URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.on_event("startup")
 async def startup_event():
     settings = get_settings()
     Database.initialize(settings.database_url, settings.debug)
-
-@app.exception_handler(Exception)
-async def exception_handler(request, exc):
-    return JSONResponse(status_code=500, content={"message": "An unexpected error occurred."})
 
 app.include_router(user_routes.router)
 app.include_router(event_routes.router)

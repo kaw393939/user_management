@@ -8,6 +8,7 @@ from app.services.email_service import EmailService
 from app.services.jwt_service import decode_token
 from settings.config import Settings
 from fastapi import Depends
+from sqlalchemy.exc import SQLAlchemyError
 
 def get_settings() -> Settings:
     """Return application settings."""
@@ -23,8 +24,8 @@ async def get_db() -> AsyncSession:
     async with async_session_factory() as session:
         try:
             yield session
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+        except SQLAlchemyError as e:
+            raise HTTPException(status_code=500, detail="Database error: " + str(e))
         
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")

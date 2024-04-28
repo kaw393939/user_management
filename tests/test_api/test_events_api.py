@@ -70,7 +70,7 @@ async def test_create_user_duplicate_email(async_client, verified_user):
     }
     response = await async_client.post("/register/", json=user_data)
     assert response.status_code == 400
-    assert "Email already exists" in response.json().get("detail", "")
+    assert "User with given email already exists." in response.json().get("detail", "")
 
 @pytest.mark.asyncio
 async def test_create_user_invalid_email(async_client):
@@ -141,7 +141,7 @@ async def test_login_locked_user(async_client, locked_user):
         "password": "MySuperPassword$1234"
     }
     response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
-    assert response.status_code == 400
+    assert response.status_code == 403
     assert "Account locked due to too many failed login attempts." in response.json().get("detail", "")
 @pytest.mark.asyncio
 async def test_delete_user_does_not_exist(async_client, admin_token):

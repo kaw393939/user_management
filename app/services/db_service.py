@@ -19,8 +19,4 @@ class DbService:
             await session.rollback()
             return None
 
-    @classmethod
-    async def _fetch_user(cls, session: AsyncSession, **filters) -> Optional[User]:
-        query = select(User).filter_by(**filters)
-        result = await cls._execute_query(session, query)
-        return result.scalars().first() if result else None
+    
