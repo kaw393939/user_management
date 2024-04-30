@@ -17,7 +17,7 @@ def get_email_service() -> EmailService:
     template_manager = TemplateManager()
     return EmailService(template_manager=template_manager)
 
-async def get_db() -> AsyncSession:
+async def get_db() -> AsyncSession: # type: ignore
     """Dependency that provides a database session for each request."""
     async_session_factory = Database.get_session_factory()
     async with async_session_factory() as session:
