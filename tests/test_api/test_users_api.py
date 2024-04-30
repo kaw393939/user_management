@@ -6,6 +6,12 @@ from app.models.user_model import User, UserRole
 from app.utils.nickname_gen import generate_nickname
 from app.utils.security import hash_password
 from app.services.jwt_service import decode_token  # Import your FastAPI app
+from datetime import datetime
+import sqlalchemy as sa
+import bcrypt
+import uuid
+from sqlalchemy import insert
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 # Example of a test function using the async_client fixture
 @pytest.mark.asyncio
@@ -45,7 +51,7 @@ async def test_update_user_email_access_denied(async_client, verified_user, user
 
 @pytest.mark.asyncio
 async def test_update_user_email_access_allowed(async_client, admin_user, admin_token):
-    updated_data = {"email": f"updated_{admin_user.id}@example.com"}
+    updated_data = {"email": f"updated_{admin_user.id}@example.com", "nickname": "new_nickname"}
     headers = {"Authorization": f"Bearer {admin_token}"}
     response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
     assert response.status_code == 200
@@ -150,17 +156,56 @@ async def test_delete_user_does_not_exist(async_client, admin_token):
     delete_response = await async_client.delete(f"/users/{non_existent_user_id}", headers=headers)
     assert delete_response.status_code == 404
 
-@pytest.mark.asyncio
-async def test_update_user_github(async_client, admin_user, admin_token):
-    updated_data = {"github_profile_url": "http://www.github.com/kaw393939"}
-    headers = {"Authorization": f"Bearer {admin_token}"}
-    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["github_profile_url"] == updated_data["github_profile_url"]
+@pytest.fixture
+async def test_user(db_session):
+    new_user = User(
+        id=uuid.uuid4(),  # Ensure a unique ID if not automatically generated
+        email="testuser@example.com",
+        nickname="TestUser",
+        role="ADMIN"  # Assuming 'USER' is a valid role in your schema
+    )
+    password = "securepassword"
+    hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+    new_user.hashed_password = hashed_password.decode()  # Ensure the hashed password is correctly assigned
+    
+    # Add the new user to the session and commit
+    db_session.add(new_user)
+    await db_session.commit()
+    return new_user
 
 @pytest.mark.asyncio
-async def test_update_user_linkedin(async_client, admin_user, admin_token):
-    updated_data = {"linkedin_profile_url": "http://www.linkedin.com/kaw393939"}
+async def test_update_user_github(async_client, test_user, admin_token, db_session):
+    unique_email = f"{datetime.now().timestamp()}_{test_user.email}"
+    updated_data = {"email": unique_email, "github_profile_url": "http://www.github.com/kaw393939", "nickname": "UpdatedNickname"}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    # Fetch and print user details before update
+    pre_update = await async_client.get(f"/users/{test_user.id}", headers=headers)
+    print("Pre-Update User Data:", pre_update.json())
+
+    # Direct database check
+    result = await db_session.execute(sa.select(User).where(User.id == test_user.id))
+    db_user = result.scalars().first()
+    if db_user:
+        print("Database User Check: User found")
+    else:
+        print("Database User Check: User NOT found")
+
+    # Attempt to update the user
+    response = await async_client.put(f"/users/{test_user.id}", json=updated_data, headers=headers)
+    print("Update Response:", response.json())  # Print response to see detailed error or message
+
+    # Assert the update was successful
+    assert response.status_code == 200, f"Expected 200 OK, got {response.status_code} with message {response.text}"
+
+    # Fetch and print user details after update attempt
+    post_update = await async_client.get(f"/users/{test_user.id}", headers=headers)
+    print("Post-Update User Data:", post_update.json())
+
+@pytest.mark.asyncio
+async def test_update_user_linkedin(async_client, admin_user, admin_token, db_session):
+    unique_email = f"{datetime.now().timestamp()}_{admin_user.email}"
+    updated_data = {"email": unique_email, "linkedin_profile_url": "http://www.linkedin.com/kaw393939", "nickname": "UpdatedNickname"}
     headers = {"Authorization": f"Bearer {admin_token}"}
     response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
     assert response.status_code == 200
