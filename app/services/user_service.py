@@ -118,8 +118,8 @@ class UserService(DbService):
             await session.commit()
             raise InvalidCredentialsException("Incorrect email or password.")
         
-        user.failed_login_attempts = 0
-        user.last_login_at = datetime.now(timezone.utc)
+        user.reset_login_attempts()
+        user.update_last_login()
         session.add(user)
         await session.commit()
         return user

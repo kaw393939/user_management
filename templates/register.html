@@ -1,0 +1,101 @@
+{% extends "layout.html" %}
+
+{% block title %}Register{% endblock %}
+<title>Register</title>
+
+{% block content %}
+
+<h1>User Registration</h1>
+<script>
+    function registerUser(event) {
+        event.preventDefault();
+
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const nickname = document.getElementById('nickname').value;
+        const firstName = document.getElementById('first_name').value;
+        const lastName = document.getElementById('last_name').value;
+        const bio = document.getElementById('bio').value;
+        const profilePictureUrl = document.getElementById('profile_picture_url').value;
+        const linkedinProfileUrl = document.getElementById('linkedin_profile_url').value;
+        const githubProfileUrl = document.getElementById('github_profile_url').value;
+        const role = document.getElementById('role').value;
+
+        const data = {
+            email: email,
+            password: password,
+            nickname: nickname,
+            first_name: firstName,
+            last_name: lastName,
+            bio: bio,
+            profile_picture_url: profilePictureUrl,
+            linkedin_profile_url: linkedinProfileUrl,
+            github_profile_url: githubProfileUrl,
+            role: role
+        };
+
+        fetch('/register/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            if (response.ok) {
+                // Registration successful
+                alert('Registration successful. Please check your email for verification.');
+                window.location.href = '/';
+            } else {
+                // Registration failed
+                response.json().then(data => {
+                    alert('Registration failed: ' + data.detail);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred during registration.');
+        });
+    }
+</script>
+<form onsubmit="registerUser(event)">
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required>
+    <br>
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password" required>
+    <br>
+    <label for="nickname">Nickname:</label>
+    <input type="text" id="nickname" name="nickname" required>
+    <br>
+    <label for="first_name">First Name:</label>
+    <input type="text" id="first_name" name="first_name" required>
+    <br>
+    <label for="last_name">Last Name:</label>
+    <input type="text" id="last_name" name="last_name" required>
+    <br>
+    <label for="bio">Bio:</label>
+    <textarea id="bio" name="bio" required></textarea>
+    <br>
+    <label for="profile_picture_url">Profile Picture URL:</label>
+    <input type="url" id="profile_picture_url" name="profile_picture_url" required>
+    <br>
+    <label for="linkedin_profile_url">LinkedIn Profile URL:</label>
+    <input type="url" id="linkedin_profile_url" name="linkedin_profile_url" required>
+    <br>
+    <label for="github_profile_url">GitHub Profile URL:</label>
+    <input type="url" id="github_profile_url" name="github_profile_url" required>
+    <br>
+    <label for="role">Role:</label>
+    <select id="role" name="role" required>
+        <option value="ANONYMOUS">Anonymous</option>
+        <option value="USER">User</option>
+        <option value="MANAGER">Manager</option>
+        <option value="ADMIN">Admin</option>
+    </select>
+    <br>
+    <button type="submit">Register</button>
+</form>
+{% endblock %}

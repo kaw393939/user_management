@@ -1,0 +1,10 @@
+{% extends "layout.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+    <h1>User Dashboard</h1>
+    <p>Welcome, {{ user.email }}!</p>
+    <p>Your role: {{ user.role }}</p>
+    <p>JWT Token: {{ request.cookies.get("access_token") }}</p>
+{% endblock %}

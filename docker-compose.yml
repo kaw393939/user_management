@@ -57,25 +57,25 @@ services:
   #     - app-network
   #   # restart: always
 
-  frontend:
-    image: kaw393939/event_manager_frontend:latest
-    depends_on:
-      - fastapi
-    volumes:
-      - .:/frontend
-      - /frontend/node_modules
-    ports:
-      - "3000:3000"
-    networks:
-      - app-network
-    # restart: always
+  # frontend:
+  #   image: kaw393939/event_manager_frontend:latest
+  #   depends_on:
+  #     - fastapi
+  #   volumes:
+  #     - .:/frontend
+  #     - /frontend/node_modules
+  #   ports:
+  #     - "3000:3000"
+  #   networks:
+  #     - app-network
+  #   # restart: always
 
-  watchtower:
-    image: containrrr/watchtower
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    command: --interval 30 frontend
-    # restart: always
+  # watchtower:
+  #   image: containrrr/watchtower
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   command: --interval 30 frontend
+  #   # restart: always
 
 volumes:
   postgres-data:

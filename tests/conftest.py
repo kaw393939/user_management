@@ -198,17 +198,17 @@ async def manager_user(db_session: AsyncSession):
 @pytest.fixture(scope="function")
 def admin_token(admin_user):
     # Assuming admin_user has an 'id' and 'role' attribute
-    token_data = {"sub": str(admin_user.id), "role": admin_user.role.name}
+    token_data = {"sub": str(admin_user.id), "role": admin_user.role.name, "user_id": str(admin_user.id), "email": str(admin_user.email)}
     return create_access_token(data=token_data, expires_delta=timedelta(minutes=30))
 
 @pytest.fixture(scope="function")
 def manager_token(manager_user):
-    token_data = {"sub": str(manager_user.id), "role": manager_user.role.name}
+    token_data = {"sub": str(manager_user.id), "role": manager_user.role.name, "user_id": str(manager_user.id), "email": str(manager_user.email)}
     return create_access_token(data=token_data, expires_delta=timedelta(minutes=30))
 
 @pytest.fixture(scope="function")
 def user_token(user):
-    token_data = {"sub": str(user.id), "role": user.role.name}
+    token_data = {"sub": str(user.id), "role": user.role.name, "user_id": str(user.id), "email": str(user.email)}
     return create_access_token(data=token_data, expires_delta=timedelta(minutes=30))
 
 @pytest.fixture

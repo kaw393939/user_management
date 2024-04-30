@@ -1,5 +1,5 @@
 from builtins import ValueError, bool, int, str
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 import uuid
 from sqlalchemy import (
@@ -83,6 +83,8 @@ class User(Base, AsyncAttrs):
     hashed_password: Mapped[str] = Column(String(255), nullable=False)
     events = relationship("Event", back_populates="creator", lazy='dynamic', cascade="all, delete-orphan")
 
+    def update_last_login(self):
+        self.last_login_at = datetime.now(timezone.utc)
 
     def __repr__(self) -> str:
         """Provides a readable representation of a user object."""
@@ -94,6 +96,9 @@ class User(Base, AsyncAttrs):
     def unlock_account(self):
         self.is_locked = False
 
+    def reset_login_attempts(self):
+        self.failed_login_attempts = 0
+        
     def verify_email(self):
         self.email_verified = True
 
