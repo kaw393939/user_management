@@ -184,6 +184,16 @@ async def test_list_users_as_manager(async_client, manager_token):
     assert response.status_code == 200
 
 @pytest.mark.asyncio
+async def test_list_users_0_pagination(async_client, admin_token):
+    response = await async_client.get(
+        "/users/?limit=0&skip=0",
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response.status_code == 400
+    assert "Limit must be greater than 0" in response.json().get("detail", "")
+    
+
+@pytest.mark.asyncio
 async def test_list_users_unauthorized(async_client, user_token):
     response = await async_client.get(
         "/users/",
