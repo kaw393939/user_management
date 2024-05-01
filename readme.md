@@ -3,8 +3,8 @@
 # The User Management System Final Project: Your Epic Coding Adventure Awaits! 🎉✨🔥
 
 Special Help
-[Event Feature overview - project help 1](https://youtu.be/WT8-41fTATs)
-[Current User Project Help and Overview of security, Project help 2](https://youtu.be/8_BsACPtKaA)
+- [Event Feature overview - project help 1](https://youtu.be/WT8-41fTATs)
+- [Current User Project Help and Overview of security, Project help 2](https://youtu.be/8_BsACPtKaA)
 
 
 

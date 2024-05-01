@@ -43,19 +43,19 @@ services:
         condition: service_healthy
     networks:
       - app-network
-    # restart: always
+    restart: always
 
-  # nginx:
-  #   image: nginx:latest
-  #   ports:
-  #     - "80:80"
-  #   volumes:
-  #     - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
-  #   depends_on:
-  #     - fastapi
-  #   networks:
-  #     - app-network
-  #   # restart: always
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - fastapi
+    networks:
+      - app-network
+    # restart: always
 
   # frontend:
   #   image: kaw393939/event_manager_frontend:latest
@@ -70,12 +70,12 @@ services:
   #     - app-network
   #   # restart: always
 
-  # watchtower:
-  #   image: containrrr/watchtower
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock
-  #   command: --interval 30 frontend
-  #   # restart: always
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 30 frontend
+    # restart: always
 
 volumes:
   postgres-data:
