@@ -7,7 +7,8 @@ from sqlalchemy import pool
 from alembic import context
 from app.models.user_model import Base  # adjust "myapp.models" to the actual location of your Base
 
-
+from app.dependencies import get_settings
+settings = get_settings()
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -54,7 +55,7 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online():
-    connectable = create_engine(os.getenv('DATABASE_URL'))
+    connectable = create_engine(settings.database_url)
     with connectable.connect() as connection:
         context.configure(
             connection=connection,
