@@ -1,5 +1,6 @@
 from logging.config import fileConfig
 import os
+import re
 
 from sqlalchemy import create_engine, engine_from_config
 from sqlalchemy import pool
@@ -55,7 +56,9 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online():
-    connectable = create_engine(settings.database_url)
+    
+    sync_database_url = re.sub(r'\+asyncpg', '', settings.database_url)
+    connectable = create_engine(sync_database_url)
     with connectable.connect() as connection:
         context.configure(
             connection=connection,
