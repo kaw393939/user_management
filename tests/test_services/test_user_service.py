@@ -21,6 +21,7 @@ async def test_create_user_with_valid_data(db_session, email_service):
     assert user.email == user_data["email"]
     assert user.id is not None
 
+
 # Test creating a user with invalid data
 async def test_create_user_with_invalid_data(db_session, email_service):
     user_data = {
