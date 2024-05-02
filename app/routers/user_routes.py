@@ -17,7 +17,7 @@ Key Highlights:
 - Implements HATEOAS by generating dynamic links for user-related actions, enhancing API discoverability.
 - Utilizes OAuth2PasswordBearer for securing API endpoints, requiring valid access tokens for operations.
 """
-
+import select
 from builtins import dict, int, len, str
 from datetime import timedelta
 from uuid import UUID
@@ -27,12 +27,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_current_user, get_db, get_email_service, require_role
 from app.schemas.pagination_schema import EnhancedPagination
 from app.schemas.token_schema import TokenResponse
-from app.schemas.user_schemas import LoginRequest, UserBase, UserCreate, UserListResponse, UserResponse, UserUpdate
+from app.schemas.user_schemas import ProfessionalStatus, LoginRequest, UserBase, UserCreate, UserListResponse, UserResponse, UserUpdate
 from app.services.user_service import UserService
 from app.services.jwt_service import create_access_token
 from app.utils.link_generation import create_user_links, generate_pagination_links
 from app.dependencies import get_settings
 from app.services.email_service import EmailService
+from app.models.user_model import User
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 settings = get_settings()
@@ -86,7 +87,9 @@ async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, 
     - **user_id**: UUID of the user to update.
     - **user_update**: UserUpdate model with updated user information.
     """
-    user_data = user_update.model_dump(exclude_unset=True)
+    user_data = user_update.dict(exclude_unset=True)
+    if "is_professional" in user_data and current_user['role'] not in ['ADMIN', 'MANAGER']:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed to change status")
     updated_user = await UserService.update(db, user_id, user_data)
     if not updated_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -245,3 +248,27 @@ async def verify_email(user_id: UUID, token: str, db: AsyncSession = Depends(get
     if await UserService.verify_email_with_token(db, user_id, token):
         return {"message": "Email verified successfully"}
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired verification token")
+
+@router.patch("/users/{user_id}/professional-status", response_model=UserResponse, tags=["User Management Requires (Admin or Manager Roles)"])
+async def update_professional_status(user_id: UUID, status_update: ProfessionalStatus, db: AsyncSession = Depends(get_db), current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))):
+    """
+    Update the professional status of a user using model's method.
+    
+    - **user_id**: UUID of the user whose professional status is to be updated.
+    - **status_update**: ProfessionalStatusUpdate model with the desired professional status.
+    """
+    async with db.begin():
+        statement = select(User).where(User.id == user_id)
+        result = await db.execute(statement)
+        user = result.scalar_one_or_none()
+
+        if user is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+        if current_user['role'] not in ['ADMIN', 'MANAGER']:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized to change professional status")
+
+        user.update_professional_status(status_update.is_professional)
+        await db.commit()  # Ensure changes are committed to the database.
+
+    return UserResponse.from_orm(user)
