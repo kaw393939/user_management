@@ -37,3 +37,12 @@ def test_allowed_file():
     # Test disallowed file extensions
     assert not allowed_file(UploadFile(filename="image.txt", file=file_data))
     assert not allowed_file(UploadFile(filename="image.gif", file=file_data))
+
+
+def test_resize_image(test_image, test_user_id):
+    resized_image_path = resize_image(test_image, (200, 200), test_user_id)
+    assert os.path.exists(resized_image_path)
+    assert resized_image_path == f"/tmp/{str(test_user_id)}.jpg"
+
+    os.remove(test_image)
+    os.remove(resized_image_path)
