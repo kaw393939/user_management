@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     smtp_port: int = Field(default=2525, description="SMTP port for sending emails")
     smtp_username: str = Field(default='your-mailtrap-username', description="Username for SMTP server")
     smtp_password: str = Field(default='your-mailtrap-password', description="Password for SMTP server")
+    #Image Storage for Minio
+    MINIO_ENDPOINT : str = Field(default='your-minio-endpoint', description="Endpoint for minio")
+    MINIO_ACCESS_KEY : str = Field(default='yout-minio-access-key', description="Access Key for minio")
+    MINIO_SECRET_KEY : str = Field(default='yout-minio-secret-key', description="Secret Key for minio")
+    MINIO_BUCKET_NAME : str = Field(default='your-minio-bucket-name', description="Bucket Name for minio")
 
 
     class Config:
