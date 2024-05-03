@@ -30,7 +30,6 @@ async def upload(file : UploadFile,user_id:UUID) -> str:
         with open(file_path, "wb") as buffer:
             buffer.write(await file.read())
         resized_image_data = resize_image(file_path, size,user_id)
-        print(resized_image_data)
         
 
         image_name = str(user_id)+"."+file.filename.split('.')[1]
@@ -39,7 +38,6 @@ async def upload(file : UploadFile,user_id:UUID) -> str:
 
         # Remove the temporary file
         os.remove(file_path)
-        os.remove(resized_image_data)
 
         # Return success response
         return "http://localhost:9000/"+settings.MINIO_BUCKET_NAME+"/"+image_name
