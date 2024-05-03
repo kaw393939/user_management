@@ -60,3 +60,16 @@ async def test_upload_error(mock_fput_object, mock_image_open, test_file, test_u
          patch("app.utils.image_uploader.minio_client.fput_object", side_effect=S3Error(code=500, message="S3 error", resource="bucket/object", request_id="request_id", host_id="host_id",response="response")):
         url = await upload(test_file, test_user_id)
         assert url is None
+
+@patch("PIL.Image.open")
+@patch("app.utils.image_uploader.minio_client.fput_object")
+async def test_upload(mock_fput_object, mock_image_open, test_file, test_user_id):
+    mock_image = MagicMock(spec=Image.Image)
+    mock_image.resize.return_value = mock_image
+    mock_image_open.return_value = mock_image
+
+    with patch("builtins.open", mock_open(read_data=b"test image data")), \
+         patch("app.utils.image_uploader.resize_image", return_value="/tmp/resized_test.jpg"):
+        url = await upload(test_file, test_user_id)
+        assert url == f"http://localhost:9000/{settings.MINIO_BUCKET_NAME}/{str(test_user_id)}.jpg"
+        mock_fput_object.assert_called_with(settings.MINIO_BUCKET_NAME, f"{str(test_user_id)}.jpg", "/tmp/resized_test.jpg")
