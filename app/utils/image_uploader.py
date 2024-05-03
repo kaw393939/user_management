@@ -42,7 +42,7 @@ async def upload(file : UploadFile,user_id:UUID) -> str:
         os.remove(resized_image_data)
 
         # Return success response
-        return "localhost:9000/"+settings.MINIO_BUCKET_NAME+"/"+image_name
+        return "http://localhost:9000/"+settings.MINIO_BUCKET_NAME+"/"+image_name
     except S3Error as exc:
         print("error occurred.", exc)
         return None
