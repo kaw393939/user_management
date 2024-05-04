@@ -76,6 +76,8 @@ class UserService:
     async def create(cls, session: AsyncSession, user_data: Dict[str, str], email_service: EmailService) -> Optional[User]:
         try:
             validated_data = UserCreate(**user_data).model_dump()
+            if "profile_picture_url" in validated_data.keys():
+                validated_data.pop("profile_picture_url")
             existing_user = await cls.get_by_email(session, validated_data['email'])
             if existing_user:
                 logger.error("User with given email already exists.")
@@ -108,7 +110,8 @@ class UserService:
         try:
             # validated_data = UserUpdate(**update_data).dict(exclude_unset=True)
             validated_data = UserUpdate(**update_data).model_dump(exclude_unset=True)
-
+            if "profile_picture_url" in validated_data.keys():
+                validated_data.pop("profile_picture_url")
             if 'password' in validated_data:
                 validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
             query = update(User).where(User.id == user_id).values(**validated_data).execution_options(synchronize_session="fetch")
