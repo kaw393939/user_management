@@ -102,6 +102,9 @@ class UserService:
         except ValidationError as e:
             logger.error(f"Validation error during user creation: {e}")
             return None
+        except ValueError as e:
+            logger.error(f"Password validation error during user creation: {e}")
+            return None
 
     @classmethod
     async def update(cls, session: AsyncSession, user_id: UUID, update_data: Dict[str, str]) -> Optional[User]:
