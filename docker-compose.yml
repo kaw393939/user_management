@@ -58,7 +58,7 @@ services:
     # restart: always
 
   # frontend:
-  #   image: kaw393939/event_manager_frontend:latest
+  #   image: tewq01/event_manager_frontend:latest
   #   depends_on:
   #     - fastapi
   #   volumes:
