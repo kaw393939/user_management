@@ -63,8 +63,12 @@ class UserService(DbService):
                 
             session.add(new_user)
             await session.commit()
-            if new_user.email_verified == False:
+
+            new_user.verification_token = generate_verification_token()
+
+            if not new_user.email_verified:
                 await email_service.send_verification_email(new_user)
+
             return new_user
         except ValidationError as e:
             raise e
