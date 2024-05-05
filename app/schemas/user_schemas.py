@@ -29,6 +29,14 @@ class UserBase(BaseModel):
     role: UserRole
 
     _validate_urls = validator('profile_picture_url', 'linkedin_profile_url', 'github_profile_url', pre=True, allow_reuse=True)(validate_url)
+
+    @validator('email', pre=True, always=True)
+    def validate_email_domain(cls, v):
+        allowed_domains = ["example.com", "anotherdomain.com"]
+        email_domain = v.split('@')[1]
+        if email_domain not in allowed_domains:
+            raise ValueError(f"Email domain {email_domain} is not allowed. Please use an allowed domain.")
+        return v
  
     class Config:
         from_attributes = True
@@ -36,6 +44,20 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     email: EmailStr = Field(..., example="john.doe@example.com")
     password: str = Field(..., example="Secure*1234")
+
+    @validator('password')
+    def validate_password(cls, v):
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters long")
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not re.search(r"[a-z]", v):
+            raise ValueError("Password must contain at least one lowercase letter")
+        if not re.search(r"\d", v):
+            raise ValueError("Password must contain at least one digit")
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", v):
+            raise ValueError("Password must contain at least one special character")
+        return v
 
 class UserUpdate(UserBase):
     email: Optional[EmailStr] = Field(None, example="john.doe@example.com")
