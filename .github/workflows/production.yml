@@ -70,9 +70,9 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: kaw393939/wis_club_api:${{ github.sha }} # Uses the Git SHA for tagging
+          tags: jatamel/is601finalsp24:${{ github.sha }} # Uses the Git SHA for tagging
           platforms: linux/amd64,linux/arm64 # Multi-platform support
-          cache-from: type=registry,ref=kaw393939/wis_club_api:cache
+          cache-from: type=registry,ref=jatamel/is601finalsp24:cache
           cache-to: type=inline,mode=max
           
       - name: Scan the Docker image
