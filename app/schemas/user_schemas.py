@@ -29,6 +29,14 @@ class UserBase(BaseModel):
     role: UserRole
 
     _validate_urls = validator('profile_picture_url', 'linkedin_profile_url', 'github_profile_url', pre=True, allow_reuse=True)(validate_url)
+
+    @validator('email', pre=True, always=True)
+    def validate_email_domain(cls, v):
+        allowed_domains = ["example.com", "anotherdomain.com"]
+        email_domain = v.split('@')[1]
+        if email_domain not in allowed_domains:
+            raise ValueError(f"Email domain {email_domain} is not allowed. Please use an allowed domain.")
+        return v
  
     class Config:
         from_attributes = True
