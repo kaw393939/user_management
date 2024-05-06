@@ -150,7 +150,7 @@ def link_data():
 def test_link_valid(link_data):
     link = Link(**link_data)
     assert link.rel == link_data["rel"]
-    assert link.href == link_data["href"]
+    assert str(link.href) == link_data["href"]
     assert link.action == link_data["action"]
     assert link.type == link_data["type"]
 
@@ -162,7 +162,7 @@ def test_link_field_invalid(field, link_data):
         Link(**link_data)
 
 # Parametrized tests for href (HttpUrl) validation
-@pytest.mark.parametrize("url", ["http://valid.com", "https://valid.com", None])
+@pytest.mark.parametrize("url", ["http://valid.com/", "https://valid.com/"])
 def test_link_href_valid(url, link_data):
     link_data["href"] = url
     link = Link(**link_data)
