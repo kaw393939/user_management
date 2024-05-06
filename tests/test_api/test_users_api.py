@@ -208,3 +208,11 @@ async def test_create_user_without_email(async_client):
     }
     response = await async_client.post("/register/", json=user_data)
     assert response.status_code == 422
+
+@pytest.mark.asyncio
+async def test_create_user_without_password(async_client):
+    user_data = {
+        "email": "test@example.com",
+    }
+    response = await async_client.post("/register/", json=user_data)
+    assert response.status_code == 422
