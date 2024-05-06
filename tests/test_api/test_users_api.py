@@ -216,3 +216,8 @@ async def test_create_user_without_password(async_client):
     }
     response = await async_client.post("/register/", json=user_data)
     assert response.status_code == 422
+@pytest.mark.asyncio
+async def test_delete_user_as_non_admin(async_client, user_token):
+    headers = {"Authorization": f"Bearer {user_token}"}
+    response = await async_client.delete("/users/some_user", headers=headers)
+    assert response.status_code == 403
