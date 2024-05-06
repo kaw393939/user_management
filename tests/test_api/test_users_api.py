@@ -93,7 +93,7 @@ async def test_login_success(async_client, verified_user):
         "password": "MySuperPassword$1234"
     }
     response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
-    
+
     # Check for successful login response
     assert response.status_code == 200
     data = response.json()
@@ -190,3 +190,13 @@ async def test_list_users_unauthorized(async_client, user_token):
         headers={"Authorization": f"Bearer {user_token}"}
     )
     assert response.status_code == 403  # Forbidden, as expected for regular user
+@pytest.mark.asyncio
+async def test_create_user_with_invalid_role(async_client, admin_token):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    user_data = {
+        "email": "test@example.com",
+        "password": "ValidPassword123!",
+        "role": "INVALID_ROLE"
+    }
+    response = await async_client.post("/users/", json=user_data, headers=headers)
+    assert response.status_code == 422
