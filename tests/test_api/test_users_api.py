@@ -152,7 +152,7 @@ async def test_delete_user_does_not_exist(async_client, admin_token):
 
 @pytest.mark.asyncio
 async def test_update_user_github(async_client, admin_user, admin_token):
-    updated_data = {"github_profile_url": "http://www.github.com/kaw393939"}
+    updated_data = {"github_profile_url": "http://www.github.com/karthikysvk"}
     headers = {"Authorization": f"Bearer {admin_token}"}
     response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
     assert response.status_code == 200
@@ -160,7 +160,7 @@ async def test_update_user_github(async_client, admin_user, admin_token):
 
 @pytest.mark.asyncio
 async def test_update_user_linkedin(async_client, admin_user, admin_token):
-    updated_data = {"linkedin_profile_url": "http://www.linkedin.com/kaw393939"}
+    updated_data = {"linkedin_profile_url": "http://www.linkedin.com/karthikyeluripati"}
     headers = {"Authorization": f"Bearer {admin_token}"}
     response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
     assert response.status_code == 200
