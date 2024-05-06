@@ -172,3 +172,10 @@ async def test_verify_email_non_existent_user(db_session):
     token = "valid_token_example"
     result = await UserService.verify_email_with_token(db_session, non_existent_user_id, token)
     assert result is False
+
+# Test updating a user's role.
+async def test_update_user_role(db_session, user):
+    new_role = UserRole.ADMIN if user.role != UserRole.ADMIN else UserRole.USER
+    updated_user = await UserService.update(db_session, user.id, {"role": new_role.name})
+    assert updated_user is not None
+    assert updated_user.role == new_role.name  # Convert the enum to a string before comparing
