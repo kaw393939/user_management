@@ -166,3 +166,9 @@ async def test_list_users_with_empty_page(db_session, users_with_same_role_50_us
     users_page = await UserService.list_users(db_session, skip=100, limit=10)
     assert len(users_page) == 0
 
+# Test the behavior of the system when trying to verify the email of a non-existent user.
+async def test_verify_email_non_existent_user(db_session):
+    non_existent_user_id = "non-existent-id"
+    token = "valid_token_example"
+    result = await UserService.verify_email_with_token(db_session, non_existent_user_id, token)
+    assert result is False
