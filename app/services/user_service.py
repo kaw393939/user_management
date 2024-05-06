@@ -11,10 +11,11 @@ from app.models.user_model import User
 from app.schemas.user_schemas import UserCreate, UserUpdate
 from app.utils.nickname_gen import generate_nickname
 from app.utils.security import generate_verification_token, hash_password, verify_password
-from uuid import UUID
+from uuid import UUID, uuid4
 from app.services.email_service import EmailService
 from app.models.user_model import UserRole
 import logging
+from fastapi import UploadFile
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
@@ -50,6 +51,26 @@ class UserService:
         return await cls._fetch_user(session, email=email)
 
     @classmethod
+    async def upload(cls, session: AsyncSession, user_id: UUID, profile_image: Dict[str, str]) -> Optional[User]:
+        try:
+            # validated_data = UserUpdate(**update_data).dict(exclude_unset=True)
+            validated_data = UserUpdate(**profile_image).model_dump(exclude_unset=True)
+            query = update(User).where(User.id == user_id).values(**validated_data).execution_options(synchronize_session="fetch")
+            await cls._execute_query(session, query)
+            updated_user = await cls.get_by_id(session, user_id)
+            if updated_user:
+                await session.refresh(updated_user)  # Explicitly refresh the updated user object
+                logger.info(f"User {user_id} updated successfully.")
+                return updated_user
+            else:
+                logger.error(f"User {user_id} not found after update attempt.")
+            return None
+        except Exception as e:  # Broad exception handling for debugging
+            logger.error(f"Error during user update: {e}")
+            return None
+
+
+    @classmethod
     async def create(cls, session: AsyncSession, user_data: Dict[str, str], email_service: EmailService) -> Optional[User]:
         try:
             validated_data = UserCreate(**user_data).model_dump()
@@ -57,6 +78,8 @@ class UserService:
             if existing_user:
                 logger.error("User with given email already exists.")
                 return None
+            # Generate a UUID for the user_id
+            validated_data['id'] = str(uuid4())
             validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
             new_user = User(**validated_data)
             new_nickname = generate_nickname()
@@ -69,12 +92,11 @@ class UserService:
             if new_user.role == UserRole.ADMIN:
                 new_user.email_verified = True
 
-            else:
-                new_user.verification_token = generate_verification_token()
-                await email_service.send_verification_email(new_user)
+            new_user.verification_token = generate_verification_token()
 
             session.add(new_user)
             await session.commit()
+            await email_service.send_verification_email(new_user)
             return new_user
         except ValidationError as e:
             logger.error(f"Validation error during user creation: {e}")
@@ -85,7 +107,14 @@ class UserService:
         try:
             # validated_data = UserUpdate(**update_data).dict(exclude_unset=True)
             validated_data = UserUpdate(**update_data).model_dump(exclude_unset=True)
-
+            existing_user = await cls.get_by_email(session, validated_data['email'])
+            if existing_user:
+                logger.error("User with given email already exists.")
+                return None
+            existing_user_nickname = await cls.get_by_nickname(session, validated_data['nickname'])
+            if existing_user_nickname:
+                logger.error("User with given nickname already exists.")
+                return None
             if 'password' in validated_data:
                 validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
             query = update(User).where(User.id == user_id).values(**validated_data).execution_options(synchronize_session="fetch")
@@ -127,10 +156,7 @@ class UserService:
     async def login_user(cls, session: AsyncSession, email: str, password: str) -> Optional[User]:
         user = await cls.get_by_email(session, email)
         if user:
-            if user.email_verified is False:
-                return None
-            if user.is_locked:
-                return None
+            
             if verify_password(password, user.hashed_password):
                 user.failed_login_attempts = 0
                 user.last_login_at = datetime.now(timezone.utc)
@@ -150,7 +176,15 @@ class UserService:
         user = await cls.get_by_email(session, email)
         return user.is_locked if user else False
 
+    @classmethod
+    async def is_verified(cls, session: AsyncSession, email: str) -> bool:
+        user = await cls.get_by_email(session, email)
+        return user.email_verified if user else False
 
+    @classmethod
+    async def is_verified(cls, session: AsyncSession, email: str) -> bool:
+        user = await cls.get_by_email(session, email)
+        return user.email_verified if user else False
     @classmethod
     async def reset_password(cls, session: AsyncSession, user_id: UUID, new_password: str) -> bool:
         hashed_password = hash_password(new_password)
@@ -170,7 +204,8 @@ class UserService:
         if user and user.verification_token == token:
             user.email_verified = True
             user.verification_token = None  # Clear the token once used
-            user.role = UserRole.AUTHENTICATED
+            if user.role == UserRole.ANONYMOUS:
+                user.role = UserRole.AUTHENTICATED
             session.add(user)
             await session.commit()
             return True

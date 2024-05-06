@@ -33,8 +33,26 @@ from app.services.jwt_service import create_access_token
 from app.utils.link_generation import create_user_links, generate_pagination_links
 from app.dependencies import get_settings
 from app.services.email_service import EmailService
+from fastapi.responses import RedirectResponse
+from fastapi import UploadFile,File
+from app.utils.image_uploader import upload,allowed_file,MAX_FILE_SIZE
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+@router.post("/token", response_model=TokenResponse)
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: AsyncSession = Depends(get_db)):
+    
+    user = await UserService.login_user(session, form_data.username, form_data.password)
+    if user:
+        access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
+
+  #         access_token = create_access_token(
+#             data={"sub": user.email, "role": str(user.role.name)},
+#             expires_delta=access_token_expires
+#         )
+
+#         return {"access_token": access_token, "token_type": "bearer"}
+#     raise HTTPException(status_code=401, detail="Incorrect email or password.")
 settings = get_settings()
 @router.get("/users/{user_id}", response_model=UserResponse, name="get_user", tags=["User Management Requires (Admin or Manager Roles)"])
 async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme), current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))):
@@ -87,7 +105,48 @@ async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, 
     - **user_update**: UserUpdate model with updated user information.
     """
     user_data = user_update.model_dump(exclude_unset=True)
+    existing_user = await UserService.get_by_email(db, user_update.email)
+    if existing_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists")
+
+    existing_user_nickname = await UserService.get_by_nickname(db, user_update.nickname)
+    if existing_user_nickname:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nickname already exists")
     updated_user = await UserService.update(db, user_id, user_data)
+    if not updated_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    return UserResponse.model_construct(
+        id=updated_user.id,
+        bio=updated_user.bio,
+        first_name=updated_user.first_name,
+        last_name=updated_user.last_name,
+        nickname=updated_user.nickname,
+        email=updated_user.email,
+        role=updated_user.role,
+        last_login_at=updated_user.last_login_at,
+        profile_picture_url=updated_user.profile_picture_url,
+        github_profile_url=updated_user.github_profile_url,
+        linkedin_profile_url=updated_user.linkedin_profile_url,
+        created_at=updated_user.created_at,
+        updated_at=updated_user.updated_at,
+        links=create_user_links(updated_user.id, request)
+    )
+
+
+@router.put("/upload/{user_id}",response_model=UserResponse, status_code=status.HTTP_202_ACCEPTED, name="update_image", tags=["User Management Requires (Admin or Manager Roles)"])
+async def update_image(user_id: UUID, request: Request,db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme), current_user: dict = Depends(require_role(["ADMIN", "MANAGER"])),file:UploadFile=File(...)):
+    """
+    Update user information.
+    - **user_id**: UUID of the user to update.
+    - **user_update**: UserUpdate model with updated user information.
+    """
+    if not allowed_file(file):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Select an Image with '.png', '.jpg', '.jpeg' extension")
+    if file.size > MAX_FILE_SIZE:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File Size too big")
+    image_url = await upload(file,user_id)
+    updated_user = await UserService.upload(db,user_id, {"profile_picture_url" : image_url})
     if not updated_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
@@ -124,7 +183,7 @@ async def delete_user(user_id: UUID, db: AsyncSession = Depends(get_db), token: 
 
 
 @router.post("/users/", response_model=UserResponse, status_code=status.HTTP_201_CREATED, tags=["User Management Requires (Admin or Manager Roles)"], name="create_user")
-async def create_user(user: UserCreate, request: Request, db: AsyncSession = Depends(get_db), email_service: EmailService = Depends(get_email_service), token: str = Depends(oauth2_scheme), current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))):
+async def create_user(user: UserCreate,request: Request, db: AsyncSession = Depends(get_db), email_service: EmailService = Depends(get_email_service), token: str = Depends(oauth2_scheme), current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))):
     """
     Create a new user.
 
@@ -144,7 +203,7 @@ async def create_user(user: UserCreate, request: Request, db: AsyncSession = Dep
     if existing_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists")
     
-    created_user = await UserService.create(db, user.model_dump(), email_service)
+    created_user = await UserService.create(db, user.model_dump(), email_service,"https://www.google.com/image")
     if not created_user:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create user")
     
@@ -173,24 +232,25 @@ async def list_users(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))
 ):
-    total_users = await UserService.count(db)
-    users = await UserService.list_users(db, skip, limit)
+    if limit>0:
+        total_users = await UserService.count(db)
+        users = await UserService.list_users(db, skip, limit)
 
-    user_responses = [
-        UserResponse.model_validate(user) for user in users
-    ]
-    
-    pagination_links = generate_pagination_links(request, skip, limit, total_users)
-    
-    # Construct the final response with pagination details
-    return UserListResponse(
-        items=user_responses,
-        total=total_users,
-        page=skip // limit + 1,
-        size=len(user_responses),
-        links=pagination_links  # Ensure you have appropriate logic to create these links
-    )
+        user_responses = [
+            UserResponse.model_validate(user) for user in users
+        ]
 
+        pagination_links = generate_pagination_links(request, skip, limit, total_users)
+
+        # Construct the final response with pagination details
+        return UserListResponse(
+            items=user_responses,
+            total=total_users,
+            page=skip // limit + 1,
+            size=len(user_responses),
+            links=pagination_links  # Ensure you have appropriate logic to create these links
+        )
+    raise HTTPException(status_code=400, detail="Limit must be greater than 0")
 
 @router.post("/register/", response_model=UserResponse, tags=["Login and Registration"])
 async def register(user_data: UserCreate, session: AsyncSession = Depends(get_db), email_service: EmailService = Depends(get_email_service)):
@@ -201,36 +261,23 @@ async def register(user_data: UserCreate, session: AsyncSession = Depends(get_db
 
 @router.post("/login/", response_model=TokenResponse, tags=["Login and Registration"])
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: AsyncSession = Depends(get_db)):
-    if await UserService.is_account_locked(session, form_data.username):
-        raise HTTPException(status_code=400, detail="Account locked due to too many failed login attempts.")
+    
 
     user = await UserService.login_user(session, form_data.username, form_data.password)
     if user:
-        access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
+        if await UserService.is_account_locked(session,form_data.username) is True:
+            raise HTTPException(status_code=401, detail="Account locked due to too many failed login attempts.")
+        elif await UserService.is_verified(session,form_data.username) is False:
+            raise HTTPException(status_code=401, detail="Verify you E-mail")
+        else:
+            access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
 
-        access_token = create_access_token(
-            data={"sub": user.email, "role": str(user.role.name)},
-            expires_delta=access_token_expires
-        )
+            access_token = create_access_token(
+                data={"sub": user.email, "role": str(user.role.name)},
+                expires_delta=access_token_expires
+            )
 
-        return {"access_token": access_token, "token_type": "bearer"}
-    raise HTTPException(status_code=401, detail="Incorrect email or password.")
-
-@router.post("/login/", include_in_schema=False, response_model=TokenResponse, tags=["Login and Registration"])
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: AsyncSession = Depends(get_db)):
-    if await UserService.is_account_locked(session, form_data.username):
-        raise HTTPException(status_code=400, detail="Account locked due to too many failed login attempts.")
-
-    user = await UserService.login_user(session, form_data.username, form_data.password)
-    if user:
-        access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
-
-        access_token = create_access_token(
-            data={"sub": user.email, "role": str(user.role.name)},
-            expires_delta=access_token_expires
-        )
-
-        return {"access_token": access_token, "token_type": "bearer"}
+            return {"access_token": access_token, "token_type": "bearer"}
     raise HTTPException(status_code=401, detail="Incorrect email or password.")
 
 
@@ -243,5 +290,5 @@ async def verify_email(user_id: UUID, token: str, db: AsyncSession = Depends(get
     - **token**: Verification token sent to the user's email.
     """
     if await UserService.verify_email_with_token(db, user_id, token):
-        return {"message": "Email verified successfully"}
+        return RedirectResponse(url=settings.account_verification)
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired verification token")
