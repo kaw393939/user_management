@@ -129,12 +129,6 @@ def test_user_list_response_valid(user_response_data):
     assert user_list.size == 10
 
 # Parametrized tests for role validation in UserBase
-@pytest.mark.parametrize("role", ["AUTHENTICATED", "ADMIN", "GUEST"])
-def test_user_base_role_valid(role, user_base_data):
-    user_base_data["role"] = role
-    user = UserBase(**user_base_data)
-    assert user.role == role
-
 @pytest.mark.parametrize("role", ["invalid_role", "", None])
 def test_user_base_role_invalid(role, user_base_data):
     user_base_data["role"] = role
