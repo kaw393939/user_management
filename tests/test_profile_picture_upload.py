@@ -49,3 +49,17 @@ async def test_retrieve_user_profile_picture(test_app, async_session: AsyncSessi
         assert response.status_code == 200
         assert 'profile_picture_url' in response.json()
         assert response.json()['profile_picture_url'].startswith("https://")
+
+
+@pytest.mark.asyncio
+async def test_profile_picture_upload_error_handling(test_app):
+    with patch('app.utils.minio_utils.get_minio_client') as mock_minio_client:
+        mock_minio_client.side_effect = Exception("Minio is down")
+        async with AsyncClient(app=test_app, base_url="http://testserver") as ac:
+            response = await ac.post(
+                "/upload-profile-picture",
+                files={"file": ("fake_pic.jpg", b"fake_data", "image/jpeg")}
+            )
+            assert response.status_code == 500
+            assert "error" in response.json()
+            assert response.json()['detail'] == "Failed to upload to Minio"
