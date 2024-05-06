@@ -33,7 +33,19 @@ from app.services.jwt_service import create_access_token
 from app.utils.link_generation import create_user_links, generate_pagination_links
 from app.dependencies import get_settings
 from app.services.email_service import EmailService
+
+
+import shutil
+import os
+import uuid
+from fastapi import APIRouter, File, UploadFile, HTTPException
+from fastapi.responses import JSONResponse
+from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
+from app.utils.minio_utils import get_minio_client, MINIO_BUCKET
+
 router = APIRouter()
+
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 settings = get_settings()
 @router.get("/users/{user_id}", response_model=UserResponse, name="get_user", tags=["User Management Requires (Admin or Manager Roles)"])
@@ -245,3 +257,35 @@ async def verify_email(user_id: UUID, token: str, db: AsyncSession = Depends(get
     if await UserService.verify_email_with_token(db, user_id, token):
         return {"message": "Email verified successfully"}
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired verification token")
+
+def save_temp_file(file: UploadFile, dest: str):
+    with open(dest, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    file.file.close()  # Ensure the file is closed after saving
+
+@router.post("/upload-profile-picture")
+async def upload_profile_picture(file: UploadFile = File(...)):
+    # Generate a secure unique filename to prevent overwriting and other issues
+    file_extension = os.path.splitext(file.filename)[1]
+    secure_filename = f"{uuid.uuid4()}{file_extension}"
+    temp_file_path = os.path.join("/tmp", secure_filename)
+    
+    # Save the uploaded file to a temporary file
+    save_temp_file(file, temp_file_path)
+
+    minio_client = get_minio_client()  # Call the function to get a Minio client
+    try:
+        # Upload the file to Minio
+        with open(temp_file_path, "rb") as data:
+            minio_client.put_object(
+                MINIO_BUCKET, secure_filename, data, os.path.getsize(temp_file_path)
+            )
+        # Generate the file URL
+        file_url = f"http://{minio_client._endpoint}/{MINIO_BUCKET}/{secure_filename}"
+        return JSONResponse(status_code=200, content={"message": "File uploaded successfully", "url": file_url})
+    except Exception as e:
+        raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    finally:
+        # Clean up the temporary file
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
