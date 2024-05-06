@@ -51,6 +51,18 @@ async def test_update_user_email_access_allowed(async_client, admin_user, admin_
     assert response.status_code == 200
     assert response.json()["email"] == updated_data["email"]
 
+@pytest.mark.asyncio
+async def test_update_user_email_access_allowed_test2(async_client, admin_user, admin_token):
+    updated_data = {"email": f"updated_{admin_user.id}@example.com"}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    # First, verify if the user exists
+    pre_response = await async_client.get(f"/users/{admin_user.id}", headers=headers)
+    assert pre_response.status_code == 200, "User should exist before update attempt"
+
+    # Then, try to update the user
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 200, "Failed to update user when it should be allowed"
 
 @pytest.mark.asyncio
 async def test_delete_user(async_client, admin_user, admin_token):
