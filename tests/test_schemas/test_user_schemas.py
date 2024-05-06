@@ -166,10 +166,10 @@ def test_link_field_invalid(field, link_data):
 def test_link_href_valid(url, link_data):
     link_data["href"] = url
     link = Link(**link_data)
-    assert link.href == url
+    assert str(link.href) == url
 
 @pytest.mark.parametrize("url", ["ftp://invalid.com", "http//invalid", "https//invalid"])
 def test_link_href_invalid(url, link_data):
     link_data["href"] = url
     with pytest.raises(ValidationError):
-        Link(**link_data)
+        str(Link(**link_data))
