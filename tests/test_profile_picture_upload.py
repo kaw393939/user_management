@@ -6,13 +6,29 @@ from unittest.mock import patch, MagicMock
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.routers.user_routes import router as user_router
 from app.utils.minio_utils import get_minio_client
-from app.dependencies import override_get_minio_client
+from unittest.mock import Mock
+
 
 @pytest.fixture
 def test_app():
     app = FastAPI()
+    app.dependency_overrides[get_minio_client] = override_get_minio_client
     app.include_router(user_router)
     return app
+
+@pytest.fixture
+def override_get_minio_client():
+    mock_client = Mock()
+    mock_client.put_object = Mock()
+    return mock_client
+
+'''@pytest.fixture
+def app(override_get_minio_client):
+    app = FastAPI()
+    app.dependency_overrides[get_minio_client] = override_get_minio_client
+    app.include_router(user_router)
+    return app'''
+
 
 @pytest.mark.asyncio
 async def test_upload_profile_picture_success(test_app):
