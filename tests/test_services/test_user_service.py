@@ -161,3 +161,14 @@ async def test_unlock_user_account(db_session, locked_user):
     assert unlocked, "The account should be unlocked"
     refreshed_user = await UserService.get_by_id(db_session, locked_user.id)
     assert not refreshed_user.is_locked, "The user should no longer be locked"
+
+async def test_is_account_locked(db_session, user):
+    result = await UserService.is_account_locked(db_session, user.email)
+    assert result is False
+
+async def test_count_users(db_session, users_with_same_role_50_users):
+    users = await UserService.list_users(db_session, skip=0, limit=10)
+    count = await UserService.count(db_session)
+    assert count == 50
+
+

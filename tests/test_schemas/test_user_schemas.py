@@ -1,8 +1,9 @@
 import uuid
 import pytest
-from pydantic import ValidationError
+from pydantic import ValidationError, HttpUrl
 from datetime import datetime
-from app.schemas.user_schemas import UserBase, UserCreate, UserUpdate, UserResponse, UserListResponse, LoginRequest
+from app.schemas.user_schemas import ErrorResponse, ProfessionalStatus, UserBase, UserCreate, UserUpdate, UserResponse, UserListResponse, LoginRequest
+from app.schemas.link_schema import Link
 
 # Fixtures for common test data
 @pytest.fixture
@@ -108,3 +109,67 @@ def test_user_base_url_invalid(url, user_base_data):
     user_base_data["profile_picture_url"] = url
     with pytest.raises(ValidationError):
         UserBase(**user_base_data)
+
+# Test for ProfessionalStatus
+def test_professional_status_valid():
+    status = ProfessionalStatus(is_professional=True)
+    assert status.is_professional == True
+
+# Test for ErrorResponse
+def test_error_response_valid():
+    error = ErrorResponse(error="Not Found", details="The requested resource was not found.")
+    assert error.error == "Not Found"
+    assert error.details == "The requested resource was not found."
+
+# Test for UserListResponse
+def test_user_list_response_valid(user_response_data):
+    user_list = UserListResponse(items=[user_response_data]*10, total=100, page=1, size=10)
+    assert len(user_list.items) == 10
+    assert user_list.total == 100
+    assert user_list.page == 1
+    assert user_list.size == 10
+
+# Parametrized tests for role validation in UserBase
+@pytest.mark.parametrize("role", ["invalid_role", "", None])
+def test_user_base_role_invalid(role, user_base_data):
+    user_base_data["role"] = role
+    with pytest.raises(ValidationError):
+        UserBase(**user_base_data)
+
+# Fixtures for common test data
+@pytest.fixture
+def link_data():
+    return {
+        "rel": "self",
+        "href": "https://api.example.com/qr/123",
+        "action": "GET",
+        "type": "application/json"
+    }
+
+# Tests for Link
+def test_link_valid(link_data):
+    link = Link(**link_data)
+    assert link.rel == link_data["rel"]
+    assert str(link.href) == link_data["href"]
+    assert link.action == link_data["action"]
+    assert link.type == link_data["type"]
+
+# Parametrized tests for rel, action and type validation
+@pytest.mark.parametrize("field", ["rel"])
+def test_link_field_invalid(field, link_data):
+    link_data[field] = ""  # empty string is invalid
+    with pytest.raises(ValidationError):
+        Link(**link_data)
+
+# Parametrized tests for href (HttpUrl) validation
+@pytest.mark.parametrize("url", ["http://valid.com/", "https://valid.com/"])
+def test_link_href_valid(url, link_data):
+    link_data["href"] = url
+    link = Link(**link_data)
+    assert str(link.href) == url
+
+@pytest.mark.parametrize("url", ["ftp://invalid.com", "http//invalid", "https//invalid"])
+def test_link_href_invalid(url, link_data):
+    link_data["href"] = url
+    with pytest.raises(ValidationError):
+        str(Link(**link_data))
