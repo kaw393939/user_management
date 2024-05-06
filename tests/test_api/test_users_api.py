@@ -200,3 +200,11 @@ async def test_create_user_with_invalid_role(async_client, admin_token):
     }
     response = await async_client.post("/users/", json=user_data, headers=headers)
     assert response.status_code == 422
+
+@pytest.mark.asyncio
+async def test_create_user_without_email(async_client):
+    user_data = {
+        "password": "ValidPassword123!",
+    }
+    response = await async_client.post("/register/", json=user_data)
+    assert response.status_code == 422
