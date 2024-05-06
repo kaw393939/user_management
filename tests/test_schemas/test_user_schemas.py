@@ -117,3 +117,6 @@ def test_user_create_null():
 def test_user_update_invalid_data_type():
     with pytest.raises(ValidationError):
         UserUpdate(**{"email": 123, "nickname": True})
+def test_login_request_missing_field():
+    with pytest.raises(ValidationError):
+        LoginRequest(**{"email": "john_doe_123@emai.com"})
