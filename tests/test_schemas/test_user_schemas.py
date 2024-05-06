@@ -114,3 +114,6 @@ def test_user_base_empty():
 def test_user_create_null():
     with pytest.raises(TypeError):
         UserCreate(**None)
+def test_user_update_invalid_data_type():
+    with pytest.raises(ValidationError):
+        UserUpdate(**{"email": 123, "nickname": True})
