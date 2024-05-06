@@ -14,8 +14,10 @@ WORKDIR /myapp
 # Update system and specifically upgrade libc-bin to the required security patch version
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
-    libpq-dev \
-    && apt-get install -y libc-bin=2.36-9+deb12u7 \   # Update to the fixed version
+    libpq-dev
+
+# Upgrade libc-bin to the fixed version and clean up
+RUN apt-get install -y libc-bin=2.36-9+deb12u7 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -32,8 +34,8 @@ FROM python:3.12-slim-bookworm as final
 # Copy the virtual environment from the base stage
 COPY --from=base /.venv /.venv
 
-# Upgrade libc-bin in the final stage to ensure security patch is applied
-RUN apt-get update && apt-get install -y libc-bin=2.36-9+deb12u7 \   # Update to the fixed version
+# Upgrade libc-bin to the fixed version and clean up
+RUN apt-get update && apt-get install -y libc-bin=2.36-9+deb12u7 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
