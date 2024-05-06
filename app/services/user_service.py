@@ -69,9 +69,7 @@ class UserService:
             if new_user.role == UserRole.ADMIN:
                 new_user.email_verified = True
 
-            else:
-                new_user.verification_token = generate_verification_token()
-                await email_service.send_verification_email(new_user)
+            new_user.verification_token = generate_verification_token()
 
             session.add(new_user)
             await session.commit()
@@ -86,6 +84,14 @@ class UserService:
             # validated_data = UserUpdate(**update_data).dict(exclude_unset=True)
             validated_data = UserUpdate(**update_data).model_dump(exclude_unset=True)
 
+            existing_user = await cls.get_by_email(session, validated_data['email'])
+            if existing_user:
+                logger.error("User with given email already exists.")
+                return None
+            existing_user_nickname = await cls.get_by_nickname(session, validated_data['nickname'])
+            if existing_user_nickname:
+                logger.error("User with given nickname already exists.")
+                return None
             if 'password' in validated_data:
                 validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
             query = update(User).where(User.id == user_id).values(**validated_data).execution_options(synchronize_session="fetch")
@@ -149,7 +155,11 @@ class UserService:
     async def is_account_locked(cls, session: AsyncSession, email: str) -> bool:
         user = await cls.get_by_email(session, email)
         return user.is_locked if user else False
-
+    
+    @classmethod
+    async def is_verified(cls, session: AsyncSession, email: str) -> bool:
+        user = await cls.get_by_email(session, email)
+        return user.email_verified if user else False
 
     @classmethod
     async def reset_password(cls, session: AsyncSession, user_id: UUID, new_password: str) -> bool:
@@ -170,7 +180,8 @@ class UserService:
         if user and user.verification_token == token:
             user.email_verified = True
             user.verification_token = None  # Clear the token once used
-            user.role = UserRole.AUTHENTICATED
+            if user.role == UserRole.ANONYMOUS:
+                user.role = UserRole.AUTHENTICATED
             session.add(user)
             await session.commit()
             return True
