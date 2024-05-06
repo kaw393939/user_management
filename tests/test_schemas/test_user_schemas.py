@@ -108,3 +108,51 @@ def test_user_base_url_invalid(url, user_base_data):
     user_base_data["profile_picture_url"] = url
     with pytest.raises(ValidationError):
         UserBase(**user_base_data)
+
+# Test username with length less than 3 characters
+def test_user_base_username_length_too_short(user_base_data):
+    user_base_data["username"] = "ab"
+    with pytest.raises(ValidationError):
+        UserBase(**user_base_data)
+
+    # Test username with length equal to 3 characters
+    user_base_data["username"] = "abc"
+    user = UserBase(**user_base_data)
+    assert user.username == "abc"
+
+# Test username with invalid special characters
+def test_user_base_username_invalid_char(user_base_data):
+    user_base_data["username"] = "@()/\!"
+    with pytest.raises(ValidationError):
+        UserBase(**user_base_data)
+
+def test_user_base_password_edge_cases(user_create_data):
+    user_create_data["password"] = "abcdefg"
+    with pytest.raises(ValidationError):
+        UserCreate(**user_create_data)
+    
+    # Test password with length equal to 8 characters but no special character
+    user_create_data["password"] = "Abcdefg1"
+    with pytest.raises(ValidationError):
+        UserCreate(**user_create_data)
+
+    # Test password with length equal to 8 characters, number, capitalization, and special character
+    user_create_data["password"] = "Abcdef1!"
+    user = UserCreate(**user_create_data)
+    assert user.password == "Abcdef1!"
+
+# Test full name for invalid special character
+def test_user_base_full_name_edge_cases(user_base_data):
+    user_base_data["full_name"] = "John=Doe"
+    with pytest.raises(ValidationError):
+        UserBase(**user_base_data)
+
+    # Test with proper full name
+    user_base_data["full_name"] = "John Doe"
+    user = UserBase(**user_base_data)
+    assert user.full_name == "John Doe"
+
+    # Test with proper full name with hyphen
+    user_base_data["full_name"] = "John's Doe"
+    user = UserBase(**user_base_data)
+    assert user.full_name == "John's Doe"
