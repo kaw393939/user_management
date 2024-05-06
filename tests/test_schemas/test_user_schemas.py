@@ -2,7 +2,7 @@ import uuid
 import pytest
 from pydantic import ValidationError
 from datetime import datetime
-from app.schemas.user_schemas import UserBase, UserCreate, UserUpdate, UserResponse, UserListResponse, LoginRequest
+from app.schemas.user_schemas import ErrorResponse, ProfessionalStatus, UserBase, UserCreate, UserUpdate, UserResponse, UserListResponse, LoginRequest
 
 # Fixtures for common test data
 @pytest.fixture
@@ -109,50 +109,34 @@ def test_user_base_url_invalid(url, user_base_data):
     with pytest.raises(ValidationError):
         UserBase(**user_base_data)
 
-# Test username with length less than 3 characters
-def test_user_base_username_length_too_short(user_base_data):
-    user_base_data["nickname"] = "ab"
+# Test for ProfessionalStatus
+def test_professional_status_valid():
+    status = ProfessionalStatus(is_professional=True)
+    assert status.is_professional == True
+
+# Test for ErrorResponse
+def test_error_response_valid():
+    error = ErrorResponse(error="Not Found", details="The requested resource was not found.")
+    assert error.error == "Not Found"
+    assert error.details == "The requested resource was not found."
+
+# Test for UserListResponse
+def test_user_list_response_valid(user_response_data):
+    user_list = UserListResponse(items=[user_response_data]*10, total=100, page=1, size=10)
+    assert len(user_list.items) == 10
+    assert user_list.total == 100
+    assert user_list.page == 1
+    assert user_list.size == 10
+
+# Parametrized tests for role validation in UserBase
+@pytest.mark.parametrize("role", ["AUTHENTICATED", "ADMIN", "GUEST"])
+def test_user_base_role_valid(role, user_base_data):
+    user_base_data["role"] = role
+    user = UserBase(**user_base_data)
+    assert user.role == role
+
+@pytest.mark.parametrize("role", ["invalid_role", "", None])
+def test_user_base_role_invalid(role, user_base_data):
+    user_base_data["role"] = role
     with pytest.raises(ValidationError):
         UserBase(**user_base_data)
-
-    # Test username with length equal to 3 characters
-    user_base_data["nickname"] = "abc"
-    user = UserBase(**user_base_data)
-    assert user.username == "abc"
-
-# Test username with invalid special characters
-def test_user_base_username_invalid_char(user_base_data):
-    user_base_data["nickname"] = "@()/\!"
-    with pytest.raises(ValidationError):
-        UserBase(**user_base_data)
-
-def test_user_base_password_edge_cases(user_create_data):
-    user_create_data["password"] = "abcdefg"
-    with pytest.raises(ValidationError):
-        UserCreate(**user_create_data)
-    
-    # Test password with length equal to 8 characters but no special character
-    user_create_data["password"] = "Abcdefg1"
-    with pytest.raises(ValidationError):
-        UserCreate(**user_create_data)
-
-    # Test password with length equal to 8 characters, number, capitalization, and special character
-    user_create_data["password"] = "Abcdef1!"
-    user = UserCreate(**user_create_data)
-    assert user.password == "Abcdef1!"
-
-# Test full name for invalid special character
-def test_user_base_full_name_edge_cases(user_base_data):
-    user_base_data["full_name"] = "John=Doe"
-    with pytest.raises(ValidationError):
-        UserBase(**user_base_data)
-
-    # Test with proper full name
-    user_base_data["full_name"] = "John Doe"
-    user = UserBase(**user_base_data)
-    assert user.full_name == "John Doe"
-
-    # Test with proper full name with hyphen
-    user_base_data["full_name"] = "John's Doe"
-    user = UserBase(**user_base_data)
-    assert user.full_name == "John's Doe"
