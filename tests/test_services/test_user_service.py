@@ -166,11 +166,9 @@ async def test_is_account_locked(db_session, user):
     result = await UserService.is_account_locked(db_session, user.email)
     assert result is False
 
-async def test_count_users(db_session, user_factory):
-    users = user_factory.create_batch(5)
-    db_session.add_all(users)
-    db_session.commit()
-    count = await UserService.count(db_session)
+async def test_count_users(db_session, users_with_same_role_5_users):
+    users = await UserService.list_users(db_session, skip=0, limit=10)
+    count = await UserService.count(users)
     assert count == 5
 
 
