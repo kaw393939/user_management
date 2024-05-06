@@ -35,7 +35,6 @@ class UserBase(BaseModel):
     class Config:
         from_attributes = True
 
-
 class UserCreate(UserBase):
     email: EmailStr = Field(..., example="john.doe@example.com")
     password: str = Field(..., example="Secure*1234", min_length=8)
@@ -56,7 +55,6 @@ class UserCreate(UserBase):
         if errors:
             raise ValueError("Password " + ", ".join(errors))
         return v
-
 
 class UserUpdate(UserBase):
     email: Optional[EmailStr] = Field(None, example="john.doe@example.com")

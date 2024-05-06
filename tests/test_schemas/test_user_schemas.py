@@ -121,6 +121,7 @@ def test_valid_password_for_user_creation(password, user_create_data):
     "allnumbers12345",
     "special$character@only",
     "1234abcd"
+    "sruj123"
     "websystems"
     "CAPITALS"
     "365421"
