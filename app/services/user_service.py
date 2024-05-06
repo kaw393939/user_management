@@ -71,9 +71,10 @@ class UserService:
 
             else:
                 new_user.verification_token = generate_verification_token()
-                await email_service.send_verification_email(new_user)
 
             session.add(new_user)
+            if new_user.email_verified == False:
+                await email_service.send_verification_email(new_user)
             await session.commit()
             return new_user
         except ValidationError as e:
