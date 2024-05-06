@@ -54,6 +54,11 @@ class UserUpdate(UserBase):
             raise ValueError("At least one field must be provided for update")
         return values
 
+@validator('linkedin_profile_url', 'profile_picture_url', 'github_profile_url', pre=True, always=True)
+def empty_string_to_none(cls, v):
+        v = v.strip() if isinstance(v, str) else v
+        return None if v == "" else v
+
 class UserResponse(UserBase):
     id: uuid.UUID = Field(..., example=uuid.uuid4())
     email: EmailStr = Field(..., example="john.doe@example.com")
