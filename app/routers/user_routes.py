@@ -251,16 +251,8 @@ async def verify_email(user_id: UUID, token: str, db: AsyncSession = Depends(get
 
 @router.patch("/users/{user_id}/professional-status", response_model=UserResponse, tags=["User Management Requires (Admin or Manager Roles)"])
 async def update_professional_status(user_id: UUID, status_update: ProfessionalStatus, db: AsyncSession = Depends(get_db), current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))):
-    """
-    Update the professional status of a user using model's method.
-    
-    - **user_id**: UUID of the user whose professional status is to be updated.
-    - **status_update**: ProfessionalStatusUpdate model with the desired professional status.
-    """
     async with db.begin():
-        statement = select(User).where(User.id == user_id)
-        result = await db.execute(statement)
-        user = result.scalar_one_or_none()
+        user = await UserService.get_by_id(db, user_id)
 
         if user is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -269,6 +261,6 @@ async def update_professional_status(user_id: UUID, status_update: ProfessionalS
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized to change professional status")
 
         user.update_professional_status(status_update.is_professional)
-        await db.commit()  # Ensure changes are committed to the database.
+        await db.commit() 
 
-    return UserResponse.from_orm(user)
+    return UserResponse.model_validate(user)
