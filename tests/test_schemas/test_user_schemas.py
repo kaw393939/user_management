@@ -111,3 +111,6 @@ def test_user_base_url_invalid(url, user_base_data):
 def test_user_base_empty():
     with pytest.raises(ValidationError):
         UserBase(**{})
+def test_user_create_null():
+    with pytest.raises(TypeError):
+        UserCreate(**None)
