@@ -155,7 +155,11 @@ class UserService:
     async def is_account_locked(cls, session: AsyncSession, email: str) -> bool:
         user = await cls.get_by_email(session, email)
         return user.is_locked if user else False
-
+    
+    @classmethod
+    async def is_verified(cls, session: AsyncSession, email: str) -> bool:
+        user = await cls.get_by_email(session, email)
+        return user.email_verified if user else False
 
     @classmethod
     async def reset_password(cls, session: AsyncSession, user_id: UUID, new_password: str) -> bool:
