@@ -59,5 +59,8 @@ tomli==2.0.1
 typing_extensions==4.10.0
 uvicorn==0.29.0
 validators==0.24.0
-markdown2
-pyjwt
+markdown2==2.4.10  
+pyjwt==2.8.0  
+coverage==7.4.4
+sentry-sdk==1.27.0
+minio==7.0.1

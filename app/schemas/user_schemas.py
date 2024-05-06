@@ -10,12 +10,14 @@ from app.utils.nickname_gen import generate_nickname
 
 
 def validate_url(url: Optional[str]) -> Optional[str]:
+    """Helper function to validate a URL format."""
     if url is None:
         return url
     url_regex = r'^https?:\/\/[^\s/$.?#].[^\s]*$'
     if not re.match(url_regex, url):
         raise ValueError('Invalid URL format')
     return url
+
 
 class UserBase(BaseModel):
     email: EmailStr = Field(..., example="john.doe@example.com")
@@ -24,18 +26,35 @@ class UserBase(BaseModel):
     last_name: Optional[str] = Field(None, example="Doe")
     bio: Optional[str] = Field(None, example="Experienced software developer specializing in web applications.")
     profile_picture_url: Optional[str] = Field(None, example="https://example.com/profiles/john.jpg")
-    linkedin_profile_url: Optional[str] =Field(None, example="https://linkedin.com/in/johndoe")
+    linkedin_profile_url: Optional[str] = Field(None, example="https://linkedin.com/in/johndoe")
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
     role: UserRole
 
     _validate_urls = validator('profile_picture_url', 'linkedin_profile_url', 'github_profile_url', pre=True, allow_reuse=True)(validate_url)
- 
+
     class Config:
         from_attributes = True
 
 class UserCreate(UserBase):
     email: EmailStr = Field(..., example="john.doe@example.com")
-    password: str = Field(..., example="Secure*1234")
+    password: str = Field(..., example="Secure*1234", min_length=8)
+
+    @validator('password')
+    def validate_password(cls, v):
+        errors = []
+        if not re.search(r"[A-Z]", v):
+            errors.append("must have an uppercase letter in pswd")
+        if not re.search(r"[a-z]", v):
+            errors.append("must include a lowercase letter in pswd")
+        if not re.search(r"\d", v):
+            errors.append("must contain a digit in pswd")
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", v):
+            errors.append("needs a special character")
+        if len(v) < 8:
+            errors.append("must be at least 8 characters")
+        if errors:
+            raise ValueError("Password " + ", ".join(errors))
+        return v
 
 class UserUpdate(UserBase):
     email: Optional[EmailStr] = Field(None, example="john.doe@example.com")
@@ -44,7 +63,7 @@ class UserUpdate(UserBase):
     last_name: Optional[str] = Field(None, example="Doe")
     bio: Optional[str] = Field(None, example="Experienced software developer specializing in web applications.")
     profile_picture_url: Optional[str] = Field(None, example="https://example.com/profiles/john.jpg")
-    linkedin_profile_url: Optional[str] =Field(None, example="https://linkedin.com/in/johndoe")
+    linkedin_profile_url: Optional[str] = Field(None, example="https://linkedin.com/in/johndoe")
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
     role: Optional[str] = Field(None, example="AUTHENTICATED")
 
@@ -54,20 +73,24 @@ class UserUpdate(UserBase):
             raise ValueError("At least one field must be provided for update")
         return values
 
+
 class UserResponse(UserBase):
     id: uuid.UUID = Field(..., example=uuid.uuid4())
     email: EmailStr = Field(..., example="john.doe@example.com")
-    nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example=generate_nickname())    
+    nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example=generate_nickname())
     is_professional: Optional[bool] = Field(default=False, example=True)
     role: UserRole
+
 
 class LoginRequest(BaseModel):
     email: str = Field(..., example="john.doe@example.com")
     password: str = Field(..., example="Secure*1234")
 
+
 class ErrorResponse(BaseModel):
     error: str = Field(..., example="Not Found")
     details: Optional[str] = Field(None, example="The requested resource was not found.")
+
 
 class UserListResponse(BaseModel):
     items: List[UserResponse] = Field(..., example=[{
