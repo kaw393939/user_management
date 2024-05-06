@@ -11,7 +11,7 @@ from app.models.user_model import User
 from app.schemas.user_schemas import UserCreate, UserUpdate
 from app.utils.nickname_gen import generate_nickname
 from app.utils.security import generate_verification_token, hash_password, verify_password
-from uuid import UUID
+from uuid import UUID, uuid4
 from app.services.email_service import EmailService
 from app.models.user_model import UserRole
 import logging
@@ -57,6 +57,8 @@ class UserService:
             if existing_user:
                 logger.error("User with given email already exists.")
                 return None
+                   # Generate a UUID for the user_id
+            validated_data['id'] = str(uuid4())
             validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
             new_user = User(**validated_data)
             new_nickname = generate_nickname()
