@@ -6,6 +6,7 @@ from unittest.mock import patch, MagicMock
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.routers.user_routes import router as user_router
 from app.utils.minio_utils import get_minio_client
+from app.dependencies import override_get_minio_client
 
 @pytest.fixture
 def test_app():
@@ -39,3 +40,12 @@ async def test_upload_profile_picture_invalid_file_type():
         )
     assert response.status_code == 400
     assert "error" in response.json()
+
+@pytest.mark.asyncio
+async def test_retrieve_user_profile_picture(test_app, async_session: AsyncSession):
+    user_id = 1  # Assuming this user is in your test database
+    async with AsyncClient(app=test_app, base_url="http://testserver") as ac:
+        response = await ac.get(f"/users/{user_id}")
+        assert response.status_code == 200
+        assert 'profile_picture_url' in response.json()
+        assert response.json()['profile_picture_url'].startswith("https://")
