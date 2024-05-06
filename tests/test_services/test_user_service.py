@@ -168,7 +168,7 @@ async def test_is_account_locked(db_session, user):
 
 async def test_count_users(db_session, users_with_same_role_50_users):
     users = await UserService.list_users(db_session, skip=0, limit=10)
-    count = await UserService.count(users)
+    count = await UserService.count(db_session)
     assert count == 5
 
 
