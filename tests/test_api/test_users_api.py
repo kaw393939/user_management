@@ -8,7 +8,7 @@ from app.utils.security import hash_password
 from app.services.jwt_service import decode_token  # Import your FastAPI app
 from datetime import datetime
 import sqlalchemy as sa
-import bcrypt # type: ignore
+import bcrypt
 import uuid
 from sqlalchemy import insert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -133,24 +133,55 @@ async def test_login_incorrect_password(async_client, verified_user):
     assert "Incorrect email or password." in response.json().get("detail", "")
 
 @pytest.mark.asyncio
-async def test_login_unverified_user(async_client, unverified_user):
+async def test_login_unverified_user_incorrect_password(async_client, unverified_user):
+    form_data = {
+        "username": unverified_user.email,
+        "password": "IncorrectPassword123!"
+    }
+    response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
+    assert response.status_code == 401
+    assert "Incorrect email or password." in response.json().get("detail", "")
+
+@pytest.mark.asyncio
+async def test_login_unverified_user_incorrect_password(async_client, unverified_user):
+    form_data = {
+        "username": unverified_user.email,
+        "password": "IncorrectPassword123!"
+    }
+    response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
+    assert response.status_code == 401
+    assert "Incorrect email or password." in response.json().get("detail", "")
+
+@pytest.mark.asyncio
+async def test_login_unverified_user_correct_password(async_client, unverified_user):
     form_data = {
         "username": unverified_user.email,
         "password": "MySuperPassword$1234"
     }
     response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
     assert response.status_code == 401
+    assert "Verify you E-mail" in response.json().get("detail", "")
 
 @pytest.mark.asyncio
-async def test_login_locked_user(async_client, locked_user):
+async def test_login_locked_user_incorrect_password(async_client, locked_user):
     form_data = {
         "username": locked_user.email,
-        "password": "MySuperPassword$1234"
+        "password": "IncorrectPassword123!"
     }
     response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
-    assert response.status_code == 400
-    assert "Account locked due to too many failed login attempts." in response.json().get("detail", "")
+    assert response.status_code == 401
+    assert "Incorrect email or password." in response.json().get("detail", "")
+
 @pytest.mark.asyncio
+async def test_login_locked_user_incorrect_password(async_client, locked_user):
+    form_data = {
+        "username": locked_user.email,
+        "password": "IncorrectPassword123!"
+    }
+    response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
+    assert response.status_code == 401
+    assert "Incorrect email or password." in response.json().get("detail", "")
+
 async def test_delete_user_does_not_exist(async_client, admin_token):
     non_existent_user_id = "00000000-0000-0000-0000-000000000000"  # Valid UUID format
     headers = {"Authorization": f"Bearer {admin_token}"}
@@ -227,6 +258,15 @@ async def test_list_users_as_manager(async_client, manager_token):
         headers={"Authorization": f"Bearer {manager_token}"}
     )
     assert response.status_code == 200
+
+@pytest.mark.asyncio
+async def test_list_users_0_pagination(async_client, admin_token):
+    response = await async_client.get(
+        "/users/?limit=0&skip=0",
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response.status_code == 400
+    assert "Limit must be greater than 0" in response.json().get("detail", "")
 
 @pytest.mark.asyncio
 async def test_list_users_unauthorized(async_client, user_token):
