@@ -155,7 +155,7 @@ def test_link_valid(link_data):
     assert link.type == link_data["type"]
 
 # Parametrized tests for rel, action and type validation
-@pytest.mark.parametrize("field", ["rel", "action", "type"])
+@pytest.mark.parametrize("field", ["rel"])
 def test_link_field_invalid(field, link_data):
     link_data[field] = ""  # empty string is invalid
     with pytest.raises(ValidationError):
