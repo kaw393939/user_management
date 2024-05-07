@@ -3,10 +3,10 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - 1-verification-of-email
+      - main
   pull_request:
     branches:
-      - 1-verification-of-email
+      - main
 
 jobs:
   test:
