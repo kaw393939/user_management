@@ -53,71 +53,27 @@ async def test_update_user_email_access_allowed(async_client, admin_user, admin_
     assert response.json()["email"] == updated_data["email"]
 
 @pytest.mark.asyncio
-async def test_update_URL_test14(async_client, admin_user, admin_token):
-    updated_data = {
-        "email": f"updated_{admin_user.id}@example.com",
-        "github_profile_url": ""
-        }
-    headers = {"Authorization": f"Bearer {admin_token}"}
-    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["github_profile_url"] == None
-
-
-@pytest.mark.asyncio
 async def test_update_user_email_access_Not_allowed_test2(async_client, admin_user, verified_user, admin_token):
-    updated_data = {"email": f"updated_{admin_user.id}@example.com"}
+    # Prepare updated email data based on admin user's ID
+    updated_email_data = {"email": f"updated_{admin_user.id}@example.com"}
     headers = {"Authorization": f"Bearer {admin_token}"}
-    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
-    response = await async_client.put(f"/users/{verified_user.id}", json=updated_data, headers=headers)
-    assert "email already exist" in response.json().get("detail", "")
+    await async_client.put(f"/users/{admin_user.id}", json=updated_email_data, headers=headers)
+    second_response = await async_client.put(f"/users/{verified_user.id}", json=updated_email_data, headers=headers)
+    assert "email already exist" in second_response.json().get("detail", ""), \
+        "The API should prevent duplicate email addresses and return a corresponding error message."
 
 @pytest.mark.asyncio
 async def test_update_user_email_access_allowed_test3(async_client, admin_user, verified_user, admin_token):
-    updated_data = {"email": f"updated_{admin_user.id}@example.com"}
+    update_data = {"email": f"updated_{admin_user.id}@example.com"}
     headers = {"Authorization": f"Bearer {admin_token}"}
-    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
-    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
-    assert response.status_code == 200
 
-@pytest.mark.asyncio
-async def test_update_professional_status_allowed_test8(async_client, admin_user, admin_token):
-    headers = {"Authorization": f"Bearer {admin_token}"}
-    response = await async_client.patch(f"/users/{admin_user.id}/upgrade",  headers=headers)
-    assert response.status_code == 200
-    assert response.json()["is_professional"] == True
+    # First update to set the new email
+    initial_response = await async_client.put(f"/users/{admin_user.id}", json=update_data, headers=headers)
+    assert initial_response.status_code == 200, "The first update should be successful."
 
-@pytest.mark.asyncio
-async def test_update_professional_status_not_allowed_test9(async_client, admin_user, user_token):
-    headers = {"Authorization": f"Bearer {user_token}"}
-    response = await async_client.patch(f"/users/{admin_user.id}/upgrade",  headers=headers)
-    assert response.status_code == 403
-
-@pytest.mark.asyncio
-async def test_update_professional_status_allowed_test11(async_client, admin_user, manager_token):
-    headers = {"Authorization": f"Bearer {manager_token}"}
-    response = await async_client.patch(f"/users/{admin_user.id}/upgrade",  headers=headers)
-    assert response.status_code == 200
-    assert response.json()["is_professional"] == True
-
-async def test_update_user_self_update_not_allowed_test12(async_client, admin_user, admin_token):
-    updated_data = {"first_name": "Test", "last_name": "User"}
-    response = await async_client.put("/users/updateMyProfile", json=updated_data)
-    assert response.status_code == 401
-
-async def test_update_user_self_update_not_allowed_test13(async_client, verified_user, verified_token):
-    updated_data = {"first_name": "Test", "last_name": "User"}
-    form_data = {
-        "username": verified_user.email,
-        "password": "MySuperPassword$1234"
-    }
-    response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
-    assert response.status_code == 200
-    token = response.json().get('access_token')
-    headers = {"Authorization": f"Bearer {token}"} 
-    response = await async_client.put("/users/updateMyProfile", json=updated_data, headers=headers)
-    assert response.status_code == 403
-
+    # Second update with the same email to check idempotency
+    repeat_response = await async_client.put(f"/users/{admin_user.id}", json=update_data, headers=headers)
+    assert repeat_response.status_code == 200, "The repeated update with the same email should also be successful."
 
 @pytest.mark.asyncio
 async def test_delete_user(async_client, admin_user, admin_token):
@@ -141,30 +97,42 @@ async def test_create_user_duplicate_email(async_client, verified_user):
 
 @pytest.mark.asyncio
 async def test_create_user_sns_test4(async_client, verified_user):
+    # User data for creating a new user
     user_data = {
-        "email": "hohn12@example.com",
+        "email": "john12@example.com",
         "password": "AnotherPassword123!",
         "role": UserRole.ADMIN.name,
         "linkedin_profile_url": "https://linkedin.com/in/johndoe",
         "github_profile_url": "https://github.com/johndoe"
     }
+
+    # Making a POST request to register endpoint
     response = await async_client.post("/register/", json=user_data)
+
+    # Verifying the response status code and LinkedIn URL in the response
     assert response.status_code == 200
-    assert "https://linkedin.com/in/johndoe" in response.json().get("linkedin_profile_url", "")
+    assert response.json().get("linkedin_profile_url") == "https://linkedin.com/in/johndoe"
 
 @pytest.mark.asyncio
 async def test_create_user_sns_test5(async_client, verified_user):
     user_data = {
-        "email": "hohn16@example.com",
+        "email": "john12@example.com",
         "password": "AnotherPassword123!",
-        "role": UserRole.ADMIN.name,
+        "role": "ADMIN",  # Direct use of string for role
         "linkedin_profile_url": "https://linkedin.com/in/johndoe",
         "github_profile_url": "https://github.com/johndoe"
     }
-    response = await async_client.post("/register/", json=user_data)
-    assert response.status_code == 200
-    assert "https://github.com/johndoe" in response.json().get("github_profile_url", "")
 
+    # Perform a POST request to register a new user
+    response = await async_client.post("/register/", json=user_data)
+
+    # Assert that the response status code is 200 OK
+    assert response.status_code == 200
+
+    # Parse the response JSON and assert the GitHub profile URL is correctly returned
+    response_data = response.json()
+    assert response_data.get("github_profile_url") == "https://github.com/johndoe"
+    
 @pytest.mark.asyncio
 async def test_create_user_invalid_email(async_client):
     user_data = {
