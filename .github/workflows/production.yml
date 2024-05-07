@@ -70,7 +70,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: hemanj/user_management:${{ github.sha }} # Uses the Git SHA for tagging
+          tags: hemanjalik/user_management:${{ github.sha }} # Uses the Git SHA for tagging
           platforms: linux/amd64,linux/arm64 # Multi-platform support
           cache-from: type=registry,ref=hemanjalik/user_management:cache
           cache-to: type=inline,mode=max
