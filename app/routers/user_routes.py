@@ -86,8 +86,12 @@ async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, 
     - **user_id**: UUID of the user to update.
     - **user_update**: UserUpdate model with updated user information.
     """
-    user_data = user_update.model_dump(exclude_unset=True)
-    updated_user = await UserService.update(db, user_id, user_data)
+    email_id = None
+    if user_update.email:
+        email_id = user_update.emailuser_data = user_update.model_dump(exclude_unset=True)
+    updated_user = await UserService.update(db, email_id, user_id, user_data)
+    if updated_user == 'email_exist':
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="email already exist")
     if not updated_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
@@ -155,6 +159,8 @@ async def create_user(user: UserCreate, request: Request, db: AsyncSession = Dep
         first_name=created_user.first_name,
         last_name=created_user.last_name,
         profile_picture_url=created_user.profile_picture_url,
+        github_profile_url = created_user.github_profile_url,
+        linkedin_profile_url = created_user.linkedin_profile_url,
         nickname=created_user.nickname,
         email=created_user.email,
         role=created_user.role,
