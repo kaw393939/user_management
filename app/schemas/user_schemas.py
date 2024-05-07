@@ -48,7 +48,7 @@ class UserUpdate(UserBase):
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
     role: Optional[str] = Field(None, example="AUTHENTICATED")
 
-    @root_validator(pre=True)
+    # @root_validator(pre=True)
     def check_at_least_one_value(self, values):
         if not any(values.values()):
             raise ValueError("At least one field must be provided for update")
