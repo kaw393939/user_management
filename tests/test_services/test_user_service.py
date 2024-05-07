@@ -10,6 +10,8 @@ from datetime import timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.utils.security import hash_password
 from unittest.mock import AsyncMock
+from fastapi import HTTPException
+
 
 pytestmark = pytest.mark.asyncio
 
@@ -222,3 +224,23 @@ async def test_user_creation_sends_verification_email_with_token(db_session: Asy
     assert new_user.verification_token == '12345-token', "Verification token should be assigned to the user"
     assert new_user.email == "new_user@example.com", "User email should be set correctly"
     email_service_mock.send_verification_email.assert_called_once_with(new_user)
+
+# NEW NICKNAME TESTS
+# Mock database access and nickname generation
+async def fake_get_by_nickname(session, nickname):
+    # Simulate database check for existing nicknames
+    return None  # Simulate all nicknames as unique
+
+@pytest.fixture
+def setup_mocks(mocker):
+    mocker.patch('app.services.user_service.generate_nickname', side_effect=lambda: "user123")
+    mocker.patch('app.services.user_service.UserService.get_by_nickname', new=fake_get_by_nickname)
+
+async def test_generate_unique_nickname_with_collision(db_session: AsyncSession, mocker):
+    """Test that unique nickname generation handles collisions and retries."""
+    # Setup mocker to simulate a nickname collision on the first call
+    mocker.patch('app.services.user_service.UserService.get_by_nickname', side_effect=[True, None])
+    mocker.patch('app.services.user_service.generate_nickname', side_effect=["user123", "user124"])
+
+    unique_nickname = await UserService.generate_unique_nickname(db_session)
+    assert unique_nickname == "user124", "Should return a new unique nickname after detecting a collision"
