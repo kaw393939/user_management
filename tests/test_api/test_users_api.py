@@ -51,6 +51,15 @@ async def test_update_user_email_access_allowed(async_client, admin_user, admin_
     assert response.status_code == 200
     assert response.json()["email"] == updated_data["email"]
 
+@pytest.mark.asyncio
+async def test_attempt_duplicate_email_update_test2(async_client, admin_user, verified_user, admin_token):
+    # Prepare updated email data based on admin user's ID
+    updated_email_data = {"email": f"updated_{admin_user.id}@example.com"}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    await async_client.put(f"/users/{admin_user.id}", json=updated_email_data, headers=headers)
+    second_response = await async_client.put(f"/users/{verified_user.id}", json=updated_email_data, headers=headers)
+    assert "email already exist" in second_response.json().get("detail", ""), \
+        "The API should prevent duplicate email addresses and return a corresponding error message."
 
 @pytest.mark.asyncio
 async def test_delete_user(async_client, admin_user, admin_token):
@@ -143,6 +152,7 @@ async def test_login_locked_user(async_client, locked_user):
     response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
     assert response.status_code == 400
     assert "Account locked due to too many failed login attempts." in response.json().get("detail", "")
+
 @pytest.mark.asyncio
 async def test_delete_user_does_not_exist(async_client, admin_token):
     non_existent_user_id = "00000000-0000-0000-0000-000000000000"  # Valid UUID format
