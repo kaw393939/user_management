@@ -134,17 +134,17 @@ async def test_empty_url_fields_test6(async_client, user_data, user_token):
     assert response.json().get("linkedin_profile_url") is None
 
 @pytest.mark.asyncio
-async def test_update_existing_user_urls_test7(async_client, existing_user_id, user_token):
-    # Assume existing_user_id is an ID of a user who already has URLs set
+async def test_update_existing_user_urls_test7(async_client, admin_user, user_token):
     updated_data = {
         "github_profile_url": "https://github.com/newexampleuser",
         "linkedin_profile_url": "https://linkedin.com/in/newexampleuser"
     }
     headers = {"Authorization": f"Bearer {user_token}"}
-    response = await async_client.put(f"/users/{existing_user_id}/update", json=updated_data, headers=headers)
+    response = await async_client.put(f"/users/{admin_user.id}/update", json=updated_data, headers=headers)
     assert response.status_code == 200
     assert response.json()["github_profile_url"] == "https://github.com/newexampleuser"
     assert response.json()["linkedin_profile_url"] == "https://linkedin.com/in/newexampleuser"
+
 
 @pytest.mark.asyncio
 async def test_create_user_invalid_email(async_client):
