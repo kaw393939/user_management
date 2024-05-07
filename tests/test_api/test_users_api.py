@@ -1,4 +1,4 @@
-from faker import Faker
+from builtins import str
 import pytest
 from httpx import AsyncClient
 from app.main import app
@@ -7,8 +7,6 @@ from app.utils.nickname_gen import generate_nickname
 from app.utils.security import hash_password
 from app.services.jwt_service import decode_token  # Import your FastAPI app
 
-fake = Faker()  # Create a Faker instance for generating fake data
-
 # Example of a test function using the async_client fixture
 @pytest.mark.asyncio
 async def test_create_user_access_denied(async_client, user_token, email_service):
@@ -16,7 +14,7 @@ async def test_create_user_access_denied(async_client, user_token, email_service
     # Define user data for the test
     user_data = {
         "nickname": generate_nickname(),
-        "email": fake.email(),  # Use fake.email() to generate a unique email address
+        "email": "test@example.com",
         "password": "sS#fdasrongPassword123!",
     }
     # Send a POST request to create a user
@@ -154,7 +152,7 @@ async def test_delete_user_does_not_exist(async_client, admin_token):
 
 @pytest.mark.asyncio
 async def test_update_user_github(async_client, admin_user, admin_token):
-    updated_data = {"github_profile_url": "http://www.github.com/vaidikrvyas"}
+    updated_data = {"github_profile_url": "http://www.github.com/NidhishVyas"}
     headers = {"Authorization": f"Bearer {admin_token}"}
     response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
     assert response.status_code == 200
@@ -162,7 +160,7 @@ async def test_update_user_github(async_client, admin_user, admin_token):
 
 @pytest.mark.asyncio
 async def test_update_user_linkedin(async_client, admin_user, admin_token):
-    updated_data = {"linkedin_profile_url": "http://www.linkedin.com/vaidikrvyas"}
+    updated_data = {"linkedin_profile_url": "http://www.linkedin.com/NidhishVyas"}
     headers = {"Authorization": f"Bearer {admin_token}"}
     response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
     assert response.status_code == 200
