@@ -49,7 +49,7 @@ class UserUpdate(UserBase):
     role: Optional[str] = Field(None, example="AUTHENTICATED")
 
     @root_validator(pre=True)
-    def check_at_least_one_value(cls, values):
+    def check_at_least_one_value(self, values):
         if not any(values.values()):
             raise ValueError("At least one field must be provided for update")
         return values
