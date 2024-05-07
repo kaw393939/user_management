@@ -11,6 +11,13 @@ from app.database import Base
 from pydantic import BaseModel, EmailStr, HttpUrl, Field, UUID4
 from typing import Optional
 
+from pydantic import BaseModel, HttpUrl
+from typing import Optional
+
+class UserProfile(BaseModel):
+    username: str
+    profile_pic_url: Optional[HttpUrl] = None
+
 class UserRole(Enum):
     """Enumeration of user roles within the application, stored as ENUM in the database."""
     ANONYMOUS = "ANONYMOUS"

@@ -9,6 +9,7 @@ def get_minio_client():
         secret_key=MINIO_SECRET_KEY,
         secure=False  # Change to True if using HTTPS
     )
+    
     # Check and create bucket if it doesn't exist
     if not client.bucket_exists(MINIO_BUCKET):
         client.make_bucket(MINIO_BUCKET)
