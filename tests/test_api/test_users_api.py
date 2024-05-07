@@ -1,4 +1,4 @@
-from builtins import str
+from faker import Faker
 import pytest
 from httpx import AsyncClient
 from app.main import app
@@ -7,6 +7,8 @@ from app.utils.nickname_gen import generate_nickname
 from app.utils.security import hash_password
 from app.services.jwt_service import decode_token  # Import your FastAPI app
 
+fake = Faker()  # Create a Faker instance for generating fake data
+
 # Example of a test function using the async_client fixture
 @pytest.mark.asyncio
 async def test_create_user_access_denied(async_client, user_token, email_service):
@@ -14,7 +16,7 @@ async def test_create_user_access_denied(async_client, user_token, email_service
     # Define user data for the test
     user_data = {
         "nickname": generate_nickname(),
-        "email": "test@example.com",
+        "email": fake.email(),  # Use fake.email() to generate a unique email address
         "password": "sS#fdasrongPassword123!",
     }
     # Send a POST request to create a user
