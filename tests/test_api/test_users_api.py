@@ -22,6 +22,7 @@ async def test_create_user_access_denied(async_client, user_token, email_service
     # Asserts
     assert response.status_code == 403
 
+
 # You can similarly refactor other test functions to use the async_client fixture
 @pytest.mark.asyncio
 async def test_retrieve_user_access_denied(async_client, verified_user, user_token):
@@ -94,6 +95,44 @@ async def test_create_user_duplicate_email(async_client, verified_user):
     assert response.status_code == 400
     assert "Email already exists" in response.json().get("detail", "")
 
+@pytest.mark.asyncio
+async def test_create_user_sns_test4(async_client, verified_user):
+    # User data for creating a new user
+    user_data = {
+        "email": "john12@example.com",
+        "password": "AnotherPassword123!",
+        "role": UserRole.ADMIN.name,
+        "linkedin_profile_url": "https://linkedin.com/in/johndoe",
+        "github_profile_url": "https://github.com/johndoe"
+    }
+
+    # Making a POST request to register endpoint
+    response = await async_client.post("/register/", json=user_data)
+
+    # Verifying the response status code and LinkedIn URL in the response
+    assert response.status_code == 200
+    assert response.json().get("linkedin_profile_url") == "https://linkedin.com/in/johndoe"
+
+@pytest.mark.asyncio
+async def test_create_user_sns_test5(async_client, verified_user):
+    user_data = {
+        "email": "john12@example.com",
+        "password": "AnotherPassword123!",
+        "role": "ADMIN",  # Direct use of string for role
+        "linkedin_profile_url": "https://linkedin.com/in/johndoe",
+        "github_profile_url": "https://github.com/johndoe"
+    }
+
+    # Perform a POST request to register a new user
+    response = await async_client.post("/register/", json=user_data)
+
+    # Assert that the response status code is 200 OK
+    assert response.status_code == 200
+
+    # Parse the response JSON and assert the GitHub profile URL is correctly returned
+    response_data = response.json()
+    assert response_data.get("github_profile_url") == "https://github.com/johndoe"
+    
 @pytest.mark.asyncio
 async def test_create_user_invalid_email(async_client):
     user_data = {
