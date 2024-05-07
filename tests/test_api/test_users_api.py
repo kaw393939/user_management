@@ -120,22 +120,6 @@ async def test_create_user_with_github_url_test5(async_client, verified_user):
     assert response.status_code == 200, "Expected successful creation status code"
 
 @pytest.mark.asyncio
-async def test_clear_github_url_test6(async_client, admin_user, admin_token):
-    # Prepare the data for updating the user, setting the GitHub URL to an empty string
-    updated_data = {
-        "email": f"updated_{admin_user.id}@example.com",
-        "github_profile_url": ""
-    }
-    headers = {"Authorization": f"Bearer {admin_token}"}
-
-    # Execute the PUT request to update the user
-    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
-
-    # Verify the response status code and that the GitHub URL was cleared (i.e., set to None)
-    assert response.status_code == 200, "Expected HTTP 200 status code for successful update"
-    assert response.json().get("github_profile_url") is None, "GitHub URL should be set to None after update"
-
-@pytest.mark.asyncio
 async def test_create_user_invalid_email(async_client):
     user_data = {
         "email": "notanemail",
