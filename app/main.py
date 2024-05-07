@@ -9,7 +9,6 @@ from app.routers import user_routes
 from app.utils.api_description import getDescription
 from app.utils.minio_utils import get_minio_client
 import uvicorn
-from app.schemas.profile_pic_upload_schema import ProfilePicture
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
