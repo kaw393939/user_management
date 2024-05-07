@@ -279,6 +279,26 @@ async def test_list_users_as_manager(async_client, manager_token):
     assert response.status_code == 200
 
 @pytest.mark.asyncio
+async def test_list_users_invalid_skip_integer(async_client, admin_token):
+    response = await async_client.get(
+        "/users/",
+        params={"skip": -1},
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Skip integer cannot be less than 0"
+
+@pytest.mark.asyncio
+async def test_list_users_invalid_limit_integer(async_client, admin_token):
+    response = await async_client.get(
+        "/users/",
+        params={"limit": 0},
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Limit integer cannot be less than 1"
+
+@pytest.mark.asyncio
 async def test_list_users_unauthorized(async_client, user_token):
     response = await async_client.get(
         "/users/",
