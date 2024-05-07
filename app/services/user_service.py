@@ -92,7 +92,7 @@ class UserService:
             if email_id:
                 existing_data = await cls.get_by_email(session,email_id)
                 print(f'existing data{existing_data}')
-                if existing_data and existing_data.id != user_id:
+                 if existing_data and existing_data.id != user_id:
                     return 'email_exist'
             if 'password' in validated_data:
                 validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
