@@ -92,6 +92,50 @@ async def test_update_user_email_access_allowed(async_client, admin_user, admin_
 
 
 @pytest.mark.asyncio
+async def test_update_user_duplicate_email(async_client, db_session, user, admin_token):
+    user_data = {
+            "nickname": "user1",
+            "first_name": "User",
+            "last_name": "One",
+            "email": "user1@example.com",
+            "hashed_password": hash_password("AnotherPassword$5678"),
+            "role": UserRole.AUTHENTICATED,
+            "email_verified": True,
+            "is_locked": False,
+        }
+    first_user = User(**user_data)
+    db_session.add(first_user)
+    user
+    await db_session.commit()
+    updated_data = {"email": "user1@example.com"}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.put(f"/users/{user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 400
+    assert "Email already exists" in response.json()["detail"]
+
+@pytest.mark.asyncio
+async def test_update_user_duplicate_nickname(async_client, db_session, user, admin_token):
+    user_data = {
+            "nickname": "user1",
+            "first_name": "User",
+            "last_name": "One",
+            "email": "user1@example.com",
+            "hashed_password": hash_password("AnotherPassword$5678"),
+            "role": UserRole.AUTHENTICATED,
+            "email_verified": True,
+            "is_locked": False,
+        }
+    first_user = User(**user_data)
+    db_session.add(first_user)
+    user
+    await db_session.commit()
+    updated_data = {"nickname": "user1"}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.put(f"/users/{user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 400
+    assert "Nickname already exists" in response.json()["detail"]
+
+@pytest.mark.asyncio
 async def test_delete_user(async_client, admin_user, admin_token):
     headers = {"Authorization": f"Bearer {admin_token}"}
     delete_response = await async_client.delete(f"/users/{admin_user.id}", headers=headers)
