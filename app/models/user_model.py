@@ -5,7 +5,7 @@ import uuid
 from sqlalchemy import (
     Column, String, Integer, DateTime, Boolean, func, Enum as SQLAlchemyEnum
 )
-from sqlalchemy.dialects.postgresql import UUID, ENUM
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
 
@@ -48,7 +48,8 @@ class User(Base):
         unlock_account(): Unlocks the user account.
         verify_email(): Marks the user's email as verified.
         has_role(role_name): Checks if the user has a specified role.
-        update_professional_status(status): Updates the professional status and logs the update time.
+        update_professional_status(status): Updates the professional status and 
+        logs the update time.
     """
     __tablename__ = "users"
     __mapper_args__ = {"eager_defaults": True}
@@ -62,14 +63,17 @@ class User(Base):
     profile_picture_url: Mapped[str] = Column(String(255), nullable=True)
     linkedin_profile_url: Mapped[str] = Column(String(255), nullable=True)
     github_profile_url: Mapped[str] = Column(String(255), nullable=True)
-    role: Mapped[UserRole] = Column(SQLAlchemyEnum(UserRole, name='UserRole', create_constraint=True), nullable=False)
+    role: Mapped[UserRole] = Column(SQLAlchemyEnum(UserRole, name='UserRole', 
+                                                   create_constraint=True), nullable=False)
     is_professional: Mapped[bool] = Column(Boolean, default=False)
-    professional_status_updated_at: Mapped[datetime] = Column(DateTime(timezone=True), nullable=True)
+    professional_status_updated_at: Mapped[datetime] = Column(DateTime(timezone=True), 
+                                                              nullable=True)
     last_login_at: Mapped[datetime] = Column(DateTime(timezone=True), nullable=True)
     failed_login_attempts: Mapped[int] = Column(Integer, default=0)
     is_locked: Mapped[bool] = Column(Boolean, default=False)
     created_at: Mapped[datetime] = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    updated_at: Mapped[datetime] = Column(DateTime(timezone=True), 
+                                          server_default=func.now(), onupdate=func.now())
     verification_token = Column(String, nullable=True)
     email_verified: Mapped[bool] = Column(Boolean, default=False, nullable=False)
     hashed_password: Mapped[str] = Column(String(255), nullable=False)

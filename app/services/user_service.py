@@ -199,3 +199,21 @@ class UserService:
             await session.commit()
             return True
         return False
+
+    @staticmethod
+    async def get_user_by_id(user_id: int) -> User:
+        # Implement logic to fetch user by ID from the database
+        pass
+
+    @staticmethod
+    async def update_user(user_id: int, **kwargs) -> User:
+        # Implement logic to update user data in the database
+        # Here, you would typically use an ORM (such as SQLAlchemy) to update the user record
+        # For demonstration purposes, let's assume you have a User ORM model 
+        # and you're using SQLAlchemy
+        user = await User.query.where(User.id == user_id).first()
+        if user:
+            for key, value in kwargs.items():
+                setattr(user, key, value)
+            await user.save()
+        return user

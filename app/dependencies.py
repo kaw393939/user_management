@@ -6,8 +6,8 @@ from app.database import Database
 from app.utils.template_manager import TemplateManager
 from app.services.email_service import EmailService
 from app.services.jwt_service import decode_token
+from app.models.user_model import UserRole
 from settings.config import Settings
-from fastapi import Depends
 
 def get_settings() -> Settings:
     """Return application settings."""
@@ -25,7 +25,7 @@ async def get_db() -> AsyncSession:
             yield session
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
-        
+
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
@@ -50,3 +50,13 @@ def require_role(role: str):
             raise HTTPException(status_code=403, detail="Operation not permitted")
         return current_user
     return role_checker
+
+async def get_user_role(current_user: dict = Depends(get_current_user)):
+    # Extract the role from the current user dictionary
+    user_role = current_user.get("role")
+
+    # Check if the role is valid
+    if user_role not in [role.value for role in UserRole]:
+        raise HTTPException(status_code=403, detail="Invalid user role")
+
+    return user_role

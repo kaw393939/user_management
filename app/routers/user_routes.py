@@ -27,7 +27,7 @@ Key Highlights:
 """
 
 from builtins import dict, int, len, str
-from datetime import timedelta
+from datetime import datetime, timedelta
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -40,9 +40,13 @@ from app.services.jwt_service import create_access_token
 from app.utils.link_generation import create_user_links, generate_pagination_links
 from app.dependencies import get_settings
 from app.services.email_service import EmailService
+from app.models.user_model import User, UserRole
+from app.dependencies import get_current_user, get_user_role
+
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 settings = get_settings()
+
 @router.get("/users/{user_id}", response_model=UserResponse, name="get_user", 
             tags=["User Management Requires (Admin or Manager Roles)"])
 async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(get_db), 
@@ -320,3 +324,28 @@ async def update_user_profile(
         updated_at=updated_user.updated_at,
         links=create_user_links(updated_user.id, request)
     )
+
+@router.put("/users/{user_id}/upgrade/", response_model=User)
+async def upgrade_user_to_professional(
+    user_id: str,
+    updated_user: User,
+    current_user: User = Depends(get_current_user),
+    current_user_role: UserRole = Depends(get_user_role)
+):
+    # Check if the current user is authorized to perform this action
+    if current_user_role not in [UserRole.MANAGER, UserRole.ADMIN]:
+        raise HTTPException(status_code=403, detail="Unauthorized to perform this action.")
+
+    # Check if the user being upgraded exists
+    user = await UserService.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    # Perform the upgrade
+    user.is_professional = True
+    user.professional_status_updated_at = datetime.now()  # Update timestamp
+
+    # Update the user
+    updated_user = await UserService.update_user(user_id, **user.dict(exclude_unset=True))
+
+    return updated_user
