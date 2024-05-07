@@ -14,12 +14,15 @@ from app.utils.security import generate_verification_token, hash_password, verif
 from uuid import UUID
 from app.services.email_service import EmailService
 from app.models.user_model import UserRole
+from fastapi import HTTPException
 import logging
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
 
 class UserService:
+     # Define the maximum number of attempts to generate a unique nickname
+    MAX_NICKNAME_ATTEMPTS = 10
     @classmethod
     async def _execute_query(cls, session: AsyncSession, query):
         try:
@@ -50,6 +53,15 @@ class UserService:
         return await cls._fetch_user(session, email=email)
 
     @classmethod
+    async def generate_unique_nickname(cls, session: AsyncSession):
+        for _ in range(cls.MAX_NICKNAME_ATTEMPTS):
+            nickname = generate_nickname()
+            if not await cls.get_by_nickname(session, nickname):
+                return nickname
+        logger.error("Failed to generate a unique nickname after several attempts.")
+        raise HTTPException(status_code=500, detail="Failed to generate a unique nickname.")
+
+    @classmethod
     async def create(cls, session: AsyncSession, user_data: Dict[str, str], email_service: EmailService) -> Optional[User]:
         try:
             validated_data = UserCreate(**user_data).model_dump()
@@ -58,11 +70,14 @@ class UserService:
                 logger.error("User with given email already exists.")
                 return None
             validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
+            
+            # Handle nickname generation
+            if 'nickname' not in validated_data or not validated_data['nickname']:
+                validated_data['nickname'] = await cls.generate_unique_nickname(session)
+            elif len(validated_data['nickname']) < 3:
+                raise HTTPException(status_code=400, detail="Nickname must be at least 3 characters long.")
+
             new_user = User(**validated_data)
-            new_nickname = generate_nickname()
-            while await cls.get_by_nickname(session, new_nickname):
-                new_nickname = generate_nickname()
-            new_user.nickname = new_nickname
             logger.info(f"User Role: {new_user.role}")
             user_count = await cls.count(session)
             new_user.role = UserRole.ADMIN if user_count == 0 else UserRole.ANONYMOUS            
