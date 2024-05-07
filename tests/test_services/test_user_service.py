@@ -67,6 +67,7 @@ async def test_update_user_valid_data(db_session, user):
     updated_user = await UserService.update(db_session, user.email, user.id, {"email": new_email})
     assert isinstance(updated_user, User), "Update function should return a User object or None"
     assert updated_user.email == new_email, "Email should be updated to the new value"
+
 # Test updating a user with invalid data
 async def test_update_user_invalid_data(db_session, user):
     email = {"email": "updated_email3@example.com"}
