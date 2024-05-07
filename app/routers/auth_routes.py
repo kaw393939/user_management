@@ -1,55 +1,71 @@
-from builtins import bool, int, str
-from pathlib import Path
-from pydantic import  Field, AnyUrl, DirectoryPath
-from pydantic_settings import BaseSettings
+from builtins import str
+from datetime import timedelta
+from uuid import UUID
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.dependencies import get_db, get_email_service
+from app.schemas.token_schema import TokenResponse
+from app.schemas.user_schemas import UserCreate, UserResponse
+from app.services.user_service import UserService
+from app.services.jwt_service import create_access_token
+from app.dependencies import get_settings
+from app.services.email_service import EmailService
 
-class Settings(BaseSettings):
-    max_login_attempts: int = Field(default=3, description="Background color of QR codes")
-    # Server configuration
-    server_base_url: AnyUrl = Field(default='http://localhost', description="Base URL of the server")
-    server_download_folder: str = Field(default='downloads', description="Folder for storing downloaded files")
+router = APIRouter()
+settings = get_settings()
 
-    # Security and authentication configuration
-    secret_key: str = Field(default="secret-key", description="Secret key for encryption")
-    algorithm: str = Field(default="HS256", description="Algorithm used for encryption")
-    access_token_expire_minutes: int = Field(default=30, description="Expiration time for access tokens in minutes")
-    admin_user: str = Field(default='admin', description="Default admin username")
-    admin_password: str = Field(default='secret', description="Default admin password")
-    debug: bool = Field(default=False, description="Debug mode outputs errors and sqlalchemy queries")
-    jwt_secret_key: str = "a_very_secret_key"
-    jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 15  # 15 minutes for access token
-    refresh_token_expire_minutes: int = 1440  # 24 hours for refresh token
-    # Database configuration
-    database_url: str = Field(default='postgresql+asyncpg://user:password@postgres/myappdb', description="URL for connecting to the database")
 
-    # Optional: If preferring to construct the SQLAlchemy database URL from components
-    postgres_user: str = Field(default='user', description="PostgreSQL username")
-    postgres_password: str = Field(default='password', description="PostgreSQL password")
-    postgres_server: str = Field(default='localhost', description="PostgreSQL server address")
-    postgres_port: str = Field(default='5432', description="PostgreSQL port")
-    postgres_db: str = Field(default='myappdb', description="PostgreSQL database name")
-    # Discord configuration
-    discord_bot_token: str = Field(default='NONE', description="Discord bot token")
-    discord_channel_id: int = Field(default=1234567890, description="Default Discord channel ID for the bot to interact", example=1234567890)
-    #Open AI Key 
-    openai_api_key: str = Field(default='NONE', description="Open AI Api Key")
-    send_real_mail: bool = Field(default=False, description="use mock")
-    # Email settings for Mailtrap
-    smtp_server: str = Field(default='smtp.mailtrap.io', description="SMTP server for sending emails")
-    smtp_port: int = Field(default=2525, description="SMTP port for sending emails")
-    smtp_username: str = Field(default='your-mailtrap-username', description="Username for SMTP server")
-    smtp_password: str = Field(default='your-mailtrap-password', description="Password for SMTP server")
-    MINIO_ENDPOINT : str = Field(default='your-minio-endpoint', description="Endpoint for minio")
-    MINIO_ACCESS_KEY : str = Field(default='yout-minio-access-key', description="Access Key for minio")
-    MINIO_SECRET_KEY : str = Field(default='yout-minio-secret-key', description="Secret Key for minio")
-    MINIO_BUCKET_NAME : str = Field(default='your-minio-bucket-name', description="Bucket Name for minio")
-    account_verification: str = Field(default='http://localhost:9000/qr-code/Dummy_Login.png', description="Redirection Service")
+@router.post("/register/", response_model=UserResponse, tags=["Login and Registration"])
+async def register(user_data: UserCreate, session: AsyncSession = Depends(get_db), email_service: EmailService = Depends(get_email_service)):
+    user = await UserService.register_user(session, user_data.model_dump(), email_service)
+    if user:
+        return user
+    raise HTTPException(status_code=400, detail="Email already exists")
 
-    class Config:
-        # If your .env file is not in the root directory, adjust the path accordingly.
-        env_file = ".env"
-        env_file_encoding = 'utf-8'
+@router.post("/login/", response_model=TokenResponse, tags=["Login and Registration"])
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: AsyncSession = Depends(get_db)):
+    if await UserService.is_account_locked(session, form_data.username):
+        raise HTTPException(status_code=400, detail="Account locked due to too many failed login attempts.")
 
-# Instantiate settings to be imported in your application
-settings = Settings()
+    user = await UserService.login_user(session, form_data.username, form_data.password)
+    if user:
+        access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
+
+        access_token = create_access_token(
+            data={"sub": user.email, "role": str(user.role.name)},
+            expires_delta=access_token_expires
+        )
+
+        return {"access_token": access_token, "token_type": "bearer"}
+    raise HTTPException(status_code=401, detail="Incorrect email or password.")
+
+@router.post("/login/", include_in_schema=False, response_model=TokenResponse, tags=["Login and Registration"])
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: AsyncSession = Depends(get_db)):
+    if await UserService.is_account_locked(session, form_data.username):
+        raise HTTPException(status_code=400, detail="Account locked due to too many failed login attempts.")
+
+    user = await UserService.login_user(session, form_data.username, form_data.password)
+    if user:
+        access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
+
+        access_token = create_access_token(
+            data={"sub": user.email, "role": str(user.role.name)},
+            expires_delta=access_token_expires
+        )
+
+        return {"access_token": access_token, "token_type": "bearer"}
+    raise HTTPException(status_code=401, detail="Incorrect email or password.")
+
+
+@router.get("/verify-email/{user_id}/{token}", status_code=status.HTTP_200_OK, name="verify_email", tags=["Login and Registration"])
+async def verify_email(user_id: UUID, token: str, db: AsyncSession = Depends(get_db), email_service: EmailService = Depends(get_email_service)):
+    """
+    Verify user's email with a provided token.
+    
+    - **user_id**: UUID of the user to verify.
+    - **token**: Verification token sent to the user's email.
+    """
+    if await UserService.verify_email_with_token(db, user_id, token):
+        return {"message": "Email verified successfully"}
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired verification token")
