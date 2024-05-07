@@ -41,7 +41,8 @@ class Settings(BaseSettings):
     smtp_username: str = Field(default='your-mailtrap-username', description="Username for SMTP server")
     smtp_password: str = Field(default='your-mailtrap-password', description="Password for SMTP server")
 
-
+    
+    
     class Config:
         # If your .env file is not in the root directory, adjust the path accordingly.
         env_file = ".env"
@@ -49,3 +50,8 @@ class Settings(BaseSettings):
 
 # Instantiate settings to be imported in your application
 settings = Settings()
+MINIO_ENDPOINT = 'minio:9000'
+MINIO_ACCESS_KEY = 'Testkey'
+MINIO_SECRET_KEY = 'Kathmandu'
+MINIO_BUCKET = 'profile-pictures'
+MINIO_SECURE = False

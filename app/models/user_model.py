@@ -8,6 +8,15 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID, ENUM
 from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
+from pydantic import BaseModel, EmailStr, HttpUrl, Field, UUID4
+from typing import Optional
+
+from pydantic import BaseModel, HttpUrl
+from typing import Optional
+
+class UserProfile(BaseModel):
+    username: str
+    profile_pic_url: Optional[HttpUrl] = None
 
 class UserRole(Enum):
     """Enumeration of user roles within the application, stored as ENUM in the database."""
@@ -95,3 +104,12 @@ class User(Base):
         """Updates the professional status and logs the update time."""
         self.is_professional = status
         self.professional_status_updated_at = func.now()
+
+
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr]
+    first_name: Optional[str]
+    last_name: Optional[str]
+    bio: Optional[str]
+    nickname: Optional[str]
+    profile_picture_url: Optional[HttpUrl]

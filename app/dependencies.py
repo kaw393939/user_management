@@ -9,6 +9,8 @@ from app.services.jwt_service import decode_token
 from settings.config import Settings
 from fastapi import Depends
 
+from app.utils.minio_utils import get_minio_client as original_get_minio_client
+
 def get_settings() -> Settings:
     """Return application settings."""
     return Settings()
@@ -17,7 +19,7 @@ def get_email_service() -> EmailService:
     template_manager = TemplateManager()
     return EmailService(template_manager=template_manager)
 
-async def get_db() -> AsyncSession:
+async def get_db() -> AsyncSession: # type: ignore
     """Dependency that provides a database session for each request."""
     async_session_factory = Database.get_session_factory()
     async with async_session_factory() as session:
@@ -50,3 +52,7 @@ def require_role(role: str):
             raise HTTPException(status_code=403, detail="Operation not permitted")
         return current_user
     return role_checker
+
+
+def get_minio_client():
+    return original_get_minio_client()

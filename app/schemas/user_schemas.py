@@ -1,8 +1,6 @@
 from builtins import ValueError, any, bool, str
 from pydantic import BaseModel, EmailStr, Field, validator, root_validator
 from typing import Optional, List
-from datetime import datetime
-from enum import Enum
 import uuid
 import re
 from app.models.user_model import UserRole
