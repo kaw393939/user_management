@@ -205,3 +205,33 @@ class UserService:
             return True
         return False
     
+
+
+
+    @classmethod
+    async def update_user(cls, session: AsyncSession, user_id, update_data: Dict[str, str]) -> Optional[User]:
+        user = await cls.get_by_email(session, user_id)
+        print(f'user {user} update_data {update_data}')
+        if user:
+            validated_data = UserUpdate(**update_data).model_dump(exclude_unset=True)
+            query = update(User).where(User.id == user.id).values(**validated_data).execution_options(synchronize_session="fetch")
+            await session.execute(query)
+            await session.commit()
+            return user
+        else:
+            raise Exception("User not found")
+        
+    @classmethod
+    async def upgrade_to_professional(cls, session: AsyncSession, user_id: UUID, email_service: EmailService):
+        user = await cls.get_by_id(session, user_id)
+        email_flag = True
+        if user and user.is_professional == True:
+            email_flag = False
+        if user:
+            user.is_professional = True
+            user.professional_status_updated_at = datetime.now()
+            await session.commit()
+            if email_flag == True:
+                await email_service.send_professional_upgrade_email(user.email)
+            return user
+        return None
