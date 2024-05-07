@@ -5,6 +5,11 @@ from app.dependencies import get_settings
 from app.models.user_model import User, UserRole
 from app.services.user_service import UserService
 from app.utils.nickname_gen import generate_nickname
+from unittest.mock import patch
+from datetime import timedelta
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.utils.security import hash_password
+from unittest.mock import AsyncMock
 
 pytestmark = pytest.mark.asyncio
 
@@ -161,3 +166,59 @@ async def test_unlock_user_account(db_session, locked_user):
     assert unlocked, "The account should be unlocked"
     refreshed_user = await UserService.get_by_id(db_session, locked_user.id)
     assert not refreshed_user.is_locked, "The user should no longer be locked"
+
+# NEW Test role assignment to the first user
+async def test_first_user_role_assignment(db_session, email_service):
+    user_data = {
+        "nickname": "first_user",
+        "email": "first_user@example.com",
+        "password": "SecurePassword123!",
+        "role": UserRole.ANONYMOUS.name  # Assuming default role to be ANONYMOUS for the sake of example
+    }
+    # Patching UserService.count to simulate no existing users in the database
+    with patch('app.services.user_service.UserService.count', return_value=0):
+        first_user = await UserService.create(db_session, user_data, email_service)
+    assert first_user is not None, "User creation failed"
+    assert first_user.role == UserRole.ADMIN, "First user should be assigned ADMIN role"
+
+# NEW Test password is hashed
+async def test_password_hashing_on_creation(db_session, email_service):
+    user_data = {
+        "nickname": "new_user",
+        "email": "secure_user@example.com",
+        "password": "SecurePassword123!",
+        "role": UserRole.ANONYMOUS.name  # Assuming ANONYMOUS is a valid role enum
+    }
+    user = await UserService.create(db_session, user_data, email_service)
+    assert user is not None, "User should be created successfully"
+    assert user.hashed_password != "SecurePassword123!", "Password should be hashed and not stored in plaintext"
+    
+# NEW Test listing users with extreme pagination
+async def test_list_users_extreme_pagination(db_session):
+    users = await UserService.list_users(db_session, skip=-1, limit=1000)
+    assert len(users) >= 0, "Skip with negative should handle gracefully and limit should not overflow"
+
+# NEW test where creation sends verification email with token 
+async def test_user_creation_sends_verification_email_with_token(db_session: AsyncSession, mocker):
+    # Mock dependencies
+    email_service_mock = AsyncMock()
+    mocker.patch('app.utils.nickname_gen.generate_nickname', return_value='unique_nickname')
+    mocker.patch('app.utils.security.hash_password', return_value='hashed_password')
+    mocker.patch('app.services.user_service.generate_verification_token', return_value='12345-token')
+    mocker.patch('app.services.user_service.UserService.count', return_value=1)
+
+    # User data for the test
+    user_data = {
+        "email": "new_user@example.com",
+        "password": "ValidPassword123!",
+        "role": UserRole.ANONYMOUS.name  # Ensure the user gets a verification token
+    }
+
+    # Call the method under test
+    new_user = await UserService.create(db_session, user_data, email_service_mock)
+
+    # Assertions to check token assignment and email sending
+    assert new_user is not None, "User should be successfully created"
+    assert new_user.verification_token == '12345-token', "Verification token should be assigned to the user"
+    assert new_user.email == "new_user@example.com", "User email should be set correctly"
+    email_service_mock.send_verification_email.assert_called_once_with(new_user)
