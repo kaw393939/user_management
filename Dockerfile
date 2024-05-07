@@ -15,9 +15,10 @@ WORKDIR /myapp
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
-    && apt-get install -y libc-bin=2.36-9+deb12u7 \  # Updated to patched version
+    && apt-get install -y libc-bin=2.36-9+deb12u7 \ 
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
 
 # Install Python dependencies in /.venv
 COPY requirements.txt .
