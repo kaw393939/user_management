@@ -1,3 +1,4 @@
+# pylint: disable=not-callable
 from builtins import bool, int, str
 from datetime import datetime
 from enum import Enum
@@ -5,7 +6,7 @@ import uuid
 from sqlalchemy import (
     Column, String, Integer, DateTime, Boolean, func, Enum as SQLAlchemyEnum
 )
-from sqlalchemy.dialects.postgresql import UUID, ENUM
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
 
