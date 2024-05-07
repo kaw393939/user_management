@@ -61,3 +61,5 @@ uvicorn==0.29.0
 validators==0.24.0
 tenacity==8.2.3
 minio==7.2.7
+markdown2
+pyjwt
