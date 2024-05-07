@@ -33,6 +33,9 @@ from app.services.jwt_service import create_access_token
 from app.utils.link_generation import create_user_links, generate_pagination_links
 from app.dependencies import get_settings
 from app.services.email_service import EmailService
+from fastapi.responses import RedirectResponse
+
+
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 settings = get_settings()
@@ -238,10 +241,9 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Async
 async def verify_email(user_id: UUID, token: str, db: AsyncSession = Depends(get_db), email_service: EmailService = Depends(get_email_service)):
     """
     Verify user's email with a provided token.
-    
     - **user_id**: UUID of the user to verify.
     - **token**: Verification token sent to the user's email.
     """
     if await UserService.verify_email_with_token(db, user_id, token):
-        return {"message": "Email verified successfully"}
+        return RedirectResponse(url=settings.account_verification)
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired verification token")
