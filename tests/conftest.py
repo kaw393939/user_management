@@ -239,21 +239,3 @@ def email_service():
         mock_service.send_user_email.return_value = None
         return mock_service
 
-@pytest.fixture(scope="function")
-async def user_data(db_session):
-    """ Provides a template of user data for testing. """
-    return {
-        "nickname": "testuser",
-        "email": "test@example.com",
-        "first_name": "Test",
-        "last_name": "User",
-        "hashed_password": hash_password("TestPassword123!"),
-        "role": UserRole.AUTHENTICATED.name,
-        "email_verified": False,
-        "is_locked": False
-    }
-
-@pytest.fixture(scope="function")
-async def existing_user(user, db_session):
-    """ Provides an existing user and returns their ID for testing. """
-    return user.id
