@@ -2,7 +2,7 @@ import uuid
 import pytest
 from pydantic import ValidationError
 from datetime import datetime
-from app.schemas.user_schemas import UserBase, UserCreate, UserUpdate, UserResponse, UserListResponse, LoginRequest
+from app.schemas.user_schemas import UserBase, UserCreate, UserUpdate, UserResponse, UserListResponse, LoginRequest, UpdateSelfUserProfile
 
 # Fixtures for common test data
 @pytest.fixture
@@ -108,3 +108,22 @@ def test_user_base_url_invalid(url, user_base_data):
     user_base_data["profile_picture_url"] = url
     with pytest.raises(ValidationError):
         UserBase(**user_base_data)
+
+# NEW USERS update their own profile information with valid data
+def test_update_own_user_profile_information_with_valid_data(user_base_data):
+    update_user_profile = UpdateSelfUserProfile(**user_base_data)
+    
+    assert update_user_profile.email == user_base_data["email"]
+    assert update_user_profile.nickname == user_base_data["nickname"]
+    assert update_user_profile.first_name == user_base_data["first_name"]
+    assert update_user_profile.last_name == user_base_data["last_name"]
+    assert update_user_profile.bio == user_base_data["bio"]
+    assert update_user_profile.profile_picture_url == user_base_data["profile_picture_url"]
+    assert update_user_profile.linkedin_profile_url == user_base_data["linkedin_profile_url"]
+    assert update_user_profile.github_profile_url == user_base_data["github_profile_url"]
+
+# NEW USERS update their own profile information with invalid data
+def test_update_own_user_profile_information_with_invalid_data(user_base_data):
+    user_base_data["email"] = ""
+    with pytest.raises(ValidationError):
+        UpdateSelfUserProfile(**user_base_data)
