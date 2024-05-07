@@ -71,21 +71,26 @@ class UserService:
 
             else:
                 new_user.verification_token = generate_verification_token()
-                await email_service.send_verification_email(new_user)
 
             session.add(new_user)
             await session.commit()
+            if new_user.email_verified == False:
+                await email_service.send_verification_email(new_user)
             return new_user
         except ValidationError as e:
             logger.error(f"Validation error during user creation: {e}")
             return None
 
     @classmethod
-    async def update(cls, session: AsyncSession, user_id: UUID, update_data: Dict[str, str]) -> Optional[User]:
+    async def update(cls, session: AsyncSession,email_id, user_id: UUID, update_data: Dict[str, str]) -> Optional[User]:
         try:
             # validated_data = UserUpdate(**update_data).dict(exclude_unset=True)
             validated_data = UserUpdate(**update_data).model_dump(exclude_unset=True)
-
+            if email_id:
+                existing_data = await cls.get_by_email(session,email_id)
+                print(f'existing data{existing_data}')
+                if existing_data and existing_data.id != user_id:
+                    return 'email_exist'
             if 'password' in validated_data:
                 validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
             query = update(User).where(User.id == user_id).values(**validated_data).execution_options(synchronize_session="fetch")
@@ -199,3 +204,4 @@ class UserService:
             await session.commit()
             return True
         return False
+    

@@ -22,6 +22,7 @@ async def test_create_user_access_denied(async_client, user_token, email_service
     # Asserts
     assert response.status_code == 403
 
+
 # You can similarly refactor other test functions to use the async_client fixture
 @pytest.mark.asyncio
 async def test_retrieve_user_access_denied(async_client, verified_user, user_token):
@@ -51,6 +52,28 @@ async def test_update_user_email_access_allowed(async_client, admin_user, admin_
     assert response.status_code == 200
     assert response.json()["email"] == updated_data["email"]
 
+@pytest.mark.asyncio
+async def test_update_user_email_access_Not_allowed_test2(async_client, admin_user, verified_user, admin_token):
+    # Prepare updated email data based on admin user's ID
+    updated_email_data = {"email": f"updated_{admin_user.id}@example.com"}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    await async_client.put(f"/users/{admin_user.id}", json=updated_email_data, headers=headers)
+    second_response = await async_client.put(f"/users/{verified_user.id}", json=updated_email_data, headers=headers)
+    assert "email already exist" in second_response.json().get("detail", ""), \
+        "The API should prevent duplicate email addresses and return a corresponding error message."
+
+@pytest.mark.asyncio
+async def test_update_user_email_access_allowed_test3(async_client, admin_user, verified_user, admin_token):
+    update_data = {"email": f"updated_{admin_user.id}@example.com"}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    # First update to set the new email
+    initial_response = await async_client.put(f"/users/{admin_user.id}", json=update_data, headers=headers)
+    assert initial_response.status_code == 200, "The first update should be successful."
+
+    # Second update with the same email to check idempotency
+    repeat_response = await async_client.put(f"/users/{admin_user.id}", json=update_data, headers=headers)
+    assert repeat_response.status_code == 200, "The repeated update with the same email should also be successful."
 
 @pytest.mark.asyncio
 async def test_delete_user(async_client, admin_user, admin_token):
@@ -71,6 +94,47 @@ async def test_create_user_duplicate_email(async_client, verified_user):
     response = await async_client.post("/register/", json=user_data)
     assert response.status_code == 400
     assert "Email already exists" in response.json().get("detail", "")
+
+@pytest.mark.asyncio
+async def test_create_user_with_linkedin_url_test4(async_client, verified_user):
+    user_data = {
+        "email": "john12_linkedin@example.com",  # Ensure unique email
+        "password": "AnotherPassword123!",
+        "role": UserRole.ADMIN.name,
+        "linkedin_profile_url": "https://linkedin.com/in/johndoe",
+        "github_profile_url": "https://github.com/johndoe"
+    }
+    response = await async_client.post("/register/", json=user_data)
+    assert response.status_code == 200, "Expected successful creation status code"
+
+@pytest.mark.asyncio
+async def test_create_user_with_github_url_test5(async_client, verified_user):
+    user_data = {
+        "email": "john12_github@example.com",  # Ensure unique email
+        "password": "AnotherPassword123!",
+        "role": UserRole.ADMIN.name,
+        "linkedin_profile_url": "https://linkedin.com/in/johndoe",
+        "github_profile_url": "https://github.com/johndoe"
+    }
+    response = await async_client.post("/register/", json=user_data)
+    assert response.status_code == 200, "Expected successful creation status code"
+
+@pytest.mark.asyncio
+async def test_clear_github_url_test6(async_client, admin_user, admin_token):
+    # Prepare the data for updating the user, setting the GitHub URL to an empty string
+    updated_data = {
+        "email": f"updated_{admin_user.id}@example.com",
+        "github_profile_url": ""
+    }
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    # Execute the PUT request to update the user
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
+
+    # Verify the response status code and that the GitHub URL was cleared (i.e., set to None)
+    assert response.status_code == 200, "Expected HTTP 200 status code for successful update"
+    assert response.json().get("github_profile_url") is None, "GitHub URL should be set to None after update"
+
 
 @pytest.mark.asyncio
 async def test_create_user_invalid_email(async_client):
