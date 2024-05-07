@@ -190,3 +190,12 @@ async def test_list_users_unauthorized(async_client, user_token):
         headers={"Authorization": f"Bearer {user_token}"}
     )
     assert response.status_code == 403  # Forbidden, as expected for regular user
+
+# Test authorizing the user admin login
+@pytest.mark.asyncio
+async def test_authorize_user_admin_login(async_client, admin_token):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    # Login and get the access token
+    token_response = await async_client.post("/login", headers=headers)
+    assert token_response.status_code == 307
