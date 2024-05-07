@@ -63,3 +63,4 @@ markdown2
 pyjwt
 minio==7.2.7
 tenacity==8.2.3
+Werkzeug==2.0.0
