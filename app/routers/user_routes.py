@@ -201,6 +201,7 @@ async def list_users(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))
 ):
+    """lists users"""
     total_users = await UserService.count(db)
     users = await UserService.list_users(db, skip, limit)
 
@@ -289,7 +290,6 @@ async def update_user_profile(
     user_update: UserUpdate,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    token: str = Depends(oauth2_scheme),
     current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))
 ):
     """
@@ -300,15 +300,19 @@ async def update_user_profile(
         - user_update: UserUpdate model with updated profile information.
         - request: The request object, used to generate full URLs in the response.
         - db: Dependency that provides an AsyncSession for database access.
-        - token: The OAuth2 access token obtained through OAuth2PasswordBearer dependency.
         - current_user: Dependency that provides information about the current authenticated user.
     """
-    user_data = user_update.model_dump(exclude_unset=True)
+    # Ensure that the current user has the necessary permissions to update the profile
+    if current_user['role'] not in ["ADMIN", "MANAGER"]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+
+    user_data = user_update.dict(exclude_unset=True)
     updated_user = await UserService.update(db, user_id, user_data)
     if not updated_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    return UserResponse.model_construct(
+    # Construct the response model
+    return UserResponse(
         id=updated_user.id,
         bio=updated_user.bio,
         first_name=updated_user.first_name,
@@ -332,6 +336,7 @@ async def upgrade_user_to_professional(
     current_user: User = Depends(get_current_user),
     current_user_role: UserRole = Depends(get_user_role)
 ):
+    """function upgrades user to professional status"""
     # Check if the current user is authorized to perform this action
     if current_user_role not in [UserRole.MANAGER, UserRole.ADMIN]:
         raise HTTPException(status_code=403, detail="Unauthorized to perform this action.")

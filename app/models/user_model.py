@@ -1,3 +1,5 @@
+"""This file contains the User model"""
+
 from builtins import bool, int, str
 from datetime import datetime
 from enum import Enum
@@ -84,15 +86,19 @@ class User(Base):
         return f"<User {self.nickname}, Role: {self.role.name}>"
 
     def lock_account(self):
+        """Locks account"""
         self.is_locked = True
 
     def unlock_account(self):
+        """Unlocks account"""
         self.is_locked = False
 
     def verify_email(self):
+        """Verify email"""
         self.email_verified = True
 
     def has_role(self, role_name: UserRole) -> bool:
+        """Checks if user has role"""
         return self.role == role_name
 
     def update_professional_status(self, status: bool):

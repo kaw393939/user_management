@@ -14,6 +14,7 @@ def get_settings() -> Settings:
     return Settings()
 
 def get_email_service() -> EmailService:
+    """function gets email service"""
     template_manager = TemplateManager()
     return EmailService(template_manager=template_manager)
 
@@ -24,12 +25,13 @@ async def get_db() -> AsyncSession:
         try:
             yield session
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
 def get_current_user(token: str = Depends(oauth2_scheme)):
+    """function gets current user info"""
     credentials_exception = HTTPException(
         status_code=401,
         detail="Could not validate credentials",
@@ -45,6 +47,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     return {"user_id": user_id, "role": user_role}
 
 def require_role(role: str):
+    """function requires role"""
     def role_checker(current_user: dict = Depends(get_current_user)):
         if current_user["role"] not in role:
             raise HTTPException(status_code=403, detail="Operation not permitted")
@@ -52,6 +55,7 @@ def require_role(role: str):
     return role_checker
 
 async def get_user_role(current_user: dict = Depends(get_current_user)):
+    """function gets user role"""
     # Extract the role from the current user dictionary
     user_role = current_user.get("role")
 
