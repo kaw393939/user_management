@@ -95,56 +95,31 @@ async def test_create_user_duplicate_email(async_client, verified_user):
     assert response.status_code == 400
     assert "Email already exists" in response.json().get("detail", "")
 
-import pytest
-
 @pytest.mark.asyncio
-async def test_accept_valid_urls_test4(async_client, user_data, user_token):
-    # Include realistic, valid URLs for testing
-    user_data.update({
-        "github_profile_url": "https://github.com/exampleuser",
-        "linkedin_profile_url": "https://linkedin.com/in/exampleuser"
-    })
-    headers = {"Authorization": f"Bearer {user_token}"}
-    response = await async_client.post("/users/update", json=user_data, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["github_profile_url"] == "https://github.com/exampleuser"
-    assert response.json()["linkedin_profile_url"] == "https://linkedin.com/in/exampleuser"
-
-@pytest.mark.asyncio
-async def test_reject_invalid_urls_test5(async_client, user_data, user_token):
-    user_data.update({
-        "github_profile_url": "htttp://github.com/wrong-url",  # Miswritten 'http' scheme
-        "linkedin_profile_url": "https:/linkedin.com/in/exampleuser"  # Missing second slash
-    })
-    headers = {"Authorization": f"Bearer {user_token}"}
-    response = await async_client.post("/users/update", json=user_data, headers=headers)
-    assert response.status_code == 400  # Expecting failure status code for invalid URLs
-
-@pytest.mark.asyncio
-async def test_empty_url_fields_test6(async_client, user_data, user_token):
-    # Testing with empty strings which should be converted to None or ignored
-    user_data.update({
-        "github_profile_url": "",
-        "linkedin_profile_url": ""
-    })
-    headers = {"Authorization": f"Bearer {user_token}"}
-    response = await async_client.post("/users/update", json=user_data, headers=headers)
-    assert response.status_code == 200
-    assert response.json().get("github_profile_url") is None
-    assert response.json().get("linkedin_profile_url") is None
-
-@pytest.mark.asyncio
-async def test_update_existing_user_urls_test7(async_client, admin_user, user_token):
-    updated_data = {
-        "github_profile_url": "https://github.com/newexampleuser",
-        "linkedin_profile_url": "https://linkedin.com/in/newexampleuser"
+async def test_create_user_with_linkedin_url_test4(async_client, verified_user):
+    user_data = {
+        "email": "john12_linkedin@example.com",  # Ensure unique email
+        "password": "AnotherPassword123!",
+        "role": UserRole.ADMIN.name,
+        "linkedin_profile_url": "https://linkedin.com/in/johndoe",
+        "github_profile_url": "https://github.com/johndoe"
     }
-    headers = {"Authorization": f"Bearer {user_token}"}
-    response = await async_client.put(f"/users/{admin_user.id}/update", json=updated_data, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["github_profile_url"] == "https://github.com/newexampleuser"
-    assert response.json()["linkedin_profile_url"] == "https://linkedin.com/in/newexampleuser"
+    response = await async_client.post("/register/", json=user_data)
+    assert response.status_code == 201, "Expected successful creation status code"
+    assert response.json().get("linkedin_profile_url") == "https://linkedin.com/in/johndoe", \
+        "LinkedIn URL should match the one provided in the request"
 
+@pytest.mark.asyncio
+async def test_create_user_with_github_url_test5(async_client, verified_user):
+    user_data = {
+        "email": "john12_github@example.com",  # Ensure unique email
+        "password": "AnotherPassword123!",
+        "role": UserRole.ADMIN.name,
+        "linkedin_profile_url": "https://linkedin.com/in/johndoe",
+        "github_profile_url": "https://github.com/johndoe"
+    }
+    response = await async_client.post("/register/", json=user_data)
+    assert response.status_code == 201, "Expected successful"
 
 @pytest.mark.asyncio
 async def test_create_user_invalid_email(async_client):

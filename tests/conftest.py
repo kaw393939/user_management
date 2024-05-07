@@ -239,26 +239,3 @@ def email_service():
         mock_service.send_user_email.return_value = None
         return mock_service
 
-@pytest.fixture
-async def existing_user_id(db_session):
-    # Setup code to create a user and return their ID
-    user = User(
-        email="existing@example.com",
-        hashed_password=hash_password("MySuperPassword$1234"),
-        role=UserRole.USER,
-        email_verified=True,
-        is_locked=False
-    )
-    db_session.add(user)
-    await db_session.commit()
-    return user.id
-
-@pytest.fixture
-def user_data():
-    return {
-        "email": "test@example.com",
-        "password": "Password123",
-        "nickname": "nickname",
-        "github_profile_url": None,  # Set default values if needed
-        "linkedin_profile_url": None
-    }
