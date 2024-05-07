@@ -118,21 +118,23 @@ async def test_create_user_sns_test5(async_client, verified_user):
     user_data = {
         "email": "john12@example.com",
         "password": "AnotherPassword123!",
-        "role": "ADMIN",  # Direct use of string for role
+        "role": "ADMIN",
         "linkedin_profile_url": "https://linkedin.com/in/johndoe",
         "github_profile_url": "https://github.com/johndoe"
     }
 
-    # Perform a POST request to register a new user
-    response = await async_client.post("/register/", json=user_data)
+    # Mock SMTP client within the context of your email service
+    with patch('app.utils.smtp_connection.SMTPClient.send_email') as mock_send_email:
+        mock_send_email.return_value = None  # Assume sending email always succeeds
 
-    # Assert that the response status code is 200 OK
-    assert response.status_code == 200
+        response = await async_client.post("/register/", json=user_data)
+        
+        assert response.status_code == 200
+        assert response.json().get("github_profile_url") == "https://github.com/johndoe"
 
-    # Parse the response JSON and assert the GitHub profile URL is correctly returned
-    response_data = response.json()
-    assert response_data.get("github_profile_url") == "https://github.com/johndoe"
-    
+        # Ensure the send_email was called
+        mock_send_email.assert_called_once()
+        
 @pytest.mark.asyncio
 async def test_create_user_invalid_email(async_client):
     user_data = {
