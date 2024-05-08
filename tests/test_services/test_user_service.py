@@ -61,34 +61,6 @@ async def test_get_by_email_user_does_not_exist(db_session):
     retrieved_user = await UserService.get_by_email(db_session, "non_existent_email@example.com")
     assert retrieved_user is None
 
-async def test_user_update_sends_notification_email(self, db_session: AsyncSession, mocker):
-        # Mock dependencies
-        email_service_mock = AsyncMock()
-        mocker.patch('app.services.user_service.UserService.get_user_by_email', return_value=User(
-            email='current_user@example.com',
-            role=UserRole.AUTHENTICATED,
-            nickname='current_nickname'
-        ))
-        mocker.patch('app.utils.security.hash_password', return_value='hashed_password')
-
-        # New user data for the test
-        new_data = {
-            "email": "updated_user@example.com",
-            "nickname": "updated_nickname",
-            "password": "UpdatedValidPassword123!"
-        }
-
-        # Call the method under test
-        updated_user = await UserService.update_user(db_session, 'current_user@example.com', new_data, email_service_mock)
-
-        # Assertions to check the user is updated and notification email is sent
-        assert updated_user is not None, "User should be successfully updated"
-        assert updated_user.email == "updated_user@example.com", "User email should be updated"
-        assert updated_user.nickname == "updated_nickname", "User nickname should be updated"
-        
-        # Checking if the email service sends a notification email
-        email_service_mock.send_notification_email.assert_called_once_with(updated_user)
-        
 # Test updating a user with valid data
 async def test_update_user_valid_data(db_session, user):
     new_email = "updated_email@example.com"

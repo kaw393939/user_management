@@ -52,9 +52,6 @@ class UserService:
     @classmethod
     async def create(cls, session: AsyncSession, user_data: Dict[str, str], email_service: EmailService) -> Optional[User]:
         try:
-            role = None
-            if 'role' in user_data and user_data['role'] is not None:
-                role = user_data['role']
             validated_data = UserCreate(**user_data).model_dump()
             existing_user = await cls.get_by_email(session, validated_data['email'])
             if existing_user:
@@ -68,7 +65,7 @@ class UserService:
             new_user.nickname = new_nickname
             logger.info(f"User Role: {new_user.role}")
             user_count = await cls.count(session)
-            new_user.role = UserRole.ADMIN if user_count == 0 or role == UserRole.ADMIN else UserRole.ANONYMOUS            
+            new_user.role = UserRole.ADMIN if user_count == 0 else UserRole.ANONYMOUS            
             if new_user.role == UserRole.ADMIN:
                 new_user.email_verified = True
 
@@ -77,23 +74,20 @@ class UserService:
 
             session.add(new_user)
             await session.commit()
-            if new_user.email_verified == False:
-                await email_service.send_verification_email(new_user)
-            return new_user
+            async def verify_and_send_email(user, email_service):
+               if not user.is_email_verified:
+                   await email_service.send_verification_email(user)
+                   return new_user
         except ValidationError as e:
             logger.error(f"Validation error during user creation: {e}")
             return None
 
     @classmethod
-    async def update(cls, session: AsyncSession,email_id, user_id: UUID, update_data: Dict[str, str]) -> Optional[User]:
+    async def update(cls, session: AsyncSession, user_id: UUID, update_data: Dict[str, str]) -> Optional[User]:
         try:
             # validated_data = UserUpdate(**update_data).dict(exclude_unset=True)
             validated_data = UserUpdate(**update_data).model_dump(exclude_unset=True)
-            if email_id:
-                existing_data = await cls.get_by_email(session,email_id)
-                print(f'existing data{existing_data}')
-                
-                    return 'email_exist'
+
             if 'password' in validated_data:
                 validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
             query = update(User).where(User.id == user_id).values(**validated_data).execution_options(synchronize_session="fetch")
@@ -178,8 +172,7 @@ class UserService:
         if user and user.verification_token == token:
             user.email_verified = True
             user.verification_token = None  # Clear the token once used
-            if user.role == UserRole.ANONYMOUS:
-                user.role = UserRole.AUTHENTICATED
+            user.role = UserRole.AUTHENTICATED
             session.add(user)
             await session.commit()
             return True
@@ -208,31 +201,3 @@ class UserService:
             await session.commit()
             return True
         return False
-    
-    @classmethod
-    async def update_user(cls, session: AsyncSession, user_id, update_data: Dict[str, str]) -> Optional[User]:
-        user = await cls.get_by_email(session, user_id)
-        print(f'user {user} update_data {update_data}')
-        if user:
-            validated_data = UserUpdate(**update_data).model_dump(exclude_unset=True)
-            query = update(User).where(User.id == user.id).values(**validated_data).execution_options(synchronize_session="fetch")
-            await session.execute(query)
-            await session.commit()
-            return user
-        else:
-            raise Exception("User not found")
-    
-    @classmethod
-    async def upgrade_to_professional(cls, session: AsyncSession, user_id: UUID, email_service: EmailService):
-        user = await cls.get_by_id(session, user_id)
-        email_flag = True
-        if user and user.is_professional == True:
-            email_flag = False
-        if user:
-            user.is_professional = True
-            user.professional_status_updated_at = datetime.now()
-            await session.commit()
-            if email_flag == True:
-                await email_service.send_professional_upgrade_email(user.email)
-            return user
-        return None
