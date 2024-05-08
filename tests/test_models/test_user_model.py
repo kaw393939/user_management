@@ -141,8 +141,7 @@ async def test_update_user_role(db_session: AsyncSession, user: User):
     assert user.role == UserRole.ADMIN, "Role update should persist correctly in the database"
 
 @pytest.mark.asyncio
-async def test_email_verification_tc1(db_session: AsyncSession, user: User):
-    """
+
     Test to ensure that a user's email verification status is updated correctly within the database.
     This test checks that the initial state of the user's email verification status is unverified,
     then simulates the email verification process, and finally asserts that the status is updated to verified.
