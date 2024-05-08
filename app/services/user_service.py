@@ -16,6 +16,9 @@ from uuid import UUID
 from app.services.email_service import EmailService
 from app.models.user_model import UserRole
 import logging
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
@@ -23,10 +26,13 @@ logger = logging.getLogger(__name__)
 from minio import Minio
 from minio.error import InvalidResponseError
 
+minio_access_key = os.getenv("MINIO_ACCESS_KEY", "default_access_key")
+minio_secret_key = os.getenv("MINIO_SECRET_KEY", "default_secret_key")
+
 minio_client = Minio(
     endpoint='127.0.0.1:9000',  # Update this to your MinIO endpoint
-    access_key='aZ5kOydbbfkCULICZH2J',
-    secret_key='ycGLJOpSWZAbexib8wIzRr7ml2q96coU5w8OCdqY',
+    access_key=minio_access_key,
+    secret_key=minio_secret_key,
     secure=False,  # Set to True if your MinIO server uses HTTPS
 )
 
