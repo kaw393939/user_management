@@ -81,3 +81,6 @@ class UserListResponse(BaseModel):
     total: int = Field(..., example=100)
     page: int = Field(..., example=1)
     size: int = Field(..., example=10)
+
+class ProfessionalStatusUpdate(BaseModel):
+    is_professional: bool  # Whether to set the user as a professional or not

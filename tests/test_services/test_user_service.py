@@ -8,6 +8,9 @@ from app.utils.nickname_gen import generate_nickname
 from sqlalchemy.ext.asyncio import AsyncSession, AsyncResult
 from unittest.mock import MagicMock
 from uuid import UUID
+from fastapi import HTTPException
+from app.main import app
+from httpx import AsyncClient
 
 from minio import Minio
 from io import BytesIO
@@ -176,5 +179,61 @@ async def test_unlock_user_account(db_session, locked_user):
     assert unlocked, "The account should be unlocked"
     refreshed_user = await UserService.get_by_id(db_session, locked_user.id)
     assert not refreshed_user.is_locked, "The user should no longer be locked"
+
+# Test updating multiple fields for an existing user
+async def test_update_user_multiple_fields(db_session, user):
+    updated_data = {
+        "nickname": "UpdatedNickname",
+        "bio": "Updated biography text here.",
+        "linkedin_profile_url": "https://linkedin.com/in/updatedprofile"
+    }
+    updated_user = await UserService.update(db_session, user.id, updated_data)
+    assert updated_user is not None, "The updated user should not be None"
+    assert updated_user.nickname == updated_data["nickname"], "Nickname should be updated correctly"
+    assert updated_user.bio == updated_data["bio"], "Bio should be updated correctly"
+    assert updated_user.linkedin_profile_url == updated_data["linkedin_profile_url"], "LinkedIn URL should be updated correctly"
+    updated_data = {
+        "nickname": "UpdatedNickname",
+        "bio": "Updated bio",
+    }
+    updated_user = await UserService.update(db_session, user.id, updated_data)
+    assert updated_user is not None
+    assert updated_user.nickname == updated_data["nickname"]
+    assert updated_user.bio == updated_data["bio"]
+
+# Test updating is_professional by admin
+async def test_update_is_professional_by_admin(db_session, user, admin_user):
+    updated_data = {"is_professional": True}
+    updated_user = await UserService.update_professional_status(db_session, user.id, updated_data, request_user=admin_user)
+    assert updated_user is not None
+    assert updated_user.is_professional is True
+
+# Test updating is_professional by manager
+async def test_update_is_professional_by_manager(db_session, user, manager_user):
+    updated_data = {"is_professional": True}
+    updated_user = await UserService.update_professional_status(db_session, user.id, updated_data, request_user=manager_user)
+    assert updated_user is not None
+    assert updated_user.is_professional is True
+
+
+async def test_update_is_professional_by_user(db_session, user):
+    updated_data = {"is_professional": True}
+    # Ensure pytest captures the exception raised by the async function
+    with pytest.raises(HTTPException) as exc_info:
+        await UserService.update_professional_status(db_session, user.id, updated_data, request_user=user)
+
+    assert exc_info.value.status_code == 403
+    assert "Unauthorized to change professional status" in str(exc_info.value.detail)
+
+
+async def test_update_is_professional_no_change(db_session, user, admin_user):
+    # Initial setup - ensure the user is already a professional
+    user.is_professional = True
+    await db_session.commit()
+
+    updated_data = {"is_professional": True}  # Same status
+    updated_user = await UserService.update_professional_status(db_session, user.id, updated_data, request_user=admin_user)
+
+    assert updated_user.is_professional == True
 
 
