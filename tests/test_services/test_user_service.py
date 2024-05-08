@@ -5,6 +5,21 @@ from app.dependencies import get_settings
 from app.models.user_model import User, UserRole
 from app.services.user_service import UserService
 from app.utils.nickname_gen import generate_nickname
+from sqlalchemy.ext.asyncio import AsyncSession, AsyncResult
+from unittest.mock import MagicMock
+from uuid import UUID
+
+from minio import Minio
+from io import BytesIO
+
+import pytest
+from unittest.mock import AsyncMock, patch
+from uuid import uuid4
+from app.services.user_service import UserService
+from app.models.user_model import User
+from app.services.email_service import EmailService
+from sqlalchemy.ext.asyncio import AsyncSession
+from minio.error import InvalidResponseError
 
 pytestmark = pytest.mark.asyncio
 
@@ -161,3 +176,59 @@ async def test_unlock_user_account(db_session, locked_user):
     assert unlocked, "The account should be unlocked"
     refreshed_user = await UserService.get_by_id(db_session, locked_user.id)
     assert not refreshed_user.is_locked, "The user should no longer be locked"
+
+@pytest.mark.asyncio
+async def test_upload_profile_picture_success():
+    user_id = uuid4()
+    file_data = b"mock_file_data"
+    expected_file_name = f"profile_picture_{user_id}.jpg"
+    
+    with patch("app.services.user_service.minio_client.put_object", new_callable=AsyncMock) as mock_put_object:
+        result = await UserService.upload_profile_picture(user_id, file_data)
+        
+    mock_put_object.assert_called_once_with(
+        "mock_bucket_name", expected_file_name, file_data, len(file_data),
+        content_type="application/octet-stream"
+    )
+    assert result == expected_file_name
+
+@pytest.mark.asyncio
+async def test_upload_profile_picture_failure():
+    user_id = uuid4()
+    file_data = b"mock_file_data"
+    
+    with patch("app.services.user_service.minio_client.put_object", side_effect=InvalidResponseError("Invalid response", None, None)):
+        result = await UserService.upload_profile_picture(user_id, file_data)
+        
+    assert result is None
+
+@pytest.mark.asyncio
+async def test_update_profile_picture_url_success():
+    user_id = uuid4()
+    picture_url = "http://example.com/picture.jpg"
+    user = User(id=user_id)
+    session = AsyncMock()
+    
+    with patch("app.services.user_service.UserService.get_by_id", return_value=user):
+        with patch("app.services.user_service.AsyncSession", return_value=session):
+            with patch("app.services.user_service.minio_client.put_object", new_callable=AsyncMock):
+                updated_user = await UserService.update_profile_picture_url(session, user_id, picture_url)
+            
+    session.assert_called_once()
+    session.commit.assert_called_once()
+    assert updated_user.profile_picture_url == picture_url
+
+@pytest.mark.asyncio
+async def test_update_profile_picture_url_failure():
+    user_id = uuid4()
+    picture_url = "http://example.com/picture.jpg"
+    session = AsyncMock()
+    
+    with patch("app.services.user_service.UserService.get_by_id", return_value=None):
+        with patch("app.services.user_service.AsyncSession", return_value=session):
+            with patch("app.services.user_service.minio_client.put_object", side_effect=InvalidResponseError("Invalid response", None, None)):
+                updated_user = await UserService.update_profile_picture_url(session, user_id, picture_url)
+            
+    session.assert_called_once()
+    session.commit.assert_not_called()
+    assert updated_user is None
