@@ -137,7 +137,7 @@ async def test_account_lock_after_failed_logins(db_session, verified_user):
     max_login_attempts = get_settings().max_login_attempts
     for _ in range(max_login_attempts):
         await UserService.login_user(db_session, verified_user.email, "wrongpassword")
-    
+
     is_locked = await UserService.is_account_locked(db_session, verified_user.email)
     assert is_locked, "The account should be locked after the maximum number of failed login attempts."
 
@@ -161,3 +161,63 @@ async def test_unlock_user_account(db_session, locked_user):
     assert unlocked, "The account should be unlocked"
     refreshed_user = await UserService.get_by_id(db_session, locked_user.id)
     assert not refreshed_user.is_locked, "The user should no longer be locked"
+
+# Tests for post/users/create user request
+@pytest.mark.asyncio
+async def test_create_user_with_unique_nickname(db_session, email_service):
+
+    user_data = {
+        "nickname": generate_nickname(),
+        "email": "unique@example.com",
+        "password": "SecurePassword123!",
+        "role": UserRole.ANONYMOUS.name
+    }
+    # Create a user to ensure the nickname is initially unique
+    user = await UserService.create(db_session, user_data, email_service)
+    assert user is not None
+    assert user.nickname == user_data["nickname"]
+
+@pytest.mark.asyncio
+async def test_create_user_with_duplicate_nickname(db_session, email_service):
+
+    initial_data = {
+        "nickname": generate_nickname(),
+        "email": "first@example.com",
+        "password": "FirstPassword123!",
+        "role": UserRole.ANONYMOUS.name
+    }
+    first_user = await UserService.create(db_session, initial_data, email_service)
+
+
+    duplicate_nickname_data = {
+        "nickname": first_user.nickname,
+        "email": "second@example.com",
+        "password": "SecondPassword123!",
+        "role": UserRole.ANONYMOUS.name
+    }
+    second_user = await UserService.create(db_session, duplicate_nickname_data, email_service)
+
+    assert second_user is not None
+    assert second_user.nickname != first_user.nickname  # Ensure a new nickname is generated
+    assert second_user.email == duplicate_nickname_data["email"]
+
+@pytest.mark.asyncio
+async def test_create_user_with_duplicate_email(db_session, email_service):
+
+    user_data = {
+        "nickname": generate_nickname(),
+        "email": "email@example.com",
+        "password": "UniquePassword123!",
+        "role": UserRole.ANONYMOUS.name
+    }
+    first_user = await UserService.create(db_session, user_data, email_service)
+
+    duplicate_email_data = {
+        "nickname": generate_nickname(),
+        "email": first_user.email,
+        "password": "AnotherPassword123!",
+        "role": UserRole.ANONYMOUS.name
+    }
+    second_user = await UserService.create(db_session, duplicate_email_data, email_service)
+
+    assert second_user is None

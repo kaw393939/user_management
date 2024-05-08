@@ -227,3 +227,30 @@ async def test_list_users_valid_parameters(async_client: AsyncClient, admin_toke
     json_response = response.json()
     assert 'items' in json_response
     assert json_response["total"] >= len(json_response["items"])
+
+# Test for POST/USERS/CREATE_USER
+@pytest.mark.asyncio
+async def test_create_user_with_urls(async_client: AsyncClient, admin_token: str):
+    user_data = {
+        "email": "new.user@example.com",
+        "nickname": "new_user",
+        "first_name": "New",
+        "last_name": "User",
+        "bio": "New user bio",
+        "profile_picture_url": "https://example.com/profiles/newuser.jpg",
+        "linkedin_profile_url": "https://linkedin.com/in/newuser",
+        "github_profile_url": "https://github.com/newuser",
+        "role": "ANONYMOUS",
+        "password": "Secure*1234"
+    }
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.post("/users/", json=user_data, headers=headers)
+    assert response.status_code == 201
+    response_data = response.json()
+    assert response_data["email"] == "new.user@example.com"
+    assert response_data["nickname"] == "new_user"
+    assert response_data["first_name"] == "New"
+    assert response_data["last_name"] == "User"
+    assert response_data["bio"] == "New user bio"
+    assert response_data["linkedin_profile_url"] == "https://linkedin.com/in/newuser"
+    assert response_data["github_profile_url"] == "https://github.com/newuser"
