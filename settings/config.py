@@ -2,6 +2,9 @@ from builtins import bool, int, str
 from pathlib import Path
 from pydantic import  Field, AnyUrl, DirectoryPath
 from pydantic_settings import BaseSettings
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
 class Settings(BaseSettings):
     max_login_attempts: int = Field(default=3, description="Background color of QR codes")
@@ -25,8 +28,8 @@ class Settings(BaseSettings):
 
     # MinIO configuration
     # minio_endpoint: str = Field(default='http://127.0.0.1:9000', description="MinIO server endpoint URL")
-    minio_access_key: str = Field(default='2XdHkahMi8kDWeiSrYxy', description="MinIO access key")
-    minio_secret_key: str = Field(default='Jlc5SMbDrJzaweG2ZEIFZr9Z7vooHhSOVD4k3lxi', description="MinIO secret key")
+    minio_access_key: str = Field(default=os.getenv("MINIO_ACCESS_KEY", "default_access_key"), description="MinIO access key")
+    minio_secret_key: str = Field(default=os.getenv("MINIO_SECRET_KEY", "default_secret_key"), description="MinIO secret key")
     minio_secure: bool = Field(default=False, description="Whether to use a secure connection to MinIO")
     minio_bucket_name: str = Field(default='demo', description="MinIO bucket name")
 
