@@ -1,5 +1,6 @@
 from builtins import str
 import pytest
+from app.services.user_service import UserService
 from httpx import AsyncClient
 from app.main import app
 from app.models.user_model import User, UserRole
@@ -93,7 +94,7 @@ async def test_login_success(async_client, verified_user):
         "password": "MySuperPassword$1234"
     }
     response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
-    
+
     # Check for successful login response
     assert response.status_code == 200
     data = response.json()
@@ -190,3 +191,39 @@ async def test_list_users_unauthorized(async_client, user_token):
         headers={"Authorization": f"Bearer {user_token}"}
     )
     assert response.status_code == 403  # Forbidden, as expected for regular user
+
+# Tests for skip & limit integer parameters
+@pytest.mark.asyncio
+async def test_list_users_invalid_skip_parameter(async_client: AsyncClient, admin_token: str):
+    response = await async_client.get(
+        "/users/?skip=-1",
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response.status_code == 400
+    assert "Parameters 'skip' and 'limit' must be non-negative integers" in response.json()["detail"]
+
+@pytest.mark.asyncio
+async def test_list_users_invalid_limit_parameter(async_client: AsyncClient, admin_token: str):
+    response = await async_client.get(
+        "/users/?limit=0",
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response.status_code == 400
+    assert "Parameters 'skip' and 'limit' must be non-negative integers" in response.json()["detail"]
+
+@pytest.fixture
+async def total_users(db_session):
+    # Replace with the actual way to count users in your database
+    count = await UserService.count(db_session)
+    return count
+
+@pytest.mark.asyncio
+async def test_list_users_valid_parameters(async_client: AsyncClient, admin_token: str):
+    response = await async_client.get(
+        "/users/?skip=0&limit=10",
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response.status_code == 200
+    json_response = response.json()
+    assert 'items' in json_response
+    assert json_response["total"] >= len(json_response["items"])
