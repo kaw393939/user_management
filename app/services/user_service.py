@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 import secrets
 from typing import Optional, Dict, List
 from pydantic import ValidationError
+from settings.config import Settings
 from sqlalchemy import func, null, update, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,6 +19,16 @@ import logging
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
+
+from minio import Minio
+from minio.error import InvalidResponseError
+
+minio_client = Minio(
+    endpoint='127.0.0.1:9000',  # Update this to your MinIO endpoint
+    access_key='aZ5kOydbbfkCULICZH2J',
+    secret_key='ycGLJOpSWZAbexib8wIzRr7ml2q96coU5w8OCdqY',
+    secure=False,  # Set to True if your MinIO server uses HTTPS
+)
 
 class UserService:
     @classmethod
@@ -199,3 +210,38 @@ class UserService:
             await session.commit()
             return True
         return False
+    
+    @classmethod
+    async def upload_profile_picture(cls, user_id: UUID, file_data: bytes) -> Optional[str]:
+        try:
+            file_name = f"profile_picture_{user_id}.jpg"
+            minio_client.put_object(
+                "demo",  # Bucket name
+                file_name,
+                file_data,
+                len(file_data),
+            )
+            return file_name
+        except InvalidResponseError as e:
+            logger.error(f"Error uploading profile picture to MinIO: {e}")
+            return None
+        
+    #@classmethod
+    #async def update_profile_picture_url(cls, session: AsyncSession, user_id: UUID, picture_url: str) -> Optional[User]:
+    #    try:
+    #        query = update(User).where(User.id == user_id).values(profile_picture_url=picture_url).execution_options(synchronize_session="fetch")
+    #        await session.execute(query)
+    #        await session.commit()
+    #        updated_user = await session.execute(select(User).where(User.id == user_id))
+    #        updated_user = updated_user.scalars().first()
+    #        if updated_user:
+    #            logger.info(f"User {user_id} profile picture URL updated successfully.")
+    #            return updated_user
+    #        else:
+    #            logger.error(f"User {user_id} not found after updating profile picture URL.")
+    #            return None
+    #    except Exception as e:  # Broad exception handling for debugging
+    #        logger.error(f"Error updating user profile picture URL: {e}")
+    #        return None
+
+
