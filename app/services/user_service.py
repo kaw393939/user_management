@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 import secrets
 from typing import Optional, Dict, List
 from pydantic import ValidationError
+from fastapi import HTTPException
 from settings.config import Settings
 from sqlalchemy import func, null, update, select
 from sqlalchemy.exc import SQLAlchemyError
@@ -117,6 +118,28 @@ class UserService:
         except Exception as e:  # Broad exception handling for debugging
             logger.error(f"Error during user update: {e}")
             return None
+
+    @staticmethod
+    async def update_professional_status(db_session: AsyncSession, user_id: int, status_update: dict, request_user) -> None:
+        # Check if the requesting user has the required role
+        if request_user.role not in [UserRole.ADMIN, UserRole.MANAGER]:
+            raise HTTPException(status_code=403, detail="Unauthorized to change professional status")
+
+        # Find the user in the database
+        statement = select(User).where(User.id == user_id)
+        result = await db_session.execute(statement)
+        user = result.scalars().first()
+
+        # Check if the user exists
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Update the professional status
+        user.is_professional = status_update['is_professional']
+        user.professional_status_updated_at = func.now()
+        await db_session.commit()
+
+        return user
 
     @classmethod
     async def delete(cls, session: AsyncSession, user_id: UUID) -> bool:
