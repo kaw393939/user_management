@@ -23,6 +23,13 @@ class Settings(BaseSettings):
     # Database configuration
     database_url: str = Field(default='postgresql+asyncpg://user:password@postgres/myappdb', description="URL for connecting to the database")
 
+    # MinIO configuration
+    # minio_endpoint: str = Field(default='http://127.0.0.1:9000', description="MinIO server endpoint URL")
+    minio_access_key: str = Field(default='2XdHkahMi8kDWeiSrYxy', description="MinIO access key")
+    minio_secret_key: str = Field(default='Jlc5SMbDrJzaweG2ZEIFZr9Z7vooHhSOVD4k3lxi', description="MinIO secret key")
+    minio_secure: bool = Field(default=False, description="Whether to use a secure connection to MinIO")
+    minio_bucket_name: str = Field(default='demo', description="MinIO bucket name")
+
     # Optional: If preferring to construct the SQLAlchemy database URL from components
     postgres_user: str = Field(default='user', description="PostgreSQL username")
     postgres_password: str = Field(default='password', description="PostgreSQL password")
