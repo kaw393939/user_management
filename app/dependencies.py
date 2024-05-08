@@ -1,4 +1,5 @@
 from builtins import Exception, dict, str
+from uuid import UUID
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -40,11 +41,12 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     payload = decode_token(token)
     if payload is None:
         raise credentials_exception
-    user_id: str = payload.get("sub")
+    user_email: str = payload.get("sub")
     user_role: str = payload.get("role")
-    if user_id is None or user_role is None:
+    user_id: str = payload.get("id")
+    if user_email is None or user_role is None or user_id is None:
         raise credentials_exception
-    return {"user_id": user_id, "role": user_role}
+    return {"user_email": user_email, "role": user_role, "user_id": user_id}
 
 def require_role(role: str):
     """function requires role"""

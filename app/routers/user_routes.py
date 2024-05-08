@@ -34,7 +34,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_db, get_email_service, require_role
 from app.schemas.token_schema import TokenResponse
-from app.schemas.user_schemas import UserCreate, UserListResponse, UserResponse, UserUpdate
+from app.schemas.user_schemas import UserCreate, UserListResponse, UserResponse, UserSelfUpdate, UserUpdate
 from app.services.user_service import UserService
 from app.services.jwt_service import create_access_token
 from app.utils.link_generation import create_user_links, generate_pagination_links
@@ -240,7 +240,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(),
         access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
 
         access_token = create_access_token(
-            data={"sub": user.email, "role": str(user.role.name)},
+            data={"sub": user.email, "role": str(user.role.name), "id": str(user.id)},
             expires_delta=access_token_expires
         )
 
@@ -285,39 +285,32 @@ async def verify_email(user_id: UUID, token: str, db: AsyncSession = Depends(get
             tags=["User Management Requires (Admin or Manager Roles)"])
 async def update_user_profile(
     user_id: UUID,
-    user_update: UserUpdate,
+    user_update: UserSelfUpdate,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))
+    token: str = Depends(oauth2_scheme),
+    current_user: dict = Depends(require_role(["AUTHENTICATED", "ADMIN", "MANAGER"]))
 ):
     """
-    Update user profile information.
+    Update user's own information.
 
-    Args:
-        - user_id: UUID of the user whose profile is to be updated.
-        - user_update: UserUpdate model with updated profile information.
-        - request: The request object, used to generate full URLs in the response.
-        - db: Dependency that provides an AsyncSession for database access.
-        - current_user: Dependency that provides information about the current authenticated user.
+    - **user_id**: UUID of the user to update. Note: this must be the same as the currently logged-in user
+    - **user_update**: UserUpdate model with updated user information.
     """
-    # Ensure that the current user has the necessary permissions to update the profile
-    if current_user['role'] not in ["ADMIN", "MANAGER"]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
-
-    user_data = user_update.dict(exclude_unset=True)
+    user_data = user_update.model_dump(exclude_unset=True)
+    if get_current_user(token)["user_id"] != str(user_id):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User cannot update other user's data")
     updated_user = await UserService.update(db, user_id, user_data)
     if not updated_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    # Construct the response model
-    return UserResponse(
+    return UserResponse.model_construct(
         id=updated_user.id,
         bio=updated_user.bio,
         first_name=updated_user.first_name,
         last_name=updated_user.last_name,
         nickname=updated_user.nickname,
         email=updated_user.email,
-        role=updated_user.role,
         last_login_at=updated_user.last_login_at,
         profile_picture_url=updated_user.profile_picture_url,
         github_profile_url=updated_user.github_profile_url,
@@ -327,28 +320,27 @@ async def update_user_profile(
         links=create_user_links(updated_user.id, request)
     )
 
-@router.put("/users/{user_id}/upgrade/", response_model=User)
-async def upgrade_user_to_professional(
-    user_id: str,
-    updated_user: User,
-    current_user: User = Depends(get_current_user),
-    current_user_role: UserRole = Depends(get_user_role)
-):
-    """function upgrades user to professional status"""
-    # Check if the current user is authorized to perform this action
-    if current_user_role not in [UserRole.MANAGER, UserRole.ADMIN]:
-        raise HTTPException(status_code=403, detail="Unauthorized to perform this action.")
+# @router.put("/users/{user_id}/upgrade/", response_model=User)
+# async def upgrade_user_to_professional(
+#     user_id: str,
+#     updated_user: User,
+#     current_user_role: UserRole = Depends(get_user_role)
+# ):
+#     """function upgrades user to professional status"""
+#     # Check if the current user is authorized to perform this action
+#     if current_user_role not in [UserRole.MANAGER, UserRole.ADMIN]:
+#         raise HTTPException(status_code=403, detail="Unauthorized to perform this action.")
 
-    # Check if the user being upgraded exists
-    user = await UserService.get_user_by_id(user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found.")
+#     # Check if the user being upgraded exists
+#     user = await UserService.get_user_by_id(user_id)
+#     if not user:
+#         raise HTTPException(status_code=404, detail="User not found.")
 
-    # Perform the upgrade
-    user.is_professional = True
-    user.professional_status_updated_at = datetime.now()  # Update timestamp
+#     # Perform the upgrade
+#     user.is_professional = True
+#     user.professional_status_updated_at = datetime.now()  # Update timestamp
 
-    # Update the user
-    updated_user = await UserService.update_user(user_id, **user.dict(exclude_unset=True))
+#     # Update the user
+#     updated_user = await UserService.update_user(user_id, **user.dict(exclude_unset=True))
 
-    return updated_user
+#     return updated_user
