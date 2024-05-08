@@ -227,6 +227,11 @@ def user_token(user):
     token_data = {"sub": str(user.id), "role": user.role.name}
     return create_access_token(data=token_data, expires_delta=timedelta(minutes=30))
 
+@pytest.fixture(scope="function")
+def verified_token(verified_user):
+    token_data = {"sub": str(verified_user.id), "role": verified_user.role.name}
+    return create_access_token(data=token_data, expires_delta=timedelta(minutes=30))
+
 @pytest.fixture
 def email_service():
     if settings.send_real_mail == 'true':
@@ -238,3 +243,4 @@ def email_service():
         mock_service.send_verification_email.return_value = None
         mock_service.send_user_email.return_value = None
         return mock_service
+
