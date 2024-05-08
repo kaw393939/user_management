@@ -53,6 +53,16 @@ async def test_update_user_email_access_allowed(async_client, admin_user, admin_
 
 
 @pytest.mark.asyncio
+async def test_update_user_email_invalid_data(async_client, admin_user, target_user, admin_token):
+    updated_data = {"email": "invalid_email_format"}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.put(f"/users/{target_user.id}", json=updated_data, headers=headers)
+    
+    # The server should return a 400 Bad Request response due to invalid email format
+    assert response.status_code == 400, "Updating email with invalid format should return 400 Bad Request."
+
+
+@pytest.mark.asyncio
 async def test_delete_user(async_client, admin_user, admin_token):
     headers = {"Authorization": f"Bearer {admin_token}"}
     delete_response = await async_client.delete(f"/users/{admin_user.id}", headers=headers)
