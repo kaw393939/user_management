@@ -1,53 +1,46 @@
+"use client";
 import React from "react";
+import Form from "@/components/Form";
+import {
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  Button,
+  useDisclosure,
+} from "@chakra-ui/react";
 
-const page = () => {
+const Page = () => {
+  const { isOpen, onOpen, onClose } = useDisclosure();
   return (
-    <form className="register-form bg-white relative min-h-96 border border-gray-300 rounded-lg p-4 flex flex-col justify-center items-center">
-      <h1 className="text-4xl font-bold text-center m-0 absolute z-10 bottom-4 left-4">
-        Welcome to the the Alumnni Network!
-      </h1>
-      <input
-        type="text"
-        name="fname"
-        id="fname"
-        placeholder="First Name"
-        className="border border-gray-300 rounded-lg pl-2"
-      />
-      <input
-        type="text"
-        name="lname"
-        id="lname"
-        placeholder="Last Name"
-        className="border border-gray-300 rounded-lg pl-2"
-      />
-      <input
-        type="email"
-        name="email"
-        id="email"
-        placeholder="Email"
-        className="border border-gray-300 rounded-lg pl-2"
-      />
-      <input
-        className="border border-gray-300 rounded-lg pl-2"
-        type="username"
-        name="username"
-        id="username"
-        placeholder="Username"
-      />
-      <input
-        className="border border-gray-300 rounded-lg pl-2"
-        type="password"
-        name="password"
-        id="password"
-        placeholder="Password"
-      />
-      <p>Are you a professional looking to provide lectures?*</p>
-      <input type="radio" name="prof" id="prof1" value="prof1" />
-      <label htmlFor="prof1">Yes</label>
-      <input type="radio" name="prof" id="prof2" value="prof2" />
-      <label htmlFor="prof2">No</label>
-    </form>
+    <>
+      <Button onClick={onOpen}>Open Modal</Button>
+
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Welcome to WIS Club</ModalHeader>
+          <ModalCloseButton />
+          {/* <ModalBody>
+            Lorem ipsum dolor, sit amet consectetur adipisicing elit. Aliquam
+            culpa corporis molestiae minus consequuntur, porro quis nemo
+            adipisci quibusdam temporibus reprehenderit deserunt cupiditate
+            veritatis cum ea quaerat, a, assumenda corrupti.
+          </ModalBody> */}
+          <Form />;
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={onClose}>
+              Close
+            </Button>
+            {/* <Button variant="ghost">Secondary Action</Button> */}
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </>
   );
 };
 
-export default page;
+export default Page;
