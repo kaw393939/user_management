@@ -232,22 +232,20 @@ class UserService:
             logger.error(f"Error uploading profile picture to MinIO: {e}")
             return None
         
-    #@classmethod
-    #async def update_profile_picture_url(cls, session: AsyncSession, user_id: UUID, picture_url: str) -> Optional[User]:
-    #    try:
-    #        query = update(User).where(User.id == user_id).values(profile_picture_url=picture_url).execution_options(synchronize_session="fetch")
-    #        await session.execute(query)
-    #        await session.commit()
-    #        updated_user = await session.execute(select(User).where(User.id == user_id))
-    #        updated_user = updated_user.scalars().first()
-    #        if updated_user:
-    #            logger.info(f"User {user_id} profile picture URL updated successfully.")
-    #            return updated_user
-    #        else:
-    #            logger.error(f"User {user_id} not found after updating profile picture URL.")
-    #            return None
-    #    except Exception as e:  # Broad exception handling for debugging
-    #        logger.error(f"Error updating user profile picture URL: {e}")
-    #        return None
-
-
+    @classmethod
+    async def update_profile_picture_url(cls, session: AsyncSession, user_id: UUID, picture_url: str) -> Optional[User]:
+        try:
+            query = update(User).where(User.id == user_id).values(profile_picture_url=picture_url).execution_options(synchronize_session="fetch")
+            await session.execute(query)
+            await session.commit()
+            updated_user = await session.execute(select(User).where(User.id == user_id))
+            updated_user = updated_user.scalars().first()
+            if updated_user:
+                logger.info(f"User {user_id} profile picture URL updated successfully.")
+                return updated_user
+            else:
+                logger.error(f"User {user_id} not found after updating profile picture URL.")
+                return None
+        except Exception as e:  # Broad exception handling for debugging
+            logger.error(f"Error updating user profile picture URL: {e}")
+            return None
