@@ -74,10 +74,6 @@ class UserService:
 
             session.add(new_user)
             await session.commit()
-            async def verify_and_send_email(user, email_service):
-               if not user.is_email_verified:
-                   await email_service.send_verification_email(user)
-                   return new_user
         except ValidationError as e:
             logger.error(f"Validation error during user creation: {e}")
             return None
@@ -87,7 +83,6 @@ class UserService:
         try:
             # validated_data = UserUpdate(**update_data).dict(exclude_unset=True)
             validated_data = UserUpdate(**update_data).model_dump(exclude_unset=True)
-
             if 'password' in validated_data:
                 validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
             query = update(User).where(User.id == user_id).values(**validated_data).execution_options(synchronize_session="fetch")
@@ -200,4 +195,3 @@ class UserService:
             session.add(user)
             await session.commit()
             return True
-        return False
