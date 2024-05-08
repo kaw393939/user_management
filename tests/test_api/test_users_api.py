@@ -53,6 +53,49 @@ async def test_update_user_email_access_allowed(async_client, admin_user, admin_
 
 
 @pytest.mark.asyncio
+async def test_update_user_email_invalid_data(async_client, admin_user, target_user, admin_token):
+    updated_data = {"email": "invalid_email_format"}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.put(f"/users/{target_user.id}", json=updated_data, headers=headers)
+    
+    # The server should return a 400 Bad Request response due to invalid email format
+    assert response.status_code == 400, "Updating email with invalid format should return 400 Bad Request."
+
+@pytest.mark.asyncio
+async def test_update_user_email_conflict_testcase2(async_client, admin_user, verified_user, admin_token):
+    """
+    Test to ensure that updating a user's email to an email that already exists is not allowed and returns an appropriate error.
+    This test first updates an admin user's email and then tries to set the same email for a different verified user.
+    """
+    # Set new email for the admin user
+    updated_email_data = {"email": f"updated_{admin_user.id}@example.com"}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    await async_client.put(f"/users/{admin_user.id}", json=updated_email_data, headers=headers)
+    
+    # Attempt to update a verified user's email to the same email address
+    conflict_response = await async_client.put(f"/users/{verified_user.id}", json=updated_email_data, headers=headers)
+    
+    # Assert that the response indicates the email already exists
+    assert "email already exists" in conflict_response.json().get("detail", ""), \
+        "The API should prevent setting duplicate email addresses and should return a relevant error message."
+
+@pytest.mark.asyncio
+async def test_update_user_email_idempotence_testcase3(async_client, admin_user, admin_token):
+    """
+    Test to verify that updating a user's email address is idempotent.
+    This involves updating the email address to the same value twice and checking that both requests succeed without errors.
+    """
+    # Update email for the first time
+    update_data = {"email": f"updated_{admin_user.id}@example.com"}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    initial_response = await async_client.put(f"/users/{admin_user.id}", json=update_data, headers=headers)
+    assert initial_response.status_code == 200, "The first email update should succeed."
+
+    # Repeat the update with the same email
+    repeat_response = await async_client.put(f"/users/{admin_user.id}", json=update_data, headers=headers)
+    assert repeat_response.status_code == 200, "The second update with the same email should also succeed, confirming idempotence."
+
+@pytest.mark.asyncio
 async def test_delete_user(async_client, admin_user, admin_token):
     headers = {"Authorization": f"Bearer {admin_token}"}
     delete_response = await async_client.delete(f"/users/{admin_user.id}", headers=headers)

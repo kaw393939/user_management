@@ -139,3 +139,24 @@ async def test_update_user_role(db_session: AsyncSession, user: User):
     await db_session.commit()
     await db_session.refresh(user)
     assert user.role == UserRole.ADMIN, "Role update should persist correctly in the database"
+
+@pytest.mark.asyncio
+
+    Test to ensure that a user's email verification status is updated correctly within the database.
+    This test checks that the initial state of the user's email verification status is unverified,
+    then simulates the email verification process, and finally asserts that the status is updated to verified.
+    """
+    # Check the initial verification status (expected to be False)
+    assert not user.email_verified, "Initially, the user's email should not be verified."
+
+    # Simulate the action of verifying the user's email
+    user.verify_email()
+
+    # Commit the changes to the database to update the user's status
+    await db_session.commit()
+
+    # Refresh the user instance to ensure it reflects the updated data from the database
+    await db_session.refresh(user)
+
+    # Assert that the user's email is verified after the simulation
+    assert user.email_verified, "The user's email should be verified after the verify_email method is executed."
