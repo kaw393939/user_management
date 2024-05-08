@@ -1,7 +1,7 @@
 # Project Submission Documentations:
 
-## Github Actions:
-[![CI/CD Pipline](https:///ictions/workflows/production.yml/badge.svg)](https://githactows/production.yml)
+
+
 ## Word Document Reflection:
 [[Reflection File](            )]
 ## Dockerhub:
