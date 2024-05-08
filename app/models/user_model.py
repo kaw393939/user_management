@@ -1,5 +1,6 @@
 """This file contains the User model"""
 
+# pylint: disable=not-callable
 from builtins import bool, int, str
 from datetime import datetime
 from enum import Enum

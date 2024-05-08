@@ -247,13 +247,11 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(),
         return {"access_token": access_token, "token_type": "bearer"}
     raise HTTPException(status_code=401, detail="Incorrect email or password.")
 
-# @router.post("/login/", include_in_schema=False, response_model=TokenResponse, 
-#              tags=["Login and Registration"])
-# async def login(form_data: OAuth2PasswordRequestForm = Depends(), 
-#                 session: AsyncSession = Depends(get_db)):
+# TODO: delete this later
+# @router.post("/login/", include_in_schema=False, response_model=TokenResponse, tags=["Login and Registration"])
+# async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: AsyncSession = Depends(get_db)):
 #     if await UserService.is_account_locked(session, form_data.username):
-#         raise HTTPException(status_code=400, 
-#                             detail="Account locked due to too many failed login attempts.")
+#         raise HTTPException(status_code=400, detail="Account locked due to too many failed login attempts.")
 
 #     user = await UserService.login_user(session, form_data.username, form_data.password)
 #     if user:

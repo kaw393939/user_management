@@ -48,8 +48,8 @@ class UserUpdate(UserBase):
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
     role: Optional[str] = Field(None, example="AUTHENTICATED")
 
-    @root_validator(pre=True)
-    def check_at_least_one_value(cls, values):
+    # @root_validator(pre=True)
+    def check_at_least_one_value(self, values):
         if not any(values.values()):
             raise ValueError("At least one field must be provided for update")
         return values
@@ -71,9 +71,13 @@ class ErrorResponse(BaseModel):
 
 class UserListResponse(BaseModel):
     items: List[UserResponse] = Field(..., example=[{
-        "id": uuid.uuid4(), "nickname": generate_nickname(), "email": "john.doe@example.com",
-        "first_name": "John", "bio": "Experienced developer", "role": "AUTHENTICATED",
-        "last_name": "Doe", "bio": "Experienced developer", "role": "AUTHENTICATED",
+        "id": uuid.uuid4(), 
+        "first_name": "John",
+        "last_name": "Doe",
+        "nickname": generate_nickname(),
+        "email": "john.doe@example.com",
+        "bio": "Experienced developer",
+        "role": "AUTHENTICATED",
         "profile_picture_url": "https://example.com/profiles/john.jpg", 
         "linkedin_profile_url": "https://linkedin.com/in/johndoe", 
         "github_profile_url": "https://github.com/johndoe"
