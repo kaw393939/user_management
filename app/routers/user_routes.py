@@ -21,7 +21,7 @@ Key Highlights:
 from builtins import dict, int, len, str
 from datetime import timedelta
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, Response, status, Request
+from fastapi import APIRouter, Depends, HTTPException, Response, status, Request, File, UploadFile
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_current_user, get_db, get_email_service, require_role
@@ -52,8 +52,8 @@ async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(g
     """
     user = await UserService.get_by_id(db, user_id)
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")    
+    
     return UserResponse.model_construct(
         id=user.id,
         nickname=user.nickname,
@@ -245,3 +245,37 @@ async def verify_email(user_id: UUID, token: str, db: AsyncSession = Depends(get
     if await UserService.verify_email_with_token(db, user_id, token):
         return {"message": "Email verified successfully"}
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired verification token")
+
+@router.post("/users/{user_id}/upload-profile-picture/", tags=["User Management Requires (Admin or Manager Roles)"])
+async def upload_profile_picture(user_id: UUID, request: Request, file: UploadFile = File(...), db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme), current_user: dict = Depends(get_current_user)):
+    """
+    Upload a profile picture for the user.
+
+    - **user_id**: UUID of the user to upload the profile picture for.
+    - **file**: The profile picture file to upload.
+    """
+    file_data = await file.read()
+    picture_url = await UserService.upload_profile_picture(user_id, file_data)
+    if not picture_url:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to upload profile picture")
+    
+    updated_user = await UserService.update_profile_picture_url(db, user_id, picture_url)
+    if not updated_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found after updating profile picture URL")
+    
+    return UserResponse.model_construct(
+        id=updated_user.id,
+        bio=updated_user.bio,
+        first_name=updated_user.first_name,
+        last_name=updated_user.last_name,
+        nickname=updated_user.nickname,
+        email=updated_user.email,
+        role=updated_user.role,
+        last_login_at=updated_user.last_login_at,
+        profile_picture_url=updated_user.profile_picture_url,
+        github_profile_url=updated_user.github_profile_url,
+        linkedin_profile_url=updated_user.linkedin_profile_url,
+        created_at=updated_user.created_at,
+        updated_at=updated_user.updated_at,
+        links=create_user_links(updated_user.id, request)
+    )
