@@ -135,6 +135,33 @@ async def test_clear_github_url_test6(async_client, admin_user, admin_token):
     assert response.status_code == 200, "Expected HTTP 200 status code for successful update"
     assert response.json().get("github_profile_url") is None, "GitHub URL should be set to None after update"
 
+@pytest.mark.asyncio
+async def test_update_professional_status_as_admin_test7(async_client: AsyncClient, admin_user, admin_token):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.patch(f"/users/{admin_user.id}/upgrade", headers=headers)
+    assert response.status_code == 200
+    assert response.json().get("is_professional") == True, "Admin should be able to update professional status."
+
+@pytest.mark.asyncio
+async def test_update_professional_status_as_user_denied_test8(async_client: AsyncClient, admin_user, user_token):
+    headers = {"Authorization": f"Bearer {user_token}"}
+    response = await async_client.patch(f"/users/{admin_user.id}/upgrade", headers=headers)
+    assert response.status_code == 403, "Regular users should not be allowed to update professional status."
+
+@pytest.mark.asyncio
+async def test_update_professional_status_as_manager_test9(async_client: AsyncClient, admin_user, manager_token):
+    headers = {"Authorization": f"Bearer {manager_token}"}
+    response = await async_client.patch(f"/users/{admin_user.id}/upgrade", headers=headers)
+    assert response.status_code == 200
+    assert response.json().get("is_professional") == True, "Managers should be able to update professional status."
+
+@pytest.mark.asyncio
+async def test_user_self_update_unauthorized_test10(async_client: AsyncClient, admin_user, admin_token):
+    # Data to update, assuming the endpoint updates user's own profile based on their token
+    updated_data = {"first_name": "Test", "last_name": "User"}
+    # No authorization header is provided intentionally to simulate unauthorized access
+    response = await async_client.put("/users/updateMyProfile", json=updated_data)
+    assert response.status_code == 401, "Should require authorization to update profile."
 
 @pytest.mark.asyncio
 async def test_create_user_invalid_email(async_client):
