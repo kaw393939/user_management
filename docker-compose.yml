@@ -51,6 +51,17 @@ services:
     networks:
       - app-network
 
+  #minio:
+  #  image: minio/minio
+  #  ports:
+  #    - "9000:9000"
+  #  environment:
+  #    MINIO_ACCESS_KEY: 2XdHkahMi8kDWeiSrYxy
+  #    MINIO_SECRET_KEY: Jlc5SMbDrJzaweG2ZEIFZr9Z7vooHhSOVD4k3lxi
+  #  command: server /data
+  #  networks:
+  #    - app-network
+
 volumes:
   postgres-data:
   pgadmin-data:
