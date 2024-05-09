@@ -1,0 +1,118 @@
+Metadata-Version: 2.1
+Name: async-sqlalchemy
+Version: 1.0.0
+Summary: asyncio sqlalchemy support
+Home-page: https://github.com/aohan237/async-sqlalchemy
+Author: aohan237
+Author-email: aohan237@gmail.com
+License: MIT
+Platform: POSIX
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Development Status :: 4 - Beta
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Operating System :: POSIX
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Software Development
+Classifier: Topic :: Software Development :: Libraries
+Description-Content-Type: text/markdown
+Requires-Dist: sqlalchemy
+Requires-Dist: asyncpg
+Requires-Dist: aiomysql
+
+# asyncnsq
+[![Downloads](https://pepy.tech/badge/async-sqlalchemy)](https://pepy.tech/project/async-sqlalchemy)
+[![PyPI version](https://badge.fury.io/py/async-sqlalchemy.svg)](https://badge.fury.io/py/async-sqlalchemy)
+
+## asyncio sqlalchemy support,with async/await
+
+add asyncio sqlalchemy support
+
+## Install
+
+--------------
+
+pip install async-sqlalchemy
+
+## Usage examples
+
+--------------
+
+
+```python
+import asyncio
+from sqlalchemy import Integer, Column, String, ForeignKey
+from async_sqlalchemy.manager.async_pg import PostgresManager
+from async_sqlalchemy.model.mixin import Mixin
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import select
+
+dsn = "postgres://postgres:test@localhost:2345/test"
+
+conf = {'dsn': dsn}
+
+Base = declarative_base()
+
+
+Manager = PostgresManager(conf=conf)
+
+
+class User(Mixin, Base):
+
+    _manager = Manager
+
+    __tablename__ = 'test'
+    id = Column(Integer, autoincrement=True,  primary_key=True)
+    name = Column(String(50))
+
+    def __repr__(self):
+        return "<User(name='%s', id='%s')>" % (
+            self.name, self.id)
+
+
+class Parent(Mixin, Base):
+    __tablename__ = 'parent'
+    _manager = Manager
+    id = Column(Integer, primary_key=True)
+    child = relationship("Child", lazy='joined')
+
+
+class Child(Mixin, Base):
+    _manager = Manager
+    __tablename__ = 'child'
+    id = Column(Integer, primary_key=True)
+    parent_id = Column(Integer, ForeignKey('parent.id'))
+    parent = relationship("Parent", back_populates="child")
+
+
+if __name__ == '__main__':
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(Manager.connect())
+
+    result = loop.run_until_complete(Manager.get(
+        User.objects([User.id]).join(
+            Parent.__table__,
+            Parent.id == User.id)))
+    print(result)
+
+    # result = loop.run_until_complete(Child.create_table())
+    # print(result)
+    # u = loop.run_until_complete(User.create(name='test'))
+    # print('create', u)
+    # print('get', loop.run_until_complete(User.get(name='test')))
+    # print('all', loop.run_until_complete(User.all()))
+    # u.name = 'aaa'
+    # print('save', loop.run_until_complete(u.save()))
+
+```
+
+License
+-------
+
+The asyncnsq is offered under MIT license.
+
+
