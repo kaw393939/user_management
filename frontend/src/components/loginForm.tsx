@@ -1,6 +1,7 @@
 "use client";
 import { useFormState } from "react-dom";
 import action from "./loginAction";
+import { Button, Input } from "@chakra-ui/react";
 const FormElm = () => {
   const defaultData = {
     email: "",
@@ -11,28 +12,40 @@ const FormElm = () => {
   return (
     <form
       action={formAction}
-      className="register-form bg-white relative min-h-96 border border-gray-300 rounded-lg p-4 flex flex-col justify-center items-center"
+      className="register-form bg-white relative border border-gray-300 rounded-lg p-4 flex flex-col gap-3 justify-center items-center"
     >
-      <input
+      {/* <input
         type="email"
         name="email"
         id="email"
         placeholder="Email"
         className="border border-gray-300 rounded-lg pl-2"
-      />
-      <input
+      /> */}
+      <h2 className="text-start w-full font-bold">Welcome to WISClub</h2>
+      <Input type="email" name="email" id="email" placeholder="Email" />
+      {/* <input
         className="border border-gray-300 rounded-lg pl-2"
         type="password"
         name="password"
         id="password"
         placeholder="Password"
+      /> */}
+      <Input
+        type="password"
+        name="password"
+        id="password"
+        placeholder="Password"
       />
-      <button
+
+      {/* <button
         type="submit"
         className="bg-blue-500 text-white rounded-lg p-2 mt-4"
       >
-        Login
-      </button>
+        Logincd
+      </button> */}
+      <Button className="w-full" colorScheme="teal" type="submit">
+        Continue
+      </Button>
       <p>{state.detail?.map((d: { msg: any }) => d.msg).join(", ")}</p>
     </form>
   );
