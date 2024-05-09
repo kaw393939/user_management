@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import Form from "@/components/Form";
+import Form from "@/components/regForm";
 import {
   Modal,
   ModalOverlay,

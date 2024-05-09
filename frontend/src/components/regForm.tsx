@@ -1,6 +1,6 @@
 "use client";
 import { useFormState } from "react-dom";
-import action from "./actions";
+import action from "./regAction";
 const FormElm = () => {
   const defaultData = {
     fname: "",
