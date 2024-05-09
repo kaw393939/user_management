@@ -1,13 +1,15 @@
-from builtins import bool, int, str
-from datetime import datetime
+from builtins import ValueError, bool, int, str
+from datetime import datetime, timezone
 from enum import Enum
 import uuid
 from sqlalchemy import (
-    Column, String, Integer, DateTime, Boolean, func, Enum as SQLAlchemyEnum
+    Column, ForeignKey, String, Integer, DateTime, Boolean, func, Enum as SQLAlchemyEnum
 )
 from sqlalchemy.dialects.postgresql import UUID, ENUM
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.asyncio import AsyncAttrs
 
 class UserRole(Enum):
     """Enumeration of user roles within the application, stored as ENUM in the database."""
@@ -16,7 +18,13 @@ class UserRole(Enum):
     MANAGER = "MANAGER"
     ADMIN = "ADMIN"
 
-class User(Base):
+class EventType(Enum):
+    """Enumeration of event types within the application."""
+    COMPANY_TOUR = "company_tour"
+    MOCK_INTERVIEW = "mock_interview"
+    GUEST_LECTURE = "guest_lecture"
+
+class User(Base, AsyncAttrs):
     """
     Represents a user within the application, corresponding to the 'users' table in the database.
     This class uses SQLAlchemy ORM for mapping attributes to database columns efficiently.
@@ -73,7 +81,10 @@ class User(Base):
     verification_token = Column(String, nullable=True)
     email_verified: Mapped[bool] = Column(Boolean, default=False, nullable=False)
     hashed_password: Mapped[str] = Column(String(255), nullable=False)
+    events = relationship("Event", back_populates="creator", lazy='dynamic', cascade="all, delete-orphan")
 
+    def update_last_login(self):
+        self.last_login_at = datetime.now(timezone.utc)
 
     def __repr__(self) -> str:
         """Provides a readable representation of a user object."""
@@ -85,6 +96,9 @@ class User(Base):
     def unlock_account(self):
         self.is_locked = False
 
+    def reset_login_attempts(self):
+        self.failed_login_attempts = 0
+        
     def verify_email(self):
         self.email_verified = True
 
@@ -95,3 +109,39 @@ class User(Base):
         """Updates the professional status and logs the update time."""
         self.is_professional = status
         self.professional_status_updated_at = func.now()
+
+class Event(Base):
+    """Represents an event within the application."""
+    __tablename__ = "events"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    title: Mapped[str] = Column(String(255), nullable=False)
+    description: Mapped[str] = Column(String(1000), nullable=True)
+    start_datetime: Mapped[datetime] = Column(DateTime(timezone=True), nullable=False)
+    end_datetime: Mapped[datetime] = Column(DateTime(timezone=True), nullable=False)
+    published: Mapped[bool] = Column(Boolean, default=False, nullable=False)
+    event_type: Mapped[EventType] = Column(SQLAlchemyEnum(EventType), nullable=False)
+    creator_id: Mapped[uuid.UUID] = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
+    created_at: Mapped[datetime] = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    creator = relationship("User", back_populates="events")
+
+    def publish_event(self):
+        """Marks the event as published."""
+        self.published = True
+        updated_at = func.now()
+
+    def unpublish_event(self):
+        """Marks the event as unpublished."""
+        self.published = False
+        updated_at = func.now()
+
+
+    def validate_event_dates(self):
+        """Ensure that the event cannot start after it ends."""
+        if self.start_datetime >= self.end_datetime:
+            raise ValueError("Event start time must be before end time.")
+
+    def __repr__(self) -> str:
+        """Provides a readable representation of an event object."""
+        return f"<Event {self.title}, Type: {self.event_type.name}, Starts: {self.start_datetime}, Published: {self.published}>"

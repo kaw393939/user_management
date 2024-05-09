@@ -79,7 +79,6 @@ Welcome, future software engineering rock stars! 🌟 Here are some exciting pro
   - Review the existing RBAC implementation in the codebase.
   - Design the API endpoints and request/response schemas for role management.
   - Implement the role change functionality in the user management service.
-  - Update the frontend to provide an interface for administrators to manage user roles.
   - Write unit tests to verify the role change functionality and permission propagation.
 
 ## 5. 🎉 Event Management with BREAD Functionality
@@ -147,7 +146,7 @@ Welcome, future software engineering rock stars! 🌟 Here are some exciting pro
   - Create API endpoints to retrieve user retention analytics data.
   - Write unit tests to verify the accuracy and reliability of the user retention analytics.
 
-## 8. 🎫 QR Code Generation for User Profiles with Minio
+## 8. 🎫 QR Code Generation User Invites with Minio
 
 - **Description:** Implement QR code generation functionality for user profiles, allowing users to share their profile information easily. Store the generated QR codes using Minio.
 - **User Story:** As a user, I want to be able to invite people to the site through email by inputing their name and email address..
