@@ -7,7 +7,7 @@ const NavBar = () => {
     { title: "Find Events", path: "/events" },
     { title: "Create Event", path: "/create" },
     { title: "Login", path: "/login" },
-    { title: "Register", path: "/register" },
+    { title: "Register", path: "/registerpage" },
   ];
   const router = useRouter();
   return (

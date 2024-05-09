@@ -66,6 +66,7 @@ const FormElm = () => {
       >
         Register
       </button>
+      <p>{state.detail?.map((d: { msg: any }) => d.msg).join(", ")}</p>
     </form>
   );
 };
