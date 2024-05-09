@@ -1,4 +1,4 @@
-from builtins import dict, int, max, str
+from builtins import dict, int, list, max, str
 from typing import List, Callable
 from urllib.parse import urlencode
 from uuid import UUID
@@ -46,3 +46,32 @@ def generate_pagination_links(request: Request, skip: int, limit: int, total_ite
         links.append(create_pagination_link("prev", base_url, {'skip': max(skip - limit, 0), 'limit': limit}))
 
     return links
+
+
+def create_event_links(event_id: UUID, request: Request) -> list:
+    return [
+        {
+            "rel": "self",
+            "href": request.url_for("get_event", event_id=event_id)
+        },
+        {
+            "rel": "update",
+            "href": request.url_for("update_event", event_id=event_id)
+        },
+        {
+            "rel": "delete",
+            "href": request.url_for("delete_event", event_id=event_id)
+        },
+        {
+            "rel": "publish",
+            "href": request.url_for("publish_event", event_id=event_id)
+        },
+        {
+            "rel": "unpublish",
+            "href": request.url_for("unpublish_event", event_id=event_id)
+        },
+        {
+            "rel": "creator",
+            "href": request.url_for("get_user", user_id=request.path_params["creator_id"])
+        }
+    ]

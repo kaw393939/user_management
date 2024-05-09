@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+{% block title %}Welcome{% endblock %}
+{% block content %}
+<h1>Welcome to the Application</h1>
+{% if user %}
+    <p>Welcome, {{ user.email }}!</p>
+    <p><a href="/dashboard">Go to Dashboard</a></p>
+    <p><a href="#" onclick="logoutUser(event)">Logout</a></p>
+    <form id="logoutForm" action="/logout" method="post" style="display: none;"></form>
+    <script>
+        function logoutUser(event) {
+            event.preventDefault();
+            document.getElementById('logoutForm').submit();
+        }
+    </script>
+{% else %}
+    <p>Please <a href="/login-form">login</a> or <a href="/register-form">register</a> to continue.</p>
+{% endif %}
+{% endblock %}
