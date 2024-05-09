@@ -1,37 +1,40 @@
+import React from "react";
 import {
-  Button,
-  ButtonGroup,
   Card,
   CardBody,
-  CardFooter,
-  Divider,
   Heading,
   Image,
   Stack,
   Text,
 } from "@chakra-ui/react";
-import React from "react";
 
-const Event = () => {
+// Define props interface if using TypeScript
+interface EventProps {
+  title: string;  // Title as a required prop
+  host: string;   // Host as a required prop
+  start_time: string;
+  location: string;
+  detailsUrl: string;
+  date: string;
+  image: string;
+}
+
+const Event: React.FC<EventProps> = ({ title, host, start_time, location, detailsUrl, date, image }) => {
   return (
     <>
       <Card maxW="sm">
         <CardBody>
-          <Image
-            src="https://source.unsplash.com/1600x900/?Professional"
-            alt="Green double couch with wooden legs"
+        <Image
+            src={image}  // Use image from props
+            alt={`${title} event image`}
             borderRadius="lg"
           />
           <Stack mt="6" spacing="3">
-            <Heading size="md">Professional Development</Heading>
-            <Text>
-              {new Date(
-                Math.random() * 120000000000 + 1660000000000
-              ).toDateString()}
-            </Text>
-            <Text>4:00 PM</Text>
-            <Text>GITC 3600 </Text>
-            <Text>Cathy Gordio</Text>
+            <Heading size="md">{title}</Heading>
+            <Text>{date}</Text>
+            <Text>{start_time}</Text>
+            <Text>{location}</Text>
+            <Text>{host}</Text>
           </Stack>
         </CardBody>
       </Card>
