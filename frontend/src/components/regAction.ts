@@ -1,4 +1,7 @@
 "use server";
+
+import { redirect } from "next/navigation";
+
 export default async function action(prevState: any, formData: FormData) {
   let payload = {
     email: formData.get("email"),
@@ -21,7 +24,8 @@ export default async function action(prevState: any, formData: FormData) {
     body: JSON.stringify(payload),
   });
   const data = await response.json();
-  console.log(data);
-
+  if (data.status === 201 || data.status === 200 || data.status === 204) {
+    return { ...prevState, ...data, close: true } && redirect("/");
+  }
   return { ...prevState, ...data };
 }

@@ -57,19 +57,21 @@ const NavBar = () => {
     {
       title: "Login",
       onclick: () => {
+        router.push("#login");
         setFormType("login");
         onOpen();
       },
-      path: "null",
+      path: "#login",
     },
 
     {
       title: "Register",
       onclick: () => {
+        router.push("#register");
         setFormType("register");
         onOpen();
       },
-      path: "null",
+      path: "#register",
     },
   ];
   const { isOpen, onOpen, onClose } = useDisclosure();

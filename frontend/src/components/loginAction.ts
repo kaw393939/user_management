@@ -1,5 +1,6 @@
 "use server";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 export default async function action(prevState: any, formData: FormData) {
   let payload = {
     email: formData.get("email") as string,
@@ -23,7 +24,7 @@ export default async function action(prevState: any, formData: FormData) {
   const data = await response.json();
   if (data.access_token) {
     setcookie.set("access_token", data.access_token);
+    redirect("/profile");
   }
-
   return { ...prevState, ...data };
 }

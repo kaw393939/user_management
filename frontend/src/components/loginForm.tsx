@@ -46,7 +46,7 @@ const FormElm = () => {
       <Button className="w-full" colorScheme="teal" type="submit">
         Continue
       </Button>
-      <p>{state.detail?.map((d: { msg: any }) => d.msg).join(", ")}</p>
+      <p>{state.detail&& JSON.stringify(state)}</p>
     </form>
   );
 };
