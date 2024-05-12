@@ -3,12 +3,12 @@ from datetime import datetime, timezone
 import secrets
 from typing import Optional, Dict, List
 from pydantic import ValidationError
-from sqlalchemy import func, null, update, select
+from sqlalchemy import func, null, update, select, or_, and_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_email_service, get_settings
 from app.models.user_model import User
-from app.schemas.user_schemas import UserCreate, UserUpdate
+from app.schemas.user_schemas import UserCreate, UserUpdate, UserResponse
 from app.utils.nickname_gen import generate_nickname
 from app.utils.security import generate_verification_token, hash_password, verify_password
 from uuid import UUID
@@ -69,12 +69,11 @@ class UserService:
             if new_user.role == UserRole.ADMIN:
                 new_user.email_verified = True
 
-            else:
-                new_user.verification_token = generate_verification_token()
-                await email_service.send_verification_email(new_user)
-
+            
+            new_user.verification_token = generate_verification_token()    
             session.add(new_user)
             await session.commit()
+            await email_service.send_verification_email(new_user)
             return new_user
         except ValidationError as e:
             logger.error(f"Validation error during user creation: {e}")
@@ -122,7 +121,6 @@ class UserService:
     async def register_user(cls, session: AsyncSession, user_data: Dict[str, str], get_email_service) -> Optional[User]:
         return await cls.create(session, user_data, get_email_service)
     
-
     @classmethod
     async def login_user(cls, session: AsyncSession, email: str, password: str) -> Optional[User]:
         user = await cls.get_by_email(session, email)
@@ -150,7 +148,6 @@ class UserService:
         user = await cls.get_by_email(session, email)
         return user.is_locked if user else False
 
-
     @classmethod
     async def reset_password(cls, session: AsyncSession, user_id: UUID, new_password: str) -> bool:
         hashed_password = hash_password(new_password)
@@ -170,7 +167,8 @@ class UserService:
         if user and user.verification_token == token:
             user.email_verified = True
             user.verification_token = None  # Clear the token once used
-            user.role = UserRole.AUTHENTICATED
+            if user.role == UserRole.ANONYMOUS:
+                user.role = UserRole.AUTHENTICATED
             session.add(user)
             await session.commit()
             return True
@@ -199,3 +197,43 @@ class UserService:
             await session.commit()
             return True
         return False
+
+    @classmethod
+    async def search_users(cls, session: AsyncSession, username: Optional[str] = None, email: Optional[str] = None, role: Optional[str] = None, account_status: Optional[str] = None, registration_date_from: Optional[datetime] = None, registration_date_to: Optional[datetime] = None, skip: int = 0, limit: int = 10) -> List[User]:
+        query = select(User)
+        
+        if username:
+            query = query.filter(func.lower(User.nickname) == func.lower(username))
+        if email:
+            query = query.filter(func.lower(User.email) == func.lower(email))
+        if role:
+            query = query.filter(User.role == role)
+        if account_status:
+            if account_status.lower() == 'locked':
+                query = query.filter(User.is_locked == True)
+            elif account_status.lower() == 'active':
+                query = query.filter(User.is_locked == False)
+        if registration_date_from:
+            query = query.filter(User.created_at >= registration_date_from)
+        if registration_date_to:
+            query = query.filter(User.created_at <= registration_date_to)
+
+        query = query.offset(skip).limit(limit)
+        
+        result = await cls._execute_query(session, query)
+        users = result.scalars().all() if result else []
+        
+        # Prepare user responses with registration date and account status
+        user_responses = [
+            UserResponse(
+                id=user.id,
+                email=user.email,
+                nickname=user.nickname,
+                is_professional=user.is_professional,
+                role=user.role,
+                registration_date=user.created_at,
+                account_status="Active" if not user.is_locked else "Locked"
+            ) for user in users
+        ]
+        
+        return user_responses
