@@ -19,7 +19,7 @@ def validate_url(url: Optional[str]) -> Optional[str]:
 
 class UserBase(BaseModel):
     email: EmailStr = Field(..., example="john.doe@example.com")
-    nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example="john_doe123")
+    nickname: str = Field(None, min_length=3, pattern=r'^[\w-]+$', example="john_doe123")
     first_name: Optional[str] = Field(None, example="John")
     last_name: Optional[str] = Field(None, example="Doe")
     bio: Optional[str] = Field(None, example="Experienced software developer specializing in web applications.")

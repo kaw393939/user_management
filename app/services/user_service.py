@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_email_service, get_settings
 from app.models.user_model import User
 from app.schemas.user_schemas import UserCreate, UserUpdate
-from app.utils.nickname_gen import generate_nickname
 from app.utils.security import generate_verification_token, hash_password, verify_password
 from uuid import UUID
 from app.services.email_service import EmailService
@@ -59,11 +58,6 @@ class UserService:
                 return None
             validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
             new_user = User(**validated_data)
-            new_nickname = generate_nickname()
-            while await cls.get_by_nickname(session, new_nickname):
-                new_nickname = generate_nickname()
-            new_user.nickname = new_nickname
-            logger.info(f"User Role: {new_user.role}")
             user_count = await cls.count(session)
             new_user.role = UserRole.ADMIN if user_count == 0 else UserRole.ANONYMOUS            
             if new_user.role == UserRole.ADMIN:
