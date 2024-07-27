@@ -190,3 +190,81 @@ async def test_list_users_unauthorized(async_client, user_token):
         headers={"Authorization": f"Bearer {user_token}"}
     )
     assert response.status_code == 403  # Forbidden, as expected for regular user
+
+@pytest.mark.asyncio
+async def test_create_user_duplicate_nickname(async_client, verified_user, admin_token):
+    user_data_duplicate_username = {
+        "nickname": verified_user.nickname,
+        "email": "test@example.com",
+        "password": "sS#fdasrongPassword123!"
+    }
+    user_data_valid_username = {
+        "nickname": "joe_cool_123",
+        "email": "test@example.com",
+        "password": "sS#fdasrongPassword123!"
+    }
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.post("/users/", json=user_data_duplicate_username, headers=headers)
+    assert response.status_code == 400
+    response = await async_client.post("/users/", json=user_data_valid_username, headers=headers)
+    assert response.status_code == 201
+    assert response.json()["nickname"] == user_data_valid_username["nickname"]
+
+@pytest.mark.asyncio
+async def test_register_user_duplicate_nickname(async_client, verified_user):
+    user_data_duplicate_username = {
+        "nickname": verified_user.nickname,
+        "email": "test.test@example.com",
+        "password": "sS#fdasrongPassword123!"
+    }
+    user_data_valid_username = {
+        "nickname": "joe_cool_123",
+        "email": "test@example.com",
+        "password": "sS#fdasrongPassword123!"
+    }
+    response = await async_client.post("/register/", json=user_data_duplicate_username)
+    assert response.status_code == 400
+    response = await async_client.post("/register/", json=user_data_valid_username)
+    assert response.status_code == 200
+    assert response.json()["nickname"] == user_data_valid_username["nickname"]
+    
+
+@pytest.mark.asyncio
+async def test_update_nicknames(async_client, admin_user, admin_token, verified_user):
+    updated_data_duplicate_nickname = {"nickname": verified_user.nickname}
+    updated_data_valid_username = {"nickname": "joe_cool_123"}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data_duplicate_nickname, headers=headers)
+    assert response.status_code == 400
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data_valid_username, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["nickname"] == updated_data_valid_username["nickname"]
+
+@pytest.mark.asyncio
+async def test_create_user_duplicate_email(async_client, verified_user, admin_token):
+    user_data = {"nickname": "joe_cool_1234",
+                 "email": verified_user.email,
+                 "password": "sS#fdasrongPassword123!"
+                 }
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.post("/users/", json=user_data, headers=headers)
+    assert response.status_code == 400
+    assert "Email already exists" in response.json().get("detail", "")
+
+@pytest.mark.asyncio
+async def test_update_user_duplicate_email(async_client, admin_user, admin_token, verified_user):
+    user_data = {"email": verified_user.email}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.put(f"/users/{admin_user.id}", json=user_data, headers=headers)
+    assert response.status_code == 400
+    assert "Email already exists" in response.json().get("detail", "")
+
+@pytest.mark.asyncio
+async def test_register_user_duplicate_email(async_client, verified_user):
+    user_data = {
+        "email": verified_user.email,
+        "password": "AnotherPassword123!",
+    }
+    response = await async_client.post("/register/", json=user_data)
+    assert response.status_code == 400
+    assert "Email already exists" in response.json().get("detail", "")
