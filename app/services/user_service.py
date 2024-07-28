@@ -70,11 +70,11 @@ class UserService:
                 new_user.email_verified = True
 
             else:
-                new_user.verification_token = generate_verification_token()
-                await email_service.send_verification_email(new_user)
+                new_user.verification_token = generate_verification_token()            
 
             session.add(new_user)
             await session.commit()
+            await email_service.send_verification_email(new_user) # the code was moved from above else condition to here for Issue #2
             return new_user
         except ValidationError as e:
             logger.error(f"Validation error during user creation: {e}")
