@@ -92,7 +92,7 @@ class UserService:
             await cls._execute_query(session, query)
             updated_user = await cls.get_by_id(session, user_id)
             if updated_user:
-                session.refresh(updated_user)  # Explicitly refresh the updated user object
+                await session.refresh(updated_user)  # Explicitly refresh the updated user object
                 logger.info(f"User {user_id} updated successfully.")
                 return updated_user
             else:
