@@ -1,7 +1,10 @@
-# Define a base stage with a Debian Bookworm base image that includes the latest glibc update
-FROM python:3.12-bookworm as base
+# Use an official lightweight Python image.
+# 3.12-slim variant is chosen for a balance between size and utility.
+FROM python:3.12-slim-bullseye as base
 
-# Set environment variables
+# Set environment variables to configure Python and pip.
+# Prevents Python from buffering stdout and stderr, enables the fault handler, disables pip cache,
+# sets default pip timeout, and suppresses pip version check messages.
 ENV PYTHONUNBUFFERED=1 \
     PYTHONFAULTHANDLER=1 \
     PIP_NO_CACHE_DIR=true \
@@ -9,52 +12,31 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=on \
     QR_CODE_DIR=/myapp/qr_codes
 
+# Set the working directory inside the container
 WORKDIR /myapp
 
-# Update system and specifically upgrade libc-bin to the required security patch version
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    libpq-dev \
-    && apt-get install -y libc-bin=2.36-9+deb12u6 \
+# Install system dependencies
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends gcc libpq-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies in /.venv
-COPY requirements.txt .
-RUN python -m venv /.venv \
-    && . /.venv/bin/activate \
-    && pip install --upgrade pip \
+# Copy only the requirements, to cache them in Docker layer
+COPY ./requirements.txt /myapp/requirements.txt
+
+# Upgrade pip and install Python dependencies from requirements file
+RUN pip install --upgrade pip \
     && pip install -r requirements.txt
 
-# Define a second stage for the runtime, using the same Debian Bookworm slim image
-FROM python:3.12-slim-bookworm as final
-
-# Upgrade libc-bin in the final stage to ensure security patch is applied
-RUN apt-get update && apt-get install -y libc-bin=2.36-9+deb12u6 \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy the virtual environment from the base stage
-COPY --from=base /.venv /.venv
-
-# Set environment variable to ensure all python commands run inside the virtual environment
-ENV PATH="/.venv/bin:$PATH" \
-    PYTHONUNBUFFERED=1 \
-    PYTHONFAULTHANDLER=1 \
-    QR_CODE_DIR=/myapp/qr_codes
-
-# Set the working directory
-WORKDIR /myapp
-
-# Create and switch to a non-root user
+# Add a non-root user and switch to it
 RUN useradd -m myuser
 USER myuser
 
-# Copy application code with appropriate ownership
-COPY --chown=myuser:myuser . .
+# Copy the rest of your application's code with appropriate ownership
+COPY --chown=myuser:myuser . /myapp
 
 # Inform Docker that the container listens on the specified port at runtime.
 EXPOSE 8000
 
 # Use ENTRYPOINT to specify the executable when the container starts.
-ENTRYPOINT ["uvicorn", "app.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
