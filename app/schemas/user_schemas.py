@@ -9,10 +9,26 @@ from app.models.user_model import UserRole
 from app.utils.nickname_gen import generate_nickname
 
 
-def validate_url(url: Optional[str]) -> Optional[str]:
+def validate_github(url: Optional[str]) -> Optional[str]:
     if url is None:
         return url
-    url_regex = r'^https?:\/\/[^\s/$.?#].[^\s]*$'
+    url_regex = r'^https?:\/\/(www\.)?github\.com\/[^\s/$.?#]*$'
+    if not re.match(url_regex, url):
+        raise ValueError('Invalid URL format')
+    return url
+
+def validate_image(url: Optional[str]) -> Optional[str]:
+    if url is None:
+        return url
+    url_regex = r'^https?:\/\/[^\s/$.?#].[^\s]*\.(?:jpe?g|png)$'
+    if not re.match(url_regex, url):
+        raise ValueError('Invalid IMAGE USED')
+    return url
+
+def validate_linkedin(url: Optional[str]) -> Optional[str]:
+    if url is None:
+        return url
+    url_regex = r'^https?:\/\/(www\.)?linkedin\.com(\/in)?\/[^\s/$.?#]*$'
     if not re.match(url_regex, url):
         raise ValueError('Invalid URL format')
     return url
@@ -28,8 +44,10 @@ class UserBase(BaseModel):
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
     role: UserRole
 
-    _validate_urls = validator('profile_picture_url', 'linkedin_profile_url', 'github_profile_url', pre=True, allow_reuse=True)(validate_url)
- 
+    _validate_github = validator('github_profile_url', pre=True, allow_reuse=True)(validate_github)
+    _validate_linkedin = validator('linkedin_profile_url', pre=True, allow_reuse=True)(validate_linkedin)
+    _validate_image = validator('profile_picture_url', pre=True, allow_reuse=True)(validate_image)
+
     class Config:
         from_attributes = True
 
