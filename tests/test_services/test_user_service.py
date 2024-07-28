@@ -1,10 +1,12 @@
 from builtins import range
 import pytest
+from unittest.mock import patch
 from sqlalchemy import select
-from app.dependencies import get_settings
+from app.dependencies import get_email_service, get_settings
 from app.models.user_model import User, UserRole
 from app.services.user_service import UserService
 from app.utils.nickname_gen import generate_nickname
+from app.schemas.user_schemas import UserCreate, UserUpdate
 
 pytestmark = pytest.mark.asyncio
 
@@ -161,3 +163,21 @@ async def test_unlock_user_account(db_session, locked_user):
     assert unlocked, "The account should be unlocked"
     refreshed_user = await UserService.get_by_id(db_session, locked_user.id)
     assert not refreshed_user.is_locked, "The user should no longer be locked"
+
+    
+# Additional Test Scenarios
+# Test user creation with an existing email address
+@patch('app.services.email_service.EmailService.send_verification_email')
+async def test_create_user_with_existing_email(email_service, db_session, existing_user):
+    user_data = {
+        "email": existing_user.email,  # Using the existing user's email
+        "password": "AnotherStrongPassword123!",
+        "full_name": "Another User",
+        "role": UserRole.ANONYMOUS
+    }
+    
+    new_user = await UserService.create(db_session, user_data, email_service)
+    
+    # User creation should fail as the email already exists
+    assert new_user is None
+
