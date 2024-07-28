@@ -108,3 +108,27 @@ def test_user_base_url_invalid(url, user_base_data):
     user_base_data["profile_picture_url"] = url
     with pytest.raises(ValidationError):
         UserBase(**user_base_data)
+
+@pytest.mark.parametrize("url", ["http://linkedin.com/profile", "https://www.linkedin.com/in/profile", None])
+def test_user_linkedin_url_valid(url, user_base_data):
+    user_base_data["linkedin_profile_url"] = url
+    user = UserBase(**user_base_data)
+    assert user.linkedin_profile_url == url
+
+@pytest.mark.parametrize("url", ["ftp://linkedin.com/profile", "http//linkedin", "https//linkedin"])
+def test_user_linkedin_url_invalid(url, user_base_data):
+    user_base_data["linkedin_profile_url"] = url
+    with pytest.raises(ValidationError):
+        UserBase(**user_base_data)
+
+@pytest.mark.parametrize("url", ["http://github.com/profile", "https://www.github.com/profile", None])
+def test_user_github_url_valid(url, user_base_data):
+    user_base_data["github_profile_url"] = url
+    user = UserBase(**user_base_data)
+    assert user.github_profile_url == url
+
+@pytest.mark.parametrize("url", ["ftp://github.com/profile", "http//github", "https//github"])
+def test_user_github_url_invalid(url, user_base_data):
+    user_base_data["github_profile_url"] = url
+    with pytest.raises(ValidationError):
+        UserBase(**user_base_data)
