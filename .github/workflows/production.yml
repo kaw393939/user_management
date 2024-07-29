@@ -70,15 +70,15 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: kaw393939/wis_club_api:${{ github.sha }} # Uses the Git SHA for tagging
+          tags: dyerovi/user_management:${{ github.sha }} # Uses the Git SHA for tagging | update with my credentials 
           platforms: linux/amd64,linux/arm64 # Multi-platform support
-          cache-from: type=registry,ref=kaw393939/wis_club_api:cache
+          cache-from: type=registry,ref=dyerovi/user_management:cache # update with my credentials
           cache-to: type=inline,mode=max
           
       - name: Scan the Docker image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'kaw393939/wis_club_api:${{ github.sha }}'
+          image-ref: 'dyerovi/user_management:${{ github.sha }}' # update with my credentials
           format: 'table'
           exit-code: '1' # Fail the job if vulnerabilities are found
           ignore-unfixed: true
