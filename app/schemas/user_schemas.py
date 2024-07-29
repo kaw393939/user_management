@@ -35,7 +35,7 @@ def validate_linkedin(url: Optional[str]) -> Optional[str]:
 
 class UserBase(BaseModel):
     email: EmailStr = Field(..., example="john.doe@example.com")
-    nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example="john_doe123")
+    nickname: Optional[str] = Field(None, min_length=8, max_length=20, pattern=r'^[\w-]+$', example="john_doe123")
     first_name: Optional[str] = Field(None, example="John")
     last_name: Optional[str] = Field(None, example="Doe")
     bio: Optional[str] = Field(None, example="Experienced software developer specializing in web applications.")
@@ -54,6 +54,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     email: EmailStr = Field(..., example="john.doe@example.com")
     password: str = Field(..., min_length=8, max_length=25, example="Secure*1234")
+    nickname: Optional[str] = Field(None, min_length=8, max_length=20, pattern=r'^[\w-]+$', example="john_doe123")
     @validator('password')
     def validate_password(cls, value):
         if value and not re.match(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!*])[A-Za-z\d@$!*]{8,25}$', value):
@@ -62,7 +63,7 @@ class UserCreate(UserBase):
 class UserUpdate(UserBase):
     email: Optional[EmailStr] = Field(None, example="john.doe@example.com")
     password: Optional[str] = Field(None, min_length=8, max_length=25, example="Secure*1234")
-    nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example="john_doe123")
+    nickname: Optional[str] = Field(None, min_length=8, max_length=20, pattern=r'^[\w-]+$', example="john_doe123")
     first_name: Optional[str] = Field(None, example="John")
     last_name: Optional[str] = Field(None, example="Doe")
     bio: Optional[str] = Field(None, example="Experienced software developer specializing in web applications.")
@@ -85,7 +86,7 @@ class UserUpdate(UserBase):
 class UserResponse(UserBase):
     id: uuid.UUID = Field(..., example=uuid.uuid4())
     email: EmailStr = Field(..., example="john.doe@example.com")
-    nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example="john_doe123")    
+    nickname: Optional[str] = Field(None, min_length=8, max_length=20, pattern=r'^[\w-]+$', example="john_doe123")    
     is_professional: Optional[bool] = Field(default=False, example=True)
     role: UserRole
 
@@ -99,7 +100,9 @@ class ErrorResponse(BaseModel):
 
 class UserListResponse(BaseModel):
     items: List[UserResponse] = Field(..., example=[{
-        "id": uuid.uuid4(), "nickname": "john_doe123", "email": "john.doe@example.com",
+        "id": uuid.uuid4(), 
+        "nickname": "john_doe123", 
+        "email": "john.doe@example.com",
         "first_name": "John",
         "last_name": "Doe", 
         "bio": "Experienced developer", 
