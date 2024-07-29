@@ -170,7 +170,10 @@ class UserService:
         if user and user.verification_token == token:
             user.email_verified = True
             user.verification_token = None  # Clear the token once used
-            user.role = UserRole.AUTHENTICATED
+            
+            #As part of Issue #4 fix, the below check is made to change to AUTHENTICATED only for ANONYMOUS user roles, not for ADMIN or MANAGER
+            if user.role == UserRole.ANONYMOUS:
+                user.role = UserRole.AUTHENTICATED
             session.add(user)
             await session.commit()
             return True
