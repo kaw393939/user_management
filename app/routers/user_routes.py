@@ -87,6 +87,17 @@ async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, 
     - **user_update**: UserUpdate model with updated user information.
     """
     user_data = user_update.model_dump(exclude_unset=True)
+
+    if 'nickname' in user_data:
+        existing_user = await UserService.get_by_nickname(db, user_data.nickname)
+        if existing_user:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You can not use this new nickname. Nickname already exists")
+
+    if 'email' in user_data:
+        existing_user = await UserService.get_by_email(db, user_data.email)
+        if existing_user:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You can not use this new email. Email already exists")
+
     updated_user = await UserService.update(db, user_id, user_data)
     if not updated_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -194,6 +205,9 @@ async def list_users(
 
 @router.post("/register/", response_model=UserResponse, tags=["Login and Registration"])
 async def register(user_data: UserCreate, session: AsyncSession = Depends(get_db), email_service: EmailService = Depends(get_email_service)):
+    existing_user = await UserService.get_by_nickname(session, user_data.nickname)
+    if existing_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="nickname already exists")
     user = await UserService.register_user(session, user_data.model_dump(), email_service)
     if user:
         return user
