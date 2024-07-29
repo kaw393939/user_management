@@ -32,6 +32,7 @@ from app.main import app
 from app.database import Base, Database
 from app.models.user_model import User, UserRole
 from app.dependencies import get_db, get_settings
+from app.services.user_service import UserService
 from app.utils.security import hash_password
 from app.utils.template_manager import TemplateManager
 from app.services.email_service import EmailService
@@ -238,3 +239,17 @@ def email_service():
         mock_service.send_verification_email.return_value = None
         mock_service.send_user_email.return_value = None
         return mock_service
+    
+#For additional pytest coverage
+@pytest.fixture
+async def existing_user(db_session, email_service):
+    user_data = {
+        "email": "existinguser@example.com",
+        "password": "ExistingPassword123!",
+        "full_name": "Existing User",
+        "role": UserRole.ANONYMOUS
+    }
+
+    existing_user = await UserService.create(db_session, user_data, email_service)
+    await db_session.commit()
+    return existing_user
