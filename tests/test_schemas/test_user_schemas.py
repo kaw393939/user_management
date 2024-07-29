@@ -27,7 +27,7 @@ def user_create_data(user_base_data):
 def user_update_data():
     return {
         "email": "john.doe.new@example.com",
-        "nickname": "j_doe",
+        "nickname": "j_doe1234",
         "first_name": "John",
         "last_name": "Doe",
         "bio": "I specialize in backend development with Python and Node.js.",
@@ -84,7 +84,7 @@ def test_login_request_valid(login_request_data):
     assert login.password == login_request_data["password"]
 
 # Parametrized tests for nickname and email validation
-@pytest.mark.parametrize("nickname", ["test_user", "test-user", "testuser123", "123test"])
+@pytest.mark.parametrize("nickname", ["test_user", "test-user", "testuser123", "1234test"])
 def test_user_base_nickname_valid(nickname, user_base_data):
     user_base_data["nickname"] = nickname
     user = UserBase(**user_base_data)

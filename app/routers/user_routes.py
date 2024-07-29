@@ -89,12 +89,12 @@ async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, 
     user_data = user_update.model_dump(exclude_unset=True)
 
     if 'nickname' in user_data:
-        existing_user = await UserService.get_by_nickname(db, user_data.nickname)
+        existing_user = await UserService.get_by_nickname(db, user_data.get('nickname'))
         if existing_user:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You can not use this new nickname. Nickname already exists")
 
     if 'email' in user_data:
-        existing_user = await UserService.get_by_email(db, user_data.email)
+        existing_user = await UserService.get_by_email(db, user_data.get('email'))
         if existing_user:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You can not use this new email. Email already exists")
 
@@ -116,6 +116,7 @@ async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, 
         linkedin_profile_url=updated_user.linkedin_profile_url,
         created_at=updated_user.created_at,
         updated_at=updated_user.updated_at,
+        is_professional=updated_user.is_professional,
         links=create_user_links(updated_user.id, request)
     )
 
