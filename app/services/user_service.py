@@ -69,12 +69,10 @@ class UserService:
             if new_user.role == UserRole.ADMIN:
                 new_user.email_verified = True
 
-            else:
-                new_user.verification_token = generate_verification_token()
-                await email_service.send_verification_email(new_user)
-
+            new_user.verification_token = generate_verification_token() # changes made by the professor to fix first user token verification on the email
             session.add(new_user)
             await session.commit()
+            await email_service.send_verification_email(new_user) # changes made by the professor to fix email verefication 
             return new_user
         except ValidationError as e:
             logger.error(f"Validation error during user creation: {e}")
@@ -170,7 +168,8 @@ class UserService:
         if user and user.verification_token == token:
             user.email_verified = True
             user.verification_token = None  # Clear the token once used
-            user.role = UserRole.AUTHENTICATED
+            if user.role == UserRole.ANONYMOUS: # professor fix to update role after email verification
+                user.role = UserRole.AUTHENTICATED
             session.add(user)
             await session.commit()
             return True
