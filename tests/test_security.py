@@ -65,3 +65,34 @@ def test_hash_password_internal_error(monkeypatch):
     with pytest.raises(ValueError):
         hash_password("test")
 
+##################### Test cases for hash_password with extremely long passwords
+
+def test_hash_password_extremely_long_password():
+    """Test that hashing an extremely long password succeeds."""
+    password = "a" * 10000  # 10,000 character password
+    hashed = hash_password(password)
+    assert isinstance(hashed, str) and hashed.startswith('$2b$')
+
+##################### Test cases for verify_password with extremely long passwords
+
+def test_verify_password_extremely_long_password():
+    """Test that verifying an extremely long password succeeds."""
+    password = "a" * 10000  # 10,000 character password
+    hashed = hash_password(password)
+    assert verify_password(password, hashed) is True
+
+##################### Test cases for hash_password with non-ASCII characters
+
+def test_hash_password_non_ascii_characters():
+    """Test that hashing a password with non-ASCII characters succeeds."""
+    password = "pässwörd"
+    hashed = hash_password(password)
+    assert isinstance(hashed, str) and hashed.startswith('$2b$')
+
+##################### Test cases for verify_password with non-ASCII characters
+
+def test_verify_password_non_ascii_characters():
+    """Test that verifying a password with non-ASCII characters succeeds."""
+    password = "pässwörd"
+    hashed = hash_password(password)
+    assert verify_password(password, hashed) is True
