@@ -108,3 +108,20 @@ def test_user_base_url_invalid(url, user_base_data):
     user_base_data["profile_picture_url"] = url
     with pytest.raises(ValidationError):
         UserBase(**user_base_data)
+
+##################### Test cases for invalid email formats
+
+@pytest.mark.parametrize("email", ["invalid_email", "email@example", "email@example.", "email@.com"])
+def test_user_base_email_invalid(email, user_base_data):
+    user_base_data["email"] = email
+    with pytest.raises(ValidationError):
+        UserBase(**user_base_data)
+
+##################### Test cases for role validation
+
+@pytest.mark.parametrize("role", ["INVALID_ROLE", "another_invalid_role"])
+def test_user_base_role_invalid(role, user_base_data):
+    user_base_data["role"] = role
+    with pytest.raises(ValidationError):
+        UserBase(**user_base_data)
+

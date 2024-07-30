@@ -62,3 +62,39 @@ async def test_update_professional_status(db_session, verified_user):
     updated_user = result.scalars().first()
     assert updated_user.is_professional
     assert updated_user.professional_status_updated_at is not None
+
+
+##################### Test cases for user deletion
+
+@pytest.mark.asyncio
+async def test_user_deletion(db_session, verified_user):
+    """Test that a user is correctly deleted from the database."""
+    await db_session.delete(verified_user)
+    await db_session.commit()
+    result = await db_session.execute(select(User).filter_by(email=verified_user.email))
+    stored_user = result.scalars().first()
+    assert stored_user is None
+
+##################### Test cases for user update email
+
+@pytest.mark.asyncio
+async def test_user_update_email(db_session, verified_user):
+    """Test that a user's email is correctly updated."""
+    new_email = "newemail@example.com"
+    verified_user.email = new_email
+    await db_session.commit()
+    result = await db_session.execute(select(User).filter_by(email=new_email))
+    updated_user = result.scalars().first()
+    assert updated_user.email == new_email
+
+##################### Test cases for user role update
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("new_role", [UserRole.ADMIN, UserRole.ANONYMOUS, UserRole.AUTHENTICATED])
+async def test_user_role_update(db_session, verified_user, new_role):
+    """Test that a user's role is correctly updated."""
+    verified_user.role = new_role
+    await db_session.commit()
+    result = await db_session.execute(select(User).filter_by(email=verified_user.email))
+    updated_user = result.scalars().first()
+    assert updated_user.role == new_role
