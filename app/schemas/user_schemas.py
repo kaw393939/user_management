@@ -81,3 +81,28 @@ class UserListResponse(BaseModel):
     total: int = Field(..., example=100)
     page: int = Field(..., example=1)
     size: int = Field(..., example=10)
+
+# Define a Pydantic model for user profile updates
+class UserUpdatedProfile(UserBase):
+    # Nickname field with validation rules
+    nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example="john_doe123")
+    
+    # Email field with built-in EmailStr validation
+    email: Optional[EmailStr] = Field(None, example="john.doe@example.com")
+    
+    # First name, last name, bio, and profile picture URL fields
+    first_name: Optional[str] = Field(None, example="John")
+    last_name: Optional[str] = Field(None, example="Doe")
+    bio: Optional[str] = Field(None, example="Experienced software developer...")
+    profile_picture_url: Optional[str] = Field(None, example="https://example.com/profiles/john.jpg")
+    
+    # LinkedIn and GitHub profile URL fields
+    linkedin_profile_url: Optional[str] = Field(None, example="https://linkedin.com/in/johndoe")
+    github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
+    
+    # Root validator to ensure at least one field is provided for update
+    @root_validator(pre=True)
+    def check_at_least_one_value(cls, values):
+        if not any(values.values()):
+            raise ValueError("At least one field must be provided for update")
+        return values
