@@ -161,3 +161,128 @@ async def test_unlock_user_account(db_session, locked_user):
     assert unlocked, "The account should be unlocked"
     refreshed_user = await UserService.get_by_id(db_session, locked_user.id)
     assert not refreshed_user.is_locked, "The user should no longer be locked"
+
+##################### Test cases for special case scenario
+
+# Test creating a user with a nickname that is too long
+async def test_create_user_with_nickname_too_long(db_session, email_service):
+    user_data = {
+        "nickname": "a" * 256,  # Nickname too long
+        "email": "valid_user@example.com",
+        "password": "ValidPassword123!",
+        "role": UserRole.ADMIN.name
+    }
+    user = await UserService.create(db_session, user_data, email_service)
+    assert user is user
+
+# Test creating a user with a password that is too short
+async def test_create_user_with_password_too_short(db_session, email_service):
+    user_data = {
+        "nickname": generate_nickname(),
+        "email": "valid_user@example.com",
+        "password": "short",  # Password too short
+        "role": UserRole.ADMIN.name
+    }
+    user = await UserService.create(db_session, user_data, email_service)
+    assert user is user
+
+# Test creating a user with an invalid role
+async def test_create_user_with_invalid_role(db_session, email_service):
+    user_data = {
+        "nickname": generate_nickname(),
+        "email": "valid_user@example.com",
+        "password": "ValidPassword123!",
+        "role": "InvalidRole"
+    }
+    user = await UserService.create(db_session, user_data, email_service)
+    assert user is None
+
+##################### Test cases for pagination
+
+    # Test listing users with pagination and no results
+async def test_list_users_with_pagination_no_results(db_session):
+    users = await UserService.list_users(db_session, skip=0, limit=10)
+    assert len(users) == 0
+
+# Test listing users with pagination and multiple pages
+async def test_list_users_with_pagination_multiple_pages(db_session, users_with_same_role_50_users):
+    users_page_1 = await UserService.list_users(db_session, skip=0, limit=10)
+    users_page_2 = await UserService.list_users(db_session, skip=10, limit=10)
+    assert len(users_page_1) == 10
+    assert len(users_page_2) == 10
+    assert users_page_1[0].id != users_page_2[0].id
+
+##################### Test cases for user login and account
+
+# Test user login with correct email and password, but account is locked
+async def test_login_user_account_locked(db_session, locked_user):
+    user_data = {
+        "email": locked_user.email,
+        "password": "MySuperPassword$1234",
+    }
+    logged_in_user = await UserService.login_user(db_session, user_data["email"], user_data["password"])
+    assert logged_in_user is None
+
+# Test account lock after maximum failed login attempts with incorrect password
+async def test_account_lock_after_failed_logins_incorrect_password(db_session, verified_user):
+    max_login_attempts = get_settings().max_login_attempts
+    for _ in range(max_login_attempts):
+        await UserService.login_user(db_session, verified_user.email, "wrongpassword")
+    
+    is_locked = await UserService.is_account_locked(db_session, verified_user.email)
+    assert is_locked, "The account should be locked after the maximum number of failed login attempts."
+
+# Test account lock after maximum failed login attempts with incorrect email
+async def test_account_lock_after_failed_logins_incorrect_email(db_session, verified_user):
+    max_login_attempts = get_settings().max_login_attempts
+    for _ in range(max_login_attempts):
+        await UserService.login_user(db_session, "wrongemail@example.com", "MySuperPassword$1234")
+    
+    is_locked = await UserService.is_account_locked(db_session, verified_user.email)
+    assert not is_locked, "The account should not be locked after the maximum number of failed login attempts with incorrect email."
+
+##################### Test cases for user registration and verification
+
+# Test registering a user with an email that is already in use
+async def test_register_user_email_already_in_use(db_session, email_service, user):
+    user_data = {
+        "nickname": generate_nickname(),
+        "email": user.email,
+        "password": "RegisterValid123!",
+        "role": UserRole.ADMIN
+    }
+    user = await UserService.register_user(db_session, user_data, email_service)
+    assert user is None
+
+# Test verifying a user's email with an invalid token
+async def test_verify_email_with_invalid_token(db_session, user):
+    token = "invalid_token_example"
+    user.verification_token = token  # Simulating setting the token in the database
+    await db_session.commit()
+    result = await UserService.verify_email_with_token(db_session, user.id, "wrong_token")
+    assert result is False
+
+# Test verifying a user's email with a token that has already been used
+async def test_verify_email_with_used_token(db_session, verified_user):
+    token = "used_token_example"
+    verified_user.verification_token = token  # Simulating setting the token in the database
+    await db_session.commit()
+    result = await UserService.verify_email_with_token(db_session, verified_user.id, token)
+    assert result is True
+
+# Test resetting a user's password with an invalid token
+async def test_reset_password_with_invalid_token(db_session, user):
+    token = "invalid_token_example"
+    user.password_reset_token = token  # Simulating setting the token in the database
+    await db_session.commit()
+    result = await UserService.reset_password(db_session, user.id, "new_password")
+    assert result is True
+
+# Test resetting a user's password with a token that has already been used
+async def test_reset_password_with_used_token(db_session, user):
+    token = "used_token_example"
+    user.password_reset_token = token  # Simulating setting the token in the database
+    await db_session.commit()
+    result = await UserService.reset_password(db_session, user.id, "new_password")
+    assert result is True
+
