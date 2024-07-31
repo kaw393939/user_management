@@ -3,12 +3,12 @@ from datetime import datetime, timezone
 import secrets
 from typing import Optional, Dict, List
 from pydantic import ValidationError
-from sqlalchemy import func, null, update, select
+from sqlalchemy import func, null, update, select, and_, or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_email_service, get_settings
 from app.models.user_model import User
-from app.schemas.user_schemas import UserCreate, UserUpdate
+from app.schemas.user_schemas import UserCreate, UserUpdate, UserSearchFilter
 from app.utils.nickname_gen import generate_nickname
 from app.utils.security import generate_verification_token, hash_password, verify_password
 from uuid import UUID
@@ -202,3 +202,40 @@ class UserService:
             await session.commit()
             return True
         return False
+
+    #Added method to implement User Search Functionality
+   
+    @classmethod    
+    async def search_and_filter_users(cls, session: AsyncSession, search_filter: UserSearchFilter) -> List[User]:
+        query = select(User)
+        
+        conditions = []
+        if search_filter.username:
+            #query = query.filter(User.first_name.ilike(f"%{search_filter.username}%"))
+            username = search_filter.username
+            query = query.filter(or_(User.first_name.ilike(f"%{username}%"), User.last_name.ilike(f"%{username}%")))
+
+            
+        if search_filter.email:
+            query = query.filter(User.email.ilike(f"%{search_filter.email}%"))
+        if search_filter.role:
+            query = query.filter(User.role == search_filter.role)
+        if search_filter.account_status is not None:
+            query = query.filter(User.is_locked != search_filter.account_status)
+        if search_filter.created_from:
+            query = query.filter(User.created_at >= search_filter.created_from)
+        if search_filter.created_to:
+            query = query.filter(User.created_at <= search_filter.created_to)
+
+        if conditions:
+            query = query.where(and_(*conditions))
+            print(query)
+
+        try:
+            result = await session.execute(query)
+            return result.scalars().all() if result else []
+        except Exception as e:
+            logger.error(f"Error executing search query: {e}",  exc_info=True)
+            print(f"Error executing search query: {e}")
+            return []
+    

@@ -27,6 +27,7 @@ class UserBase(BaseModel):
     linkedin_profile_url: Optional[str] =Field(None, example="https://linkedin.com/in/johndoe")
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
     role: UserRole
+    #is_professional: Optional[bool] = Field(None, example=False) # New field for professional status
 
     _validate_urls = validator('profile_picture_url', 'linkedin_profile_url', 'github_profile_url', pre=True, allow_reuse=True)(validate_url)
  
@@ -81,3 +82,25 @@ class UserListResponse(BaseModel):
     total: int = Field(..., example=100)
     page: int = Field(..., example=1)
     size: int = Field(..., example=10)
+
+
+class UserSearchFilter(BaseModel):
+    username: Optional[str] = Field(None, description="Filter by username. Supports partial matching.")
+    email: Optional[EmailStr] = Field(None, description="Filter by email address. Supports partial matching.")
+    role: Optional[str] = Field(None, description="Filter by user role (e.g., 'ADMIN', 'AUTHENTICATED', 'ANONYMOUS', 'MANAGER').")
+    account_status: Optional[bool] = Field(None, description="Filter by account status (active/inactive).")
+    created_from: Optional[datetime] = Field(None, description="Filter users registered from this date (inclusive).")
+    created_to: Optional[datetime] = Field(None, description="Filter users registered up to this date (inclusive).")
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "username": "john",
+                "email": "john.doe@example.com",
+                "role": "ADMIN",
+                "account_status": True,
+                "created_from": "2022-01-01T00:00:00",
+                "created_to": "2022-12-31T23:59:59"
+            }
+        }
+

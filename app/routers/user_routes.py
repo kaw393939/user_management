@@ -24,18 +24,65 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Optional, Dict, List
 from app.dependencies import get_current_user, get_db, get_email_service, require_role
 from app.schemas.pagination_schema import EnhancedPagination
 from app.schemas.token_schema import TokenResponse
-from app.schemas.user_schemas import LoginRequest, UserBase, UserCreate, UserListResponse, UserResponse, UserUpdate
+from app.schemas.user_schemas import LoginRequest, UserBase, UserCreate, UserListResponse, UserResponse, UserUpdate, UserSearchFilter, UserSearchListResponse
 from app.services.user_service import UserService
 from app.services.jwt_service import create_access_token
 from app.utils.link_generation import create_user_links, generate_pagination_links
 from app.dependencies import get_settings
 from app.services.email_service import EmailService
+import logging
+
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 settings = get_settings()
+
+
+#Added method to implement User Search Functionality
+@router.get("/users/search", response_model=UserListResponse, tags=["User Management Requires (Admin Role)"])
+async def search_users(
+    request: Request,
+    search_filter: UserSearchFilter = Depends(),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_role(["ADMIN"]))
+):
+    """
+    Search and filter users based on various criteria.
+    This endpoint is restricted to users with the "ADMIN" role.
+    """
+    try:
+        logging.info('!!!!!!!search_filter !!!!!' ,  search_filter)
+        users = await UserService.search_and_filter_users(db, search_filter)
+        total_users = len(users)
+
+        user_responses = [
+            UserResponse.model_validate(user) for user in users
+        ]
+
+        return UserListResponse(
+            items=user_responses,
+            total=total_users,
+            page=1,  # Replace with actual pagination logic if needed
+            size=len(user_responses),
+            links={}  # Replace with actual pagina  tion links if needed
+        )
+        
+    except HTTPException as http_exc:
+        # Explicitly handle known HTTP exceptions
+        logging.error(f"HTTP error occurred: {http_exc.detail}")
+        raise HTTPException(status_code=404, detail="No users found")
+        
+    except Exception as e:
+        # Log the error and raise an HTTPException for 500 errors
+        logging.error(f"An unexpected error occurred: {e}",  exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    
+
+
+
 @router.get("/users/{user_id}", response_model=UserResponse, name="get_user", tags=["User Management Requires (Admin or Manager Roles)"])
 async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme), current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))):
     """
@@ -79,7 +126,8 @@ async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(g
 # experience by adhering to REST principles and providing self-discoverable operations.
 
 @router.put("/users/{user_id}", response_model=UserResponse, name="update_user", tags=["User Management Requires (Admin or Manager Roles)"])
-async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme), current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))):
+async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, db: AsyncSession = Depends(get_db), 
+                      token: str = Depends(oauth2_scheme), current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))):
     """
     Update user information.
 
