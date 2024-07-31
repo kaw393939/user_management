@@ -76,7 +76,7 @@ jobs:
           cache-to: type=inline,mode=max
           
       - name: Scan the Docker image
-        uses: aquasecurity/trivy-action@v0.24.0
+        uses: aquasecurity/trivy-action@v0.3.1
         with:
           image-ref: 'io6625/final:${{ github.sha }}'
           format: 'table'
