@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 import secrets
 from typing import Optional, Dict, List
 from pydantic import ValidationError
+from fastapi import HTTPException
+from settings.config import Settings
 from sqlalchemy import func, null, update, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,9 +17,25 @@ from uuid import UUID
 from app.services.email_service import EmailService
 from app.models.user_model import UserRole
 import logging
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
+
+from minio import Minio
+from minio.error import InvalidResponseError
+
+minio_access_key = os.getenv("MINIO_ACCESS_KEY", "default_access_key")
+minio_secret_key = os.getenv("MINIO_SECRET_KEY", "default_secret_key")
+
+minio_client = Minio(
+    endpoint='127.0.0.1:9000',  # Update this to your MinIO endpoint
+    access_key=minio_access_key,
+    secret_key=minio_secret_key,
+    secure=False,  # Set to True if your MinIO server uses HTTPS
+)
 
 class UserService:
     @classmethod
@@ -69,12 +87,11 @@ class UserService:
             if new_user.role == UserRole.ADMIN:
                 new_user.email_verified = True
 
-            else:
-                new_user.verification_token = generate_verification_token()
-                await email_service.send_verification_email(new_user)
+            new_user.verification_token = generate_verification_token()
 
             session.add(new_user)
             await session.commit()
+            await email_service.send_verification_email(new_user)
             return new_user
         except ValidationError as e:
             logger.error(f"Validation error during user creation: {e}")
@@ -101,6 +118,28 @@ class UserService:
         except Exception as e:  # Broad exception handling for debugging
             logger.error(f"Error during user update: {e}")
             return None
+
+    @staticmethod
+    async def update_professional_status(db_session: AsyncSession, user_id: int, status_update: dict, request_user) -> None:
+        # Check if the requesting user has the required role
+        if request_user.role not in [UserRole.ADMIN, UserRole.MANAGER]:
+            raise HTTPException(status_code=403, detail="Unauthorized to change professional status")
+
+        # Find the user in the database
+        statement = select(User).where(User.id == user_id)
+        result = await db_session.execute(statement)
+        user = result.scalars().first()
+
+        # Check if the user exists
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Update the professional status
+        user.is_professional = status_update['is_professional']
+        user.professional_status_updated_at = func.now()
+        await db_session.commit()
+
+        return user
 
     @classmethod
     async def delete(cls, session: AsyncSession, user_id: UUID) -> bool:
@@ -170,7 +209,8 @@ class UserService:
         if user and user.verification_token == token:
             user.email_verified = True
             user.verification_token = None  # Clear the token once used
-            user.role = UserRole.AUTHENTICATED
+            if user.role == UserRole.ANONYMOUS:
+                user.role = UserRole.AUTHENTICATED
             session.add(user)
             await session.commit()
             return True
@@ -199,3 +239,36 @@ class UserService:
             await session.commit()
             return True
         return False
+    
+    @classmethod
+    async def upload_profile_picture(cls, user_id: UUID, file_data: bytes) -> Optional[str]:
+        try:
+            file_name = f"profile_picture_{user_id}.jpg"
+            minio_client.put_object(
+                "demo",  # Bucket name
+                file_name,
+                file_data,
+                len(file_data),
+            )
+            return file_name
+        except InvalidResponseError as e:
+            logger.error(f"Error uploading profile picture to MinIO: {e}")
+            return None
+        
+    @classmethod
+    async def update_profile_picture_url(cls, session: AsyncSession, user_id: UUID, picture_url: str) -> Optional[User]:
+        try:
+            query = update(User).where(User.id == user_id).values(profile_picture_url=picture_url).execution_options(synchronize_session="fetch")
+            await session.execute(query)
+            await session.commit()
+            updated_user = await session.execute(select(User).where(User.id == user_id))
+            updated_user = updated_user.scalars().first()
+            if updated_user:
+                logger.info(f"User {user_id} profile picture URL updated successfully.")
+                return updated_user
+            else:
+                logger.error(f"User {user_id} not found after updating profile picture URL.")
+                return None
+        except Exception as e:  # Broad exception handling for debugging
+            logger.error(f"Error updating user profile picture URL: {e}")
+            return None
