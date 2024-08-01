@@ -190,3 +190,13 @@ async def test_list_users_unauthorized(async_client, user_token):
         headers={"Authorization": f"Bearer {user_token}"}
     )
     assert response.status_code == 403  # Forbidden, as expected for regular user
+
+@pytest.mark.asyncio
+async def test_create_user_missing_fields(async_client):
+    user_data = {
+        "email": "test@example.com",
+    }
+    response = await async_client.post("/register/", json=user_data)
+    assert response.status_code == 422
+
+
