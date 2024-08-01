@@ -21,7 +21,7 @@ Key Highlights:
 from builtins import dict, int, len, str
 from datetime import timedelta
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, Response, status, Request
+from fastapi import APIRouter, Depends, HTTPException, Response, status, Request, UploadFile, File
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_current_user, get_db, get_email_service, require_role
@@ -33,6 +33,14 @@ from app.services.jwt_service import create_access_token
 from app.utils.link_generation import create_user_links, generate_pagination_links
 from app.dependencies import get_settings
 from app.services.email_service import EmailService
+from app.utils.minio_client import upload_profile_picture, get_profile_picture_url
+from sqlalchemy.future import select
+from io import BytesIO
+from app.models.user_model import User
+import logging
+
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 settings = get_settings()
@@ -209,7 +217,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Async
         access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
 
         access_token = create_access_token(
-            data={"sub": user.email, "role": str(user.role.name)},
+            data={"sub": user.email, "role": str(user.role.name), "id": str(user.id)},
             expires_delta=access_token_expires
         )
 
@@ -226,7 +234,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Async
         access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
 
         access_token = create_access_token(
-            data={"sub": user.email, "role": str(user.role.name)},
+            data={"sub": user.email, "role": str(user.role.name),"id": str(user.id)},
             expires_delta=access_token_expires
         )
 
@@ -245,3 +253,57 @@ async def verify_email(user_id: UUID, token: str, db: AsyncSession = Depends(get
     if await UserService.verify_email_with_token(db, user_id, token):
         return {"message": "Email verified successfully"}
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired verification token")
+
+@router.get("/profile-picture/{file_name}")
+def get_profile_picture(file_name: str):
+    try:
+        url = get_profile_picture_url(file_name)
+        return {"url": url}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+from uuid import uuid4  # Ensure this import is present
+
+@router.post("/users/me/upload-profile-picture")
+async def upload_profile_picture_endpoint(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+    _=Depends(require_role(["ADMIN", "MANAGER", "AUTHENTICATED"]))
+):
+    if not file.content_type.startswith('image/'):
+        raise HTTPException(status_code=400, detail="Invalid file type. Only images are allowed.")
+
+    file_data = await file.read()
+    data_stream = BytesIO(file_data)
+    random_filename = uuid4()
+    user_id = current_user["user_id"]
+    file_extension = file.filename.split('.')[-1]
+    secure_filename = f"{user_id}.{file_extension}"
+
+    try:
+        # Replace this with actual MinIO upload logic and URL retrieval
+        url = upload_profile_picture(data_stream, secure_filename)
+
+        # Update the current user's profile picture URL in the database
+        user_id = current_user["user_id"]  # Accessing the user_id from the current_user dictionary
+        stmt = select(User).where(User.id == user_id)
+        result = await db.execute(stmt)
+        user = result.scalar_one_or_none()
+
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        user.profile_picture_url = url
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+
+        logger.debug(f"Profile picture URL updated for user: {user.id}, URL: {user.profile_picture_url}")
+
+        return {"message": "Profile picture uploaded successfully.", "profile_picture_url": url}
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Failed to upload image: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to upload image: {str(e)}")

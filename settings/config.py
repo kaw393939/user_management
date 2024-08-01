@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     smtp_port: int = Field(default=2525, description="SMTP port for sending emails")
     smtp_username: str = Field(default='your-mailtrap-username', description="Username for SMTP server")
     smtp_password: str = Field(default='your-mailtrap-password', description="Password for SMTP server")
+    # minoi config
+    MINIO_ENDPOINT: str = Field(default= "minio:9000", description="Minio endpoint")
+    MINIO_ACCESS_KEY: str = Field(default= "your_minio_access_key", description="Minio access key")
+    MINIO_SECRET_KEY: str = Field(default= "your_minio_secret_key", description="Minio secret key")
+    MINIO_USE_SSL: bool = Field(default= False, description="Minio use ssl")
+    MINIO_BUCKET_NAME: str = Field(default= "bucket_name", description="Minio bucket name")
 
 
     class Config:

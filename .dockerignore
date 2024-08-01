@@ -6,4 +6,5 @@ qr_codes
 .vscode
 .env
 .coverage
+/minio_data
 

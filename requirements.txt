@@ -61,3 +61,4 @@ uvicorn==0.29.0
 validators==0.24.0
 markdown2
 pyjwt
+minio
