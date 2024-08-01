@@ -14,11 +14,12 @@ async def test_create_user_with_valid_data(db_session, email_service):
         "nickname": generate_nickname(),
         "email": "valid_user@example.com",
         "password": "ValidPassword123!",
-        "role": UserRole.ADMIN.name
+        "role": UserRole.ADMIN.name  # Ensure role is included
     }
     user = await UserService.create(db_session, user_data, email_service)
     assert user is not None
     assert user.email == user_data["email"]
+    assert user.role.value == user_data["role"]  # Correct comparison if role is stored as a string
 
 # Test creating a user with invalid data
 async def test_create_user_with_invalid_data(db_session, email_service):
@@ -98,11 +99,12 @@ async def test_register_user_with_valid_data(db_session, email_service):
         "nickname": generate_nickname(),
         "email": "register_valid_user@example.com",
         "password": "RegisterValid123!",
-        "role": UserRole.ADMIN
+        "role": UserRole.ADMIN.name  # Ensure role is included
     }
     user = await UserService.register_user(db_session, user_data, email_service)
     assert user is not None
     assert user.email == user_data["email"]
+    assert user.role.value == user_data["role"]  # Correct comparison if role is stored as a string
 
 # Test attempting to register a user with invalid data
 async def test_register_user_with_invalid_data(db_session, email_service):
@@ -161,3 +163,15 @@ async def test_unlock_user_account(db_session, locked_user):
     assert unlocked, "The account should be unlocked"
     refreshed_user = await UserService.get_by_id(db_session, locked_user.id)
     assert not refreshed_user.is_locked, "The user should no longer be locked"
+
+# Test sending verification email after user creation
+async def test_send_verification_email_after_user_creation(db_session, email_service, mocker):
+    user_data = {
+        "nickname": generate_nickname(),
+        "email": "verification_test_user@example.com",
+        "password": "TestPassword123!",
+        "role": UserRole.AUTHENTICATED.name
+    }
+    send_verification_email_spy = mocker.spy(email_service, "send_verification_email")
+    await UserService.create(db_session, user_data, email_service)
+    send_verification_email_spy.assert_called_once()
