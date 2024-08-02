@@ -183,7 +183,7 @@ class UserService:
     
 
     @classmethod
-    async def login_user(cls, session: AsyncSession, email: str, password: str) -> Optional[User]:
+    async def login_user(cls, session: AsyncSession, email: str, password: str,  email_service: EmailService) -> Optional[User]:
         user = await cls.get_by_email(session, email)
         if user:
             if user.email_verified is False:
@@ -200,6 +200,7 @@ class UserService:
                 user.failed_login_attempts += 1
                 if user.failed_login_attempts >= settings.max_login_attempts:
                     user.is_locked = True
+                    await email_service.send_account_locked_email(user)
                 session.add(user)
                 await session.commit()
         return None
