@@ -18,7 +18,6 @@ class EmailService:
     async def send_user_email(self, user_data: dict, email_type: str):
         subject_map = {
             'email_verification': "Verify Your Account",
-            'password_reset': "Password Reset Instructions",
             'account_locked': "Account Locked Notification",
             'user_pro_status_approved': 'You Have Been Approved for Pro Status',
             'user_request_pro_status': 'A User has Requested Pro Status'
@@ -44,6 +43,12 @@ class EmailService:
             "id": user.id,
             "email": user.email
         }, 'user_request_pro_status')
+
+    async def send_account_locked_email(self, user: User):
+        await self.send_user_email({
+            "name": user.first_name,
+            "email": user.email
+        }, 'account_locked')
 
     async def send_pro_status_approved_email(self, user: User):
         await self.send_user_email({
