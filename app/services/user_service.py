@@ -199,3 +199,7 @@ class UserService:
             await session.commit()
             return True
         return False
+
+def is_profile_complete(user: User) -> bool:
+    required_fields = ["first_name", "last_name", "email", "profile_picture_url"]
+    return all([getattr(user, field) for field in required_fields])
