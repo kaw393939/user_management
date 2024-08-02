@@ -31,6 +31,7 @@ def upgrade() -> None:
     sa.Column('linkedin_profile_url', sa.String(length=255), nullable=True),
     sa.Column('github_profile_url', sa.String(length=255), nullable=True),
     sa.Column('role', sa.Enum('ANONYMOUS', 'AUTHENTICATED', 'MANAGER', 'ADMIN', name='UserRole', create_constraint=True), nullable=False),
+    sa.Column('requested_pro_status', sa.Boolean(), nullable=True),
     sa.Column('is_professional', sa.Boolean(), nullable=True),
     sa.Column('professional_status_updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('last_login_at', sa.DateTime(timezone=True), nullable=True),
