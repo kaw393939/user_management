@@ -1,12 +1,14 @@
 from builtins import range
+#import pytz
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 from app.dependencies import get_email_service, get_settings
 from app.models.user_model import User, UserRole
 from app.services.user_service import UserService
 from app.utils.nickname_gen import generate_nickname
-from app.schemas.user_schemas import UserCreate, UserUpdate
+from app.schemas.user_schemas import UserCreate, UserSearchFilter, UserUpdate
 
 pytestmark = pytest.mark.asyncio
 
@@ -181,3 +183,144 @@ async def test_create_user_with_existing_email(email_service, db_session, existi
     # User creation should fail as the email already exists
     assert new_user is None
 
+# Helper function to mock query results
+class MockResult:
+    def __init__(self, users):
+        self._users = users
+
+    def scalars(self):
+        return self
+
+    def all(self):
+        return self._users
+       
+
+# Helper function to mock query results
+def mock_query_result(users):
+    return MockResult(users)
+
+# Test searching users by first name
+async def test_search_by_first_name(db_session, users_with_same_role_50_users):
+    sample_users = users_with_same_role_50_users
+    async def mock_execute(query):
+        return mock_query_result([user for user in sample_users if user.first_name == "John"])
+
+    db_session.execute = mock_execute
+
+    search_filter = UserSearchFilter(username="John")
+    users = await UserService.search_and_filter_users(db_session, search_filter)
+    assert len(users) == len([user for user in sample_users if user.first_name == "John"])
+    assert all(user.first_name == "John" for user in users)
+
+# Test searching users by last name
+async def test_search_by_last_name(db_session, users_with_same_role_50_users):
+    sample_users = users_with_same_role_50_users
+    async def mock_execute(query):
+        return mock_query_result([user for user in sample_users if user.last_name == "Doe"])
+
+    db_session.execute = mock_execute
+
+    search_filter = UserSearchFilter(username="Doe")
+    users = await UserService.search_and_filter_users(db_session, search_filter)
+    assert len(users) == len([user for user in sample_users if user.last_name == "Doe"])
+    assert all(user.last_name == "Doe" for user in users)
+
+
+# Test searching users by email
+async def test_search_by_email(db_session, users_with_same_role_50_users):
+    sample_users = users_with_same_role_50_users
+
+    async def mock_execute(query):
+        return mock_query_result([user for user in sample_users if user.email == "john.doe12@example.com"])
+
+   # db_session.execute = AsyncMock(side_effect=mock_execute)
+    db_session.execute = mock_execute
+
+    search_filter = UserSearchFilter(email="john.doe@example.com")
+    users = await UserService.search_and_filter_users(db_session, search_filter)
+    assert len(users) == len([user for user in sample_users if user.email == "john.doe12@example.com"])
+
+# Test searching users by role
+async def test_search_by_role(db_session, users_with_same_role_50_users):
+    sample_users = users_with_same_role_50_users
+    async def mock_execute(query):
+        return mock_query_result([user for user in sample_users if user.role == UserRole.AUTHENTICATED])
+
+    db_session.execute = mock_execute
+
+    search_filter = UserSearchFilter(role=UserRole.AUTHENTICATED)
+    users = await UserService.search_and_filter_users(db_session, search_filter)
+    assert len(users) == len([user for user in sample_users if user.role == UserRole.AUTHENTICATED])
+    assert users[0].role == UserRole.AUTHENTICATED 
+
+# Test searching users with no match
+async def test_search_no_match(db_session, users_with_same_role_50_users):
+    sample_users = users_with_same_role_50_users
+    async def mock_execute(query):
+        return mock_query_result([])
+
+    db_session.execute = mock_execute
+
+    search_filter = UserSearchFilter(username="NonExistentUser")
+    users = await UserService.search_and_filter_users(db_session, search_filter)
+    assert len(users) == 0
+
+# Test filtering users by account status
+async def test_filter_by_account_status(db_session, users_with_same_role_50_users):
+    sample_users = users_with_same_role_50_users
+
+    async def mock_execute(query):
+        return mock_query_result([user for user in sample_users if user.is_locked == False])
+
+    db_session.execute = AsyncMock(side_effect=mock_execute)
+
+    search_filter = UserSearchFilter(account_status=False)
+    users = await UserService.search_and_filter_users(db_session, search_filter)
+    assert len(users) == len([user for user in sample_users if not user.is_locked])
+    assert all(user.is_locked == False for user in users)
+
+# Test filtering users by creation date range (created_from)
+async def test_filter_by_created_from(db_session, users_with_same_role_50_users):
+    sample_users = users_with_same_role_50_users
+    created_from_date = datetime.now(timezone.utc) - timedelta(days=30)
+
+    async def mock_execute(query):
+        return mock_query_result([user for user in sample_users if user.created_at >= created_from_date])
+
+    db_session.execute = AsyncMock(side_effect=mock_execute)
+
+    search_filter = UserSearchFilter(created_from=created_from_date)
+    users = await UserService.search_and_filter_users(db_session, search_filter)
+    assert len(users) == len([user for user in sample_users if user.created_at >= created_from_date])
+    assert all(user.created_at >= created_from_date for user in users)
+
+# Test filtering users by creation date range (created_to)
+async def test_filter_by_created_to(db_session, users_with_same_role_50_users):
+    sample_users = users_with_same_role_50_users
+    created_to_date = datetime.now(timezone.utc) - timedelta(days=30)
+
+    async def mock_execute(query):
+        return mock_query_result([user for user in sample_users if user.created_at <= created_to_date])
+
+    db_session.execute = AsyncMock(side_effect=mock_execute)
+
+    search_filter = UserSearchFilter(created_to=created_to_date)
+    users = await UserService.search_and_filter_users(db_session, search_filter)
+    assert len(users) == len([user for user in sample_users if user.created_at <= created_to_date])
+    assert all(user.created_at <= created_to_date for user in users)
+
+# Test filtering users by creation date range (created_from and created_to)
+async def test_filter_by_created_date_range(db_session, users_with_same_role_50_users):
+    sample_users = users_with_same_role_50_users
+    created_from_date = datetime.now(timezone.utc) - timedelta(days=60)
+    created_to_date = datetime.now(timezone.utc) - timedelta(days=30)
+
+    async def mock_execute(query):
+        return mock_query_result([user for user in sample_users if created_from_date <= user.created_at <= created_to_date])
+
+    db_session.execute = AsyncMock(side_effect=mock_execute)
+
+    search_filter = UserSearchFilter(created_from=created_from_date, created_to=created_to_date)
+    users = await UserService.search_and_filter_users(db_session, search_filter)
+    assert len(users) == len([user for user in sample_users if created_from_date <= user.created_at <= created_to_date])
+    assert all(created_from_date <= user.created_at <= created_to_date for user in users)
