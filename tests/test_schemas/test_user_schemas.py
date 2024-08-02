@@ -2,7 +2,7 @@ import uuid
 import pytest
 from pydantic import ValidationError
 from datetime import datetime
-from app.schemas.user_schemas import UserBase, UserCreate, UserUpdate, UserResponse, UserListResponse, LoginRequest
+from app.schemas.user_schemas import UserBase, UserCreate, UserUpdate, UserResponse, UserListResponse, LoginRequest, RequestResponse, UserProUpdate
 
 # Fixtures for common test data
 @pytest.fixture
@@ -132,3 +132,27 @@ def test_user_github_url_invalid(url, user_base_data):
     user_base_data["github_profile_url"] = url
     with pytest.raises(ValidationError):
         UserBase(**user_base_data)
+
+@pytest.mark.parametrize("password", ["Secure*12345178731927397123", "supercalifragilisticexpialidocious!12", "Methylenedioxymethamphetamine!123"])
+def test_password_too_long(password, user_create_data):
+    user_create_data["password"] = password
+    with pytest.raises(ValidationError):
+        UserCreate(**user_create_data)
+
+@pytest.mark.parametrize("password", ["Tat!12", "Grim12!", "Nub4!"])
+def test_password_too_short(password, user_create_data):
+    user_create_data["password"] = password
+    with pytest.raises(ValidationError):
+        UserCreate(**user_create_data)
+
+@pytest.mark.parametrize("password", ["Secure*1234", "Supercal!12", "Methyle!123"])
+def test_password_format_valid(password, user_create_data):
+    user_create_data["password"] = password
+    user = UserCreate(**user_create_data)
+    assert user.password == password
+
+@pytest.mark.parametrize("password", ["Secure1234", "supercal!", "methyle!123"])
+def test_password_format_invalid(password, user_create_data):
+    user_create_data["password"] = password
+    with pytest.raises(ValidationError):
+        UserCreate(**user_create_data)

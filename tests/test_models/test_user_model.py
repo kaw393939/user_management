@@ -139,3 +139,14 @@ async def test_update_user_role(db_session: AsyncSession, user: User):
     await db_session.commit()
     await db_session.refresh(user)
     assert user.role == UserRole.ADMIN, "Role update should persist correctly in the database"
+
+@pytest.mark.asyncio
+async def test_update_professional_status(db_session: AsyncSession, user: User):
+    """
+    Tests updating the user's role and ensuring it persists correctly.
+    """
+    user.update_professional_status(True)
+    await db_session.commit()
+    await db_session.refresh(user)
+    assert user.is_professional == True
+    assert user.professional_status_updated_at != None

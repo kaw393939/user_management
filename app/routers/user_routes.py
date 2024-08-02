@@ -71,7 +71,7 @@ async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(g
         links=create_user_links(user.id, request)  
     )
 
-@router.get("/user", response_model=UserResponse, name="display_user_profile", tags=["User Profile Management"])
+@router.get("/user/{user_id}", response_model=UserResponse, name="display_user_profile", tags=["User Profile Management"])
 async def get_user(request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme), current_user: dict = Depends(require_role(["AUTHENTICATED", "ADMIN", "MANAGER"]))):
     """
     Endpoint to fetch a user by their unique identifier (UUID).
@@ -183,7 +183,7 @@ async def upgrade_pro_status(user_id: UUID, request: Request, db: AsyncSession =
         links=create_user_links(updated_user.id, request)
     )
 
-@router.put("/user/request", response_model=RequestResponse, name="request_user_pro_status", tags=["User Profile Management"])
+@router.put("/user/request/{user_id}", response_model=RequestResponse, name="request_user_pro_status", tags=["User Profile Management"])
 async def request_pro_status(user_id: UUID, request: Request, db: AsyncSession = Depends(get_db), email_service: EmailService = Depends(get_email_service), token: str = Depends(oauth2_scheme), current_user: dict = Depends(require_role(["AUTHENTICATED"]))):
     """
     Update user profile information.
@@ -211,7 +211,7 @@ async def request_pro_status(user_id: UUID, request: Request, db: AsyncSession =
         links=create_user_links(updated_user.id, request)
     )
 
-@router.put("/user", response_model=UserResponse, name="update_profile", tags=["User Profile Management"])
+@router.put("/user/{user_id}", response_model=UserResponse, name="update_profile", tags=["User Profile Management"])
 async def update_user(user_update: UserUpdate, request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme), current_user: dict = Depends(require_role(["AUTHENTICATED"]))):
     """
     Update user profile information.
@@ -220,6 +220,7 @@ async def update_user(user_update: UserUpdate, request: Request, db: AsyncSessio
     """
     user_data = user_update.model_dump(exclude_unset=True)
     user: dict = get_current_user(token)
+    print(user.get("user_id"))
     user_id = await UserService.get_by_email(db, user.get("user_id"))
     if 'nickname' in user_data:
         existing_user = await UserService.get_by_nickname(db, user_data.get('nickname'))

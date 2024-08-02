@@ -116,6 +116,10 @@ async def user(db_session):
         "first_name": fake.first_name(),
         "last_name": fake.last_name(),
         "email": fake.email(),
+        "bio":"",
+        "profile_picture_url": "https://example.com/profiles/user.jpg",
+        "linkedin_profile_url": "https://linkedin.com/in/user",
+        "github_profile_url": "https://github.com/user",
         "hashed_password": hash_password("MySuperPassword$1234"),
         "role": UserRole.AUTHENTICATED,
         "email_verified": False,
@@ -125,6 +129,36 @@ async def user(db_session):
     db_session.add(user)
     await db_session.commit()
     return user
+
+@pytest.fixture(scope="function")
+async def eligible_user(db_session):
+    user_data = {
+        "nickname": fake.user_name(),
+        "first_name": fake.first_name(),
+        "last_name": fake.last_name(),
+        "email": fake.email(),
+        "bio":"I'm a pro",
+        "profile_picture_url": "https://example.com/profiles/user.jpg",
+        "linkedin_profile_url": "https://linkedin.com/in/user",
+        "github_profile_url": "https://github.com/user",
+        "hashed_password": hash_password("MySuperPassword$1234"),
+        "role": UserRole.AUTHENTICATED,
+        "email_verified": False,
+        "is_locked": False,
+    }
+    user = User(**user_data)
+    db_session.add(user)
+    await db_session.commit()
+    return user
+
+@pytest.fixture(scope="function")
+async def eligible_user_id(eligible_user):
+    return eligible_user.id
+
+
+@pytest.fixture(scope="function")
+async def user_id(user):
+    return user.id
 
 @pytest.fixture(scope="function")
 async def verified_user(db_session):
@@ -225,6 +259,16 @@ def manager_token(manager_user):
 @pytest.fixture(scope="function")
 def user_token(user):
     token_data = {"sub": str(user.id), "role": user.role.name}
+    return create_access_token(data=token_data, expires_delta=timedelta(minutes=30))
+
+@pytest.fixture(scope="function")
+def verified_user_token(verified_user):
+    token_data = {"sub": str(verified_user.id), "role": verified_user.role.name}
+    return create_access_token(data=token_data, expires_delta=timedelta(minutes=30))
+
+@pytest.fixture(scope="function")
+def eligible_user_token(eligible_user):
+    token_data = {"sub": str(eligible_user.id), "role": eligible_user.role.name}
     return create_access_token(data=token_data, expires_delta=timedelta(minutes=30))
 
 @pytest.fixture

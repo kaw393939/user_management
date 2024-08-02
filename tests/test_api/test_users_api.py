@@ -190,3 +190,33 @@ async def test_list_users_unauthorized(async_client, user_token):
         headers={"Authorization": f"Bearer {user_token}"}
     )
     assert response.status_code == 403  # Forbidden, as expected for regular user
+
+@pytest.mark.asyncio
+async def test_request_pro_status_unauthorized(async_client, admin_token, admin_user, email_service):
+    response = await async_client.put(
+        f"/user/request/{admin_user.id}",headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response.status_code == 403  # Forbidden, as expected for regular user
+
+@pytest.mark.asyncio
+async def test_request_pro_status_authorized(async_client, eligible_user, eligible_user_token):
+    response = await async_client.put(
+        f"/user/request/{eligible_user.id}", headers={"Authorization": f"Bearer {eligible_user_token}"}
+    )
+    assert response.status_code == 200  
+
+@pytest.mark.asyncio
+async def test_upgrade_pro_status_authorized(async_client, admin_user, eligible_user, admin_token):
+    response = await async_client.put(f"/users/status/{eligible_user.id}",headers={"Authorization": f"Bearer {admin_token}"})
+    assert response.status_code == 200  
+
+@pytest.mark.asyncio
+async def test_upgrade_pro_status_unauthorized(async_client,  user, user_token):
+    response = await async_client.put(f"/users/status/{user.id}", headers={"Authorization": f"Bearer {user_token}"})
+    assert response.status_code == 403  # Forbidden, as expected for regular user
+
+@pytest.mark.asyncio
+async def test_update_profile_unauthorized(async_client, admin_user, admin_token):
+    response = await async_client.put(f"/user/{admin_user.id}",headers={"Authorization": f"Bearer {admin_token}"})
+    assert response.status_code == 403  # Forbidden, as expected for regular user
+ 
