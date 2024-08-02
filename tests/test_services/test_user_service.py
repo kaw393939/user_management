@@ -114,29 +114,29 @@ async def test_register_user_with_invalid_data(db_session, email_service):
     assert user is None
 
 # Test successful user login
-async def test_login_user_successful(db_session, verified_user):
+async def test_login_user_successful(db_session, verified_user, email_service):
     user_data = {
         "email": verified_user.email,
         "password": "MySuperPassword$1234",
     }
-    logged_in_user = await UserService.login_user(db_session, user_data["email"], user_data["password"])
+    logged_in_user = await UserService.login_user(db_session, user_data["email"], user_data["password"], email_service)
     assert logged_in_user is not None
 
 # Test user login with incorrect email
-async def test_login_user_incorrect_email(db_session):
-    user = await UserService.login_user(db_session, "nonexistentuser@noway.com", "Password123!")
+async def test_login_user_incorrect_email(db_session, email_service):
+    user = await UserService.login_user(db_session, "nonexistentuser@noway.com", "Password123!",email_service)
     assert user is None
 
 # Test user login with incorrect password
-async def test_login_user_incorrect_password(db_session, user):
-    user = await UserService.login_user(db_session, user.email, "IncorrectPassword!")
+async def test_login_user_incorrect_password(db_session, user, email_service):
+    user = await UserService.login_user(db_session, user.email, "IncorrectPassword!", email_service)
     assert user is None
 
 # Test account lock after maximum failed login attempts
-async def test_account_lock_after_failed_logins(db_session, verified_user):
+async def test_account_lock_after_failed_logins(db_session, verified_user, email_service):
     max_login_attempts = get_settings().max_login_attempts
     for _ in range(max_login_attempts):
-        await UserService.login_user(db_session, verified_user.email, "wrongpassword")
+        await UserService.login_user(db_session, verified_user.email, "wrongpassword", email_service)
     
     is_locked = await UserService.is_account_locked(db_session, verified_user.email)
     assert is_locked, "The account should be locked after the maximum number of failed login attempts."
