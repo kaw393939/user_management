@@ -4,7 +4,7 @@ from starlette.responses import JSONResponse
 from starlette.middleware.cors import CORSMiddleware  # Import the CORSMiddleware
 from app.database import Database
 from app.dependencies import get_settings
-from app.routers import user_routes, pro_route
+from app.routers import user_routes, pro_route, minio_routes
 from app.utils.api_description import getDescription
 app = FastAPI(
     title="User Management",
@@ -39,5 +39,6 @@ async def exception_handler(request, exc):
 
 app.include_router(user_routes.router)
 app.include_router(pro_route.router)
+app.include_router(minio_routes.router)
 
 
