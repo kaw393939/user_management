@@ -2,13 +2,14 @@ from builtins import Exception, bool, classmethod, int, str
 from datetime import datetime, timezone
 import secrets
 from typing import Optional, Dict, List
+from fastapi import HTTPException, status
 from pydantic import ValidationError
 from sqlalchemy import func, null, update, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_email_service, get_settings
 from app.models.user_model import User
-from app.schemas.user_schemas import UserCreate, UserUpdate
+from app.schemas.user_schemas import UserCreate, UserUpdate, UserProUpdate
 from app.utils.nickname_gen import generate_nickname
 from app.utils.security import generate_verification_token, hash_password, verify_password
 from uuid import UUID
@@ -75,7 +76,6 @@ class UserService:
 
             else:
                 new_user.verification_token = generate_verification_token()
-
             session.add(new_user)
             await session.commit()
             await email_service.send_verification_email(new_user)
@@ -88,8 +88,7 @@ class UserService:
     async def update(cls, session: AsyncSession, user_id: UUID, update_data: Dict[str, str]) -> Optional[User]:
         try:
             # validated_data = UserUpdate(**update_data).dict(exclude_unset=True)
-            validated_data = UserUpdate(**update_data).model_dump(exclude_unset=True)
-
+            validated_data = UserUpdate(**update_data).model_dump(exclude_unset=True)            
             if 'password' in validated_data:
                 validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
             query = update(User).where(User.id == user_id).values(**validated_data).execution_options(synchronize_session="fetch")
@@ -98,6 +97,62 @@ class UserService:
             if updated_user:
                 await session.refresh(updated_user)  # Explicitly refresh the updated user object
                 logger.info(f"User {user_id} updated successfully.")
+                return updated_user
+            else:
+                logger.error(f"User {user_id} not found after update attempt.")
+            return None
+        except Exception as e:  # Broad exception handling for debugging
+            logger.error(f"Error during user update: {e}")
+            return None
+
+    @classmethod
+    async def update_pro_status(cls, session: AsyncSession, user_id: UUID, email_service: EmailService) -> Optional[User]:
+        try:
+            updated_user = await cls.get_by_id(session, user_id)
+            # validated_data = UserUpdate(**update_data).dict(exclude_unset=True)
+            if await cls.check_eligibility( session, user_id) == True:
+                updated_user.is_professional = True
+                updated_user.professional_status_updated_at = func.now()
+            else:
+                logger.error(f"User is missing profile information")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User is missing profile information")
+            query = update(User).where(User.id == user_id).values(is_professional=updated_user.is_professional,professional_status_updated_at=updated_user.professional_status_updated_at).execution_options(synchronize_session="fetch")
+            await cls._execute_query(session, query)
+            
+            if updated_user:
+                await session.refresh(updated_user)  # Explicitly refresh the updated user object
+                logger.info(f"User {user_id} updated successfully.")
+                await email_service.send_pro_status_approved_email(updated_user)
+                return updated_user
+            else:
+                logger.error(f"User {user_id} not found after update attempt.")
+            return None
+        except Exception as e:  # Broad exception handling for debugging
+            logger.error(f"Error during user update: {e}")
+            return None
+
+    @classmethod
+    async def delete(cls, session: AsyncSession, user_id: UUID) -> bool:
+        user = await cls.get_by_id(session, user_id)
+        if not user:
+            logger.info(f"User with ID {user_id} not found.")
+            return False
+        await session.delete(user)
+        await session.commit()
+        return True
+    
+    @classmethod
+    async def request_pro_status(cls, session: AsyncSession, user_id: UUID,  email_service: EmailService) -> Optional[User]:
+        try:
+            updated_user = await cls.get_by_id(session, user_id)
+            if updated_user.requested_pro_status == True:
+                return None
+            if updated_user:
+                query = update(User).where(User.id == user_id).values(requested_pro_status=True).execution_options(synchronize_session="fetch")
+                await cls._execute_query(session, query)
+                await session.refresh(updated_user)  # Explicitly refresh the updated user object
+                logger.info(f"User {user_id} has requested pro status")
+                await email_service.send_pro_status_request_email(updated_user)
                 return updated_user
             else:
                 logger.error(f"User {user_id} not found after update attempt.")
@@ -154,6 +209,13 @@ class UserService:
         user = await cls.get_by_email(session, email)
         return user.is_locked if user else False
 
+    @classmethod
+    async def check_eligibility(cls, session: AsyncSession, id: str) -> bool:
+        user = await cls.get_by_id(session, id)
+        if user.linkedin_profile_url != '' and user.github_profile_url != '' and user.profile_picture_url != '' and user.bio != '' and user.is_professional == False:
+            return True
+        else:
+            return False
 
     @classmethod
     async def reset_password(cls, session: AsyncSession, user_id: UUID, new_password: str) -> bool:

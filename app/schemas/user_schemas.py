@@ -60,6 +60,16 @@ class UserCreate(UserBase):
         if value and not re.match(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!*])[A-Za-z\d@$!*]{8,25}$', value):
             raise ValueError('Password must be >8 and <25 characters long. It must include an uppercase letter, a lowercase letter, a number, and  one of these special characters: @, $, !, *.')
         return value
+    
+class UserProUpdate(UserBase):
+    email: Optional[EmailStr] = Field(None, example="john.doe@example.com")
+    nickname: Optional[str] = Field(None, min_length=8, max_length=20, pattern=r'^[\w-]+$', example="john_doe123")
+    bio: Optional[str] = Field(None, example="Experienced software developer specializing in web applications.")
+    profile_picture_url: Optional[str] = Field(None, example="https://example.com/profiles/john.jpg")
+    linkedin_profile_url: Optional[str] =Field(None, example="https://linkedin.com/in/johndoe")
+    github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
+    is_professional: Optional[bool] = Field(None, example=False)
+    
 class UserUpdate(UserBase):
     email: Optional[EmailStr] = Field(None, example="john.doe@example.com")
     password: Optional[str] = Field(None, min_length=8, max_length=25, example="Secure*1234")
@@ -70,8 +80,7 @@ class UserUpdate(UserBase):
     profile_picture_url: Optional[str] = Field(None, example="https://example.com/profiles/john.jpg")
     linkedin_profile_url: Optional[str] =Field(None, example="https://linkedin.com/in/johndoe")
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
-    role: Optional[str] = Field(None, example="AUTHENTICATED")
-    is_professional: Optional[bool] = Field(None, example=True)
+    role: Optional[UserRole] = Field(None, example="AUTHENTICATED")
     @root_validator(pre=True)
     def check_at_least_one_value(cls, values):
         if not any(values.values()):
@@ -83,11 +92,15 @@ class UserUpdate(UserBase):
         if value and not re.match(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!*])[A-Za-z\d@$!*]{8,25}$', value):
             raise ValueError('Password must be >8 and <25 characters long. It must include an uppercase letter, a lowercase letter, a number, and  one of these special characters: @, $, !, *.')
         return value
+
+class RequestResponse(UserBase):
+    requested_pro_status: str = Field(..., example=False)
+
 class UserResponse(UserBase):
     id: uuid.UUID = Field(..., example=uuid.uuid4())
     email: EmailStr = Field(..., example="john.doe@example.com")
     nickname: Optional[str] = Field(None, min_length=8, max_length=20, pattern=r'^[\w-]+$', example="john_doe123")    
-    is_professional: Optional[bool] = Field(default=False, example=True)
+    is_professional: Optional[bool] = Field(None, example=True)
     role: UserRole
 
 class LoginRequest(BaseModel):
@@ -109,7 +122,8 @@ class UserListResponse(BaseModel):
         "role": "AUTHENTICATED",
         "profile_picture_url": "https://example.com/profiles/john.jpg", 
         "linkedin_profile_url": "https://linkedin.com/in/johndoe", 
-        "github_profile_url": "https://github.com/johndoe"
+        "github_profile_url": "https://github.com/johndoe",
+        "is_professional": False
     }])
     total: int = Field(..., example=100)
     page: int = Field(..., example=1)

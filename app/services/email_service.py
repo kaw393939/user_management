@@ -19,7 +19,9 @@ class EmailService:
         subject_map = {
             'email_verification': "Verify Your Account",
             'password_reset': "Password Reset Instructions",
-            'account_locked': "Account Locked Notification"
+            'account_locked': "Account Locked Notification",
+            'user_pro_status_approved': 'You Have Been Approved for Pro Status',
+            'user_request_pro_status': 'A User has Requested Pro Status'
         }
 
         if email_type not in subject_map:
@@ -35,3 +37,16 @@ class EmailService:
             "verification_url": verification_url,
             "email": user.email
         }, 'email_verification')
+
+    async def send_pro_status_request_email(self, user: User):
+        await self.send_user_email({
+            "name": user.first_name,
+            "id": user.id,
+            "email": user.email
+        }, 'user_request_pro_status')
+
+    async def send_pro_status_approved_email(self, user: User):
+        await self.send_user_email({
+            "name": user.first_name,
+            "email": user.email
+        }, 'user_pro_status_approved')
